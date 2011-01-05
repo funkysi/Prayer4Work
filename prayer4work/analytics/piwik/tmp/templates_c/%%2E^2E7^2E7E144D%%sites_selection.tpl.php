@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:00
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:11:54
          compiled from CoreHome/templates/sites_selection.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/sites_selection.tpl', 3, false),array('function', 'url', 'CoreHome/templates/sites_selection.tpl', 5, false),array('function', 'hiddenurl', 'CoreHome/templates/sites_selection.tpl', 11, false),)), $this); ?>
@@ -57,10 +57,8 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 </label>
     <div id="sitesSelectionSearch" class="custom_select">
     
-        <a href="index.php?module=CoreHome&amp;action=index&amp;period=<?php echo $this->_tpl_vars['period']; ?>
-&amp;date=<?php echo $this->_tpl_vars['date']; ?>
-&amp;idSite=<?php echo $this->_tpl_vars['idSite']; ?>
-" class="custom_select_main_link custom_select_collapsed"><?php echo $this->_tpl_vars['siteName']; ?>
+        <a href="javascript:broadcast.propagateNewPage( 'idSite=<?php echo $this->_tpl_vars['idSite']; ?>
+' );" class="custom_select_main_link custom_select_collapsed"><?php echo $this->_tpl_vars['siteName']; ?>
 </a>
         
         <div class="custom_select_block">
@@ -69,10 +67,8 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
                 <?php $_from = $this->_tpl_vars['sites']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
     foreach ($_from as $this->_tpl_vars['info']):
 ?>
-                    <li><a <?php if ($this->_tpl_vars['idSite'] == $this->_tpl_vars['info']['idsite']): ?> style="display: none"<?php endif; ?> href="index.php?module=CoreHome&amp;action=index&amp;period=<?php echo $this->_tpl_vars['period']; ?>
-&amp;date=<?php echo $this->_tpl_vars['date']; ?>
-&amp;idSite=<?php echo $this->_tpl_vars['info']['idsite']; ?>
-"><?php echo $this->_tpl_vars['info']['name']; ?>
+                    <li><a <?php if ($this->_tpl_vars['idSite'] == $this->_tpl_vars['info']['idsite']): ?> style="display: none"<?php endif; ?> href="javascript:broadcast.propagateNewPage( 'idSite=<?php echo $this->_tpl_vars['info']['idsite']; ?>
+');"><?php echo $this->_tpl_vars['info']['name']; ?>
 </a></li>
 				<?php endforeach; endif; unset($_from); ?>
             </ul>

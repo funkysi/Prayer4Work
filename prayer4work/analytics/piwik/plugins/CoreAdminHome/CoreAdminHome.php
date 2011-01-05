@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: CoreAdminHome.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: CoreAdminHome.php 3556 2011-01-02 09:20:55Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreAdminHome
@@ -75,7 +75,7 @@ class Piwik_CoreAdminHome extends Piwik_Plugin
 	{
 		Piwik_AddAdminMenu('CoreAdminHome_MenuGeneralSettings', 
 							array('module' => 'CoreAdminHome', 'action' => 'generalSettings'),
-							Piwik::isUserIsSuperUser(),
+							Piwik::isUserHasSomeAdminAccess(),
 							$order = 6);
 	}
 	

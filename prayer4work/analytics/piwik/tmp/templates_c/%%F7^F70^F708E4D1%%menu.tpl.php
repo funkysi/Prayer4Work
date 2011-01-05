@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:19:59
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:13:53
          compiled from CoreAdminHome/templates/menu.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'urlRewriteWithParameters', 'CoreAdminHome/templates/menu.tpl', 5, false),array('modifier', 'translate', 'CoreAdminHome/templates/menu.tpl', 5, false),)), $this); ?>

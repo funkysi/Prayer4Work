@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3595 2011-01-03 23:28:00Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -26,8 +26,7 @@ class Piwik_Referers_API
 	{
 		if (self::$instance == null)
 		{
-			$c = __CLASS__;
-			self::$instance = new $c();
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -125,7 +124,9 @@ class Piwik_Referers_API
 	public function getUrlsFromWebsiteId($idSite, $period, $date, $idSubtable)
 	{
 		$dataTable = $this->getDataTable('Referers_urlByWebsite',$idSite, $period, $date, $expanded = false, $idSubtable);
-		$dataTable->queueFilter('ColumnCallbackAddMetadata', array( 'label', 'url', create_function('$label', 'return $label;')) );
+		// the htmlspecialchars_decode call is for BC for before 1.1 
+		// as the Referer URL was previously encoded in the log tables, but is now recorded raw
+		$dataTable->queueFilter('ColumnCallbackAddMetadata', array( 'label', 'url', create_function('$label', 'return htmlspecialchars_decode($label);')) );
 		$dataTable->queueFilter('ColumnCallbackReplace', array('label', 'Piwik_getPathFromUrl'));
 		return $dataTable;
 	}

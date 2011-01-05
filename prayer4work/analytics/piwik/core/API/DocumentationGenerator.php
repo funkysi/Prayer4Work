@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: DocumentationGenerator.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: DocumentationGenerator.php 3470 2010-12-20 19:03:26Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -165,9 +165,11 @@ class Piwik_API_DocumentationGenerator
 		// the parameter 'format' can be set to all API methods (used in tests)
 		// the parameter 'hideIdSubDatable' is used for integration tests only
 		// the parameter 'serialize' sets php outputs human readable, used in integration tests and debug
+		// the parameter 'language' sets the language for the response (eg. country names)
 		$aParameters['format'] = false;
 		$aParameters['hideIdSubDatable'] = false;
 		$aParameters['serialize'] = false;
+		$aParameters['language'] = false;
 		
 		$moduleName = Piwik_API_Proxy::getInstance()->getModuleNameFromClassName($class);
 		$urlExample = '?module=API&method='.$moduleName.'.'.$methodName.'&';
@@ -185,7 +187,6 @@ class Piwik_API_DocumentationGenerator
 				return false;
 			}
 		}
-		
 		return substr($urlExample,0,-1);
 	}
 	

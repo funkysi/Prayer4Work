@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:00
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:11:54
          compiled from CoreHome/templates/js_disabled_notice.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/js_disabled_notice.tpl', 3, false),)), $this); ?>

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AnonymizeIP.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: AnonymizeIP.php 3188 2010-09-27 17:16:04Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_AnonymizeIP
@@ -64,8 +64,9 @@ class Piwik_AnonymizeIP extends Piwik_Plugin
 			default:
 		}
 
+		// unpack byte array and mask to 32-bits
 		$res = unpack('V', $maskedIP);
-		return sprintf("%u", $res[1]);
+		return sprintf("%u", $res[1] & 0xffffffff);
 	}
 
 	/**

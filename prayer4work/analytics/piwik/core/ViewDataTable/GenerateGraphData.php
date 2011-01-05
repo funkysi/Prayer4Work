@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: GenerateGraphData.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: GenerateGraphData.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -87,7 +87,7 @@ abstract class Piwik_ViewDataTable_GenerateGraphData extends Piwik_ViewDataTable
 		}
 		$this->mainAlreadyExecuted = true;
 
-		if (!Zend_Registry::get('config')->General->serve_widget_and_data)
+		if (Zend_Registry::get('config')->Debug->disable_merged_requests)
 		{
 			@header( "Content-Type: application/json" );
 		}
@@ -101,6 +101,7 @@ abstract class Piwik_ViewDataTable_GenerateGraphData extends Piwik_ViewDataTable
 
 		// throws exception if no view access
 		$this->loadDataTableFromAPI();
+		$this->checkStandardDataTable();
 		
 		$graphLimit = $this->getGraphLimit();
 		if(!empty($graphLimit))

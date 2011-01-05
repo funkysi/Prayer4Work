@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: VisitorGenerator.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: VisitorGenerator.php 3300 2010-11-07 01:33:12Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_VisitorGenerator
@@ -41,4 +41,3 @@ class Piwik_VisitorGenerator extends Piwik_Plugin {
 		);
 	}
 }
-?>

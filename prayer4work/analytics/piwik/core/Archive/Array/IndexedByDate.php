@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: IndexedByDate.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: IndexedByDate.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -109,7 +109,7 @@ class Piwik_Archive_Array_IndexedByDate extends Piwik_Archive_Array
 									FROM $table
 									WHERE idarchive IN ( $inIds )
 										AND name IN ( $inNames )";
-			$values = $db->fetchAll($sql);
+			$values = $db->fetchAll($sql, $fields);
 			foreach($values as $value)
 			{
 				$timestamp = Piwik_Date::factory($value['startDate'])->getTimestamp();

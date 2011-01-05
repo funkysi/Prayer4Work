@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExamplePlugin.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ExamplePlugin.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExamplePlugin
@@ -27,8 +27,11 @@ class Piwik_ExamplePlugin extends Piwik_Plugin
 	{
 		return array(
 			'description' => Piwik_Translate('ExamplePlugin_PluginDescription'),
+			'homepage' => 'http://piwik.org/',
 			'author' => 'Piwik',
 			'author_homepage' => 'http://piwik.org/',
+			'license' => 'GPL v3 or later',
+			'license_homepage' => 'http://www.gnu.org/licenses/gpl.html',
 			'version' => '0.1',
 			'translationAvailable' => true,
 		);
@@ -59,6 +62,7 @@ class Piwik_ExamplePlugin extends Piwik_Plugin
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_exampleWidget', 'ExamplePlugin', 'exampleWidget');
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_blogPiwikRss', 'ExamplePlugin', 'blogPiwik');
 		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_photostreamMatt', 'ExamplePlugin', 'photostreamMatt');
+		Piwik_AddWidget('ExamplePlugin_exampleWidgets', 'ExamplePlugin_piwikDownloads', 'ExamplePlugin', 'piwikDownloads');
 	}
 }
 
@@ -108,6 +112,17 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 	}
 	
 	/**
+	 * this widgets shows how to make a remote API request to piwik.org 
+	 * you find the main JS code in templates/piwikDownloadCount.tpl
+	 */
+	function piwikDownloads()
+	{
+		$view = Piwik_View::factory('piwikDownloads'); 
+		$this->setGeneralVariablesView($view);
+		echo $view->render();
+	}
+	
+	/**
 	 * This method displays a text containing an help about "How to build plugins for Piwik".
 	 * This help is then used on http://dev.piwik.org/trac/wiki/Plugins/GlobalFunctions
 	 *
@@ -117,7 +132,7 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 		$out = '';
 		$out .= '<i>This page aims to list the different functions you can use when programming plugins for Piwik.</i><br />';
 		$out .= '<b>Be careful, the following APIs may change in the near future as Piwik is still in development.</b><br />';
-		
+
 		$out .= '<h2>General</h2>';
 		$out .= '<h3>Accessible from your plugin controller</h3>';
 		
@@ -128,8 +143,8 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 		$out .= '<code>$this->str_date</code> = current selected date in YYYY-MM-DD format<br />';
 		
 		$out .= '<h3>Misc</h3>';
-		$out .= '<code>Piwik_AddMenu( $mainMenuName, $subMenuName, $url );</code> - Adds an entry to the menu in the Piwik interface (See the example in the <a href="http://dev.piwik.org/trac/browser/trunk/plugins/UserCountry/UserCountry.php#L146">UserCountry Plugin file</a>)<br />';
-		$out .= '<code>Piwik_AddWidget( $widgetCategory, $widgetName, $controllerName, $controllerAction, $customParameters = array());</code> - Adds a widget that users can add in the dashboard, or export using the Widgets link at the top of the screen. See the example in the <a href="http://dev.piwik.org/trac/browser/trunk/plugins/UserCountry/UserCountry.php#L143">UserCountry Plugin file</a> or any other plugin)<br />';
+		$out .= '<code>Piwik_AddMenu( $mainMenuName, $subMenuName, $url );</code> - Adds an entry to the menu in the Piwik interface (See the example in the <a href="http://dev.piwik.org/trac/browser/tags/1.0/plugins/UserCountry/UserCountry.php#L76">UserCountry Plugin file</a>)<br />';
+		$out .= '<code>Piwik_AddWidget( $widgetCategory, $widgetName, $controllerName, $controllerAction, $customParameters = array());</code> - Adds a widget that users can add in the dashboard, or export using the Widgets link at the top of the screen. See the example in the <a href="http://dev.piwik.org/trac/browser/tags/1.0/plugins/UserCountry/UserCountry.php#L70">UserCountry Plugin file</a> or any other plugin)<br />';
 		$out .= '<code>Piwik_Common::prefixTable("site")</code> = <b>' . Piwik_Common::prefixTable("site") . '</b><br />';
 		
 		
@@ -167,7 +182,7 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 		$out .= 'In order to translate strings within Javascript code, you can use the javascript function _pk_translate( token );.
 				<ul><li>The "token" parameter is the string unique key found in the translation file. For this token string to be available in Javascript, you must
 				suffix your token by "_js" in the language file. For example, you can add <code>\'Goals_AddGoal_js\' => \'Add Goal\',</code> in the lang/en.php file</li>
-				<li>You then need to instruct Piwik to load your Javascript translations for your plugin; by default, all translation strings are not loaded in Javascript for performance reasons. This can be done by calling the Smarty modifier before any your javascript includes that would be using the translations, eg. 
+				<li>You then need to instruct Piwik to load your Javascript translations for your plugin; by default, all translation strings are not loaded in Javascript for performance reasons. This can be done by calling a custom-made Smarty modifier before the Javascript code requiring translations, eg. 
 					<code>{loadJavascriptTranslations plugins=\'$YOUR_PLUGIN_NAME\'}</code>. In our previous example, the $YOUR_PLUGIN_NAME being Goals, we would write <code>{loadJavascriptTranslations plugins=\'Goals\'}</code>
 					</li><li>You can then print this string from your JS code by doing <code>_pk_translate(\'Goals_AddGoal_js\');</code>.
 					</li></ul>';

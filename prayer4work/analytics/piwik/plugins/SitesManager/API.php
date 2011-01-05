@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2977 2010-08-24 03:54:50Z vipsoft $
+ * @version $Id: API.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -24,9 +24,8 @@ class Piwik_SitesManager_API
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -52,11 +51,11 @@ class Piwik_SitesManager_API
 		{
 			$piwikUrl = Piwik_Url::getCurrentUrlWithoutFileName();
 		}
-		$piwikUrl = addslashes(Piwik_Common::sanitizeInputValues($piwikUrl));
+		$piwikUrl = Piwik_Common::sanitizeInputValues($piwikUrl);
 		
 		$htmlEncoded = Piwik::getJavascriptCode($idSite, $piwikUrl);
 		$htmlEncoded = str_replace(array('<br>','<br />','<br/>'), '', $htmlEncoded);
-		return html_entity_decode($htmlEncoded);
+		return $htmlEncoded;
 	}
 	
 	/**
@@ -669,33 +668,8 @@ class Piwik_SitesManager_API
 	 */
 	public function getCurrencyList()
 	{
-		return array(
-    		'USD' => 'US Dollar ($)',
-            'EUR' => 'Euro (€)',
-            'JPY' => 'Japanese Yen (¥)',
-            'GBP' => 'British Pound Sterling (£)',
-            'AUD' => 'Australian Dollar (A$)',
-            'KRW' => 'South Korean Won (₩)',
-            'BRL' => 'Brazilian Real (R$)',
-            'CNY' => 'Chinese Yuan Renminbi (CN¥)',
-            'DKK' => 'Danish Krone (Dkr)',
-            'RUB' => 'Russian Ruble (RUB)',
-            'SEK' => 'Swedish Krona (Skr)',
-            'NOK' => 'Norwegian Krone (Nkr)',
-            'PLN' => 'Polish Zloty (zł)',
-            'TRY' => 'Turkish Lira (TL)',
-            'TWD' => 'New Taiwan Dollar (NT$)',
-            'HKD' => 'Hong Kong Dollar (HK$)',
-            'THB' => 'Thai Baht (฿)',
-            'IDR' => 'Indonesian Rupiah (Rp)',
-            'ARS' => 'Argentine Peso (AR$)',
-            'MXN' => 'Mexican Peso (MXN)',
-            'VND' => 'Vietnamese Dong (₫)',
-            'PHP' => 'Philippine Peso (Php)',
-            'INR' => 'Indian Rupee (Rs.)',
-			'VEF' => 'Venezuelan bolívar (Bs. F)',
-            'CHF' => 'Swiss Franc (Fr.)',
-		);
+		$currencies = Piwik::getCurrencyList();
+		return array_map(create_function('$a', 'return $a[1]." (".$a[0].")";'), $currencies);
 	}
 	
 	/**
@@ -705,35 +679,9 @@ class Piwik_SitesManager_API
 	 */
 	public function getCurrencySymbols()
 	{
-		return array(
-    		'USD' => '$',
-            'EUR' => '€',
-            'JPY' => '¥',
-            'GBP' => '£',
-            'AUD' => 'A$',
-            'KRW' => '₩',
-            'BRL' => 'R$',
-            'CNY' => 'CN¥',
-            'DKK' => 'Dkr',
-            'RUB' => 'RUB',
-            'SEK' => 'Skr',
-            'NOK' => 'Nkr',
-            'PLN' => 'zł',
-            'TRY' => 'TL',
-            'TWD' => 'NT$',
-            'HKD' => 'HK$',
-            'THB' => '฿',
-            'IDR' => 'Rp',
-            'ARS' => 'AR$',
-            'MXN' => 'MXN',
-            'VND' => '₫',
-            'PHP' => 'Php',
-            'INR' => 'Rs.',
-			'VEF' => 'Bs. F',
-            'CHF' => 'Fr.',
-		);
+		$currencies = Piwik::getCurrencyList();
+		return array_map(create_function('$a', 'return $a[0];'), $currencies);
 	}
-	
 	
 	/**
 	 * Returns the list of timezones supported. 
@@ -941,9 +889,9 @@ class Piwik_SitesManager_API
 		return $urls;
 	}
 
-        static public function getPatternMatchSites($pattern)
+        public function getPatternMatchSites($pattern)
 	{
-		$ids = self::getSitesIdWithAtLeastViewAccess();
+		$ids = $this->getSitesIdWithAtLeastViewAccess();
 		$ids_str = '';
 		foreach($ids as $id_num => $id_val)
 		{
@@ -958,7 +906,7 @@ class Piwik_SitesManager_API
 								WHERE (		s.name like ? 
 										OR 	s.main_url like ?) 
 									AND idsite in ($ids_str) 
-								LIMIT ".Zend_Registry::get('config')->General->site_selector_max_sites, 
+								LIMIT ".Piwik::getWebsitesCountToDisplay(), 
 							$bind) ;
 		return $sites;
 	}

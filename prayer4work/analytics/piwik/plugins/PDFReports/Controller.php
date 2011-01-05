@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2990 2010-08-26 20:06:22Z matt $
+ * @version $Id: Controller.php 3038 2010-08-31 17:52:29Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -43,6 +43,4 @@ class Piwik_PDFReports_Controller extends Piwik_Controller
 		$view->reports = $reports;
 		echo $view->render();
 	}
-	
-	
 }

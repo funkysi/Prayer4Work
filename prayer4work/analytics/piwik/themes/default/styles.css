@@ -34,6 +34,9 @@
 	list-style:none;
 	background:#FFF;
 	border: 1px solid #1F447F;
+	overflow:auto;
+	width:190px;
+	height:400px;
 }
 .formDiv_ul_list li {
 	padding:0px;
@@ -46,4 +49,19 @@
 	background:#176999;
 	color:#FFF;
 	text-decoration:none;
+}
+
+code {
+	background-color:#F6F9F9;
+	border-color:#3B3BB5;
+	border-style:dashed dashed dashed solid;
+	border-width:1px 1px 1px 5px;
+	direction:ltr;
+	display:table;
+	font-size:100%;
+	margin:12px 2px 0px;
+	padding:5px 50px 5px 15px;
+	text-align:left;
+	line-height:1.3em;
+	font-family: "Courier New" Courier monospace;
 }

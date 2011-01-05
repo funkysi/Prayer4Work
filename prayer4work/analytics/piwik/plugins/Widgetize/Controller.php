@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Widgetize
@@ -41,7 +41,10 @@ class Piwik_Widgetize_Controller extends Piwik_Controller
 		echo $view->render();
 	}
 	
-	function js()
+	/**
+	 * Disabled for now, not obvious that this is useful (iframe sounds like a better solution)
+	 */
+	private function js()
 	{
 		Piwik_API_Request::reloadAuthUsingTokenAuth();
 		$controllerName = Piwik_Common::getRequestVar('moduleToWidgetize');
@@ -49,7 +52,6 @@ class Piwik_Widgetize_Controller extends Piwik_Controller
 		$parameters = array ( $fetch = true );
 		$content = Piwik_FrontController::getInstance()->fetchDispatch( $controllerName, $actionName, $parameters);
 		$view = Piwik_View::factory('js');
-		$view->piwikUrl = Piwik_Url::getCurrentUrlWithoutFileName();
 		$content = str_replace(array("\t","\n","\r\n","\r"), "", $content);
 		$view->content = $content;
 		echo $view->render();

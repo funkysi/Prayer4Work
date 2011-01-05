@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2990 2010-08-26 20:06:22Z matt $
+ * @version $Id: API.php 3576 2011-01-03 12:38:40Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -25,9 +25,8 @@ class Piwik_PDFReports_API
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -198,11 +197,20 @@ class Piwik_PDFReports_API
 	 * @param int $idSite 
 	 * @param string $period 
 	 * @param string $date
+	 * @param string|false $language
 	 * @param int $idReport If not passed, will generate a PDF containing all reports.
 	 * @param bool $outputType 
+	 * @param string $periodUsedFullReport If idReport == 0, will generate the report for the specified period
 	 */
-	public function generateReport($idReport, $date, $idSite = false, $outputType = false, $periodUsedFullReport = 'day')
+	public function generateReport($idReport, $date, $idSite = false, $language = false, $outputType = false, $periodUsedFullReport = 'day')
 	{
+		// Load specified language
+		if(empty($language))
+		{
+			$language = Piwik_Translate::getInstance()->getLanguageDefault();
+		}
+    	Piwik_Translate::getInstance()->reloadLanguage($language);
+		
 		// Available reports
 		static $reportMetadata = null;
 		if(is_null($reportMetadata))
@@ -238,10 +246,10 @@ class Piwik_PDFReports_API
     		}
 		}
 		
-		// PDF will display the first 30 rows, then aggeregate other rows in a summary row 
+		// PDF will display the first 30 rows, then aggregate other rows in a summary row 
     	$filterTruncateGET = Piwik_Common::getRequestVar('filter_truncate', false);
     	$_GET['filter_truncate'] = 30;
-        
+    	
     	$date = Piwik_Date::factory($date)->toString('Y-m-d');
         
     	$websiteName = $prettyDate = false;
@@ -255,26 +263,27 @@ class Piwik_PDFReports_API
         	{
         		$apiParameters = $action['parameters'];
         	}
-        	$report = Piwik_API_API::getInstance()->getProcessedReport($idSite, $date, $period, $apiModule, $apiAction, $apiParameters);
+        	$report = Piwik_API_API::getInstance()->getProcessedReport($idSite, $date, $period, $apiModule, $apiAction, $apiParameters, $language);
         	$websiteName = $report['website'];
         	$prettyDate = $report['prettyDate'];
         	$processedReports[] = $report;
         }
         
+        // Restore values
         if($filterTruncateGET !== false)
         {
         	$_GET['filter_truncate'] = $filterTruncateGET;
         }
 	
         // Generates the PDF Report
-		$pdf = new Piwik_PDFReports_PDFRenderer($websiteName, $prettyDate, $description);
+		$pdf = new Piwik_PDFReports_PDFRenderer($websiteName, $prettyDate, $description, $language);
         $pdf->paintFirstPage();
         foreach($processedReports as $report)
         {
     		$pdf->setReport($report['metadata'], $report['reportData'], $report['columns'], $report['reportMetadata']);
     		$pdf->paintReport();
         }
-        $outputFilename = 'Analytics report - '.$prettyDate.' - '.$websiteName.".pdf";	
+        $outputFilename = 'PDF Report - '.$idReport.'.'.$date.'.'.$idSite.'.'.$language.'.pdf';	
         
         switch($outputType)
         { 
@@ -284,6 +293,7 @@ class Piwik_PDFReports_API
         		@unlink($outputFilename);
     		break;
         	case self::OUTPUT_PDF_DOWNLOAD:
+        		$outputFilename = "$websiteName - $prettyDate - $description.pdf";
         		$flagOutput = 'D';
     		break;
         	default:
@@ -306,20 +316,32 @@ class Piwik_PDFReports_API
 	{
 		$reports = $this->getReports($idSite, $period = false, $idReport);
 		$report = reset($reports);
+		
+		// Get user emails and languages 
+		$emails = self::getEmailsFromString($report['additional_emails']);
+		if($report['email_me'] == 1)
+		{	
+			if(Piwik::getCurrentUserLogin() == $report['login']
+				|| Piwik::isUserIsSuperUser())
+			{
+				$emails[] = Piwik::getCurrentUserEmail();
+			}
+			else
+			{
+				$user = Piwik_UsersManager_API::getInstance()->getUser($report['login']);
+				$emails[] = $user['email'];
+			}
+		}
+		$language = Piwik_LanguagesManager_API::getInstance()->getLanguageForUser($report['login']);
 		list($outputFilename, $prettyDate, $websiteName) = 
-			Piwik_PDFReports_API::getInstance()->generateReport(
+			$this->generateReport(
 					$idReport, 
-					Piwik_Date::now()->subPeriod(1, $report['period']),
+					Piwik_Date::now()->subPeriod(1, $report['period'])->toString(),
 					$idSite,
+					$language,
 					$outputType = Piwik_PDFReports_API::OUTPUT_PDF_SAVE_ON_DISK
 					);
 
-		
-		$emails = self::getEmailsFromString($report['additional_emails']);
-		if($report['email_me'] == 1)
-		{		
-			$emails[] = Piwik::getCurrentUserEmail();
-		}
 		$this->sendReportEmailPdfAttached($emails, $outputFilename, $prettyDate, $websiteName, $report);
 	}
 	
@@ -328,7 +350,7 @@ class Piwik_PDFReports_API
 		$periods = self::getPeriodToFrequency();
 		$message  = Piwik_Translate('PDFReports_EmailHello');
 		$message .= "\n" . Piwik_Translate('PDFReports_PleaseFindAttachedFile', array($periods[$report['period']], $websiteName));
-		$subject = "Reports " . $websiteName . " - ".$prettyDate;
+		$subject = Piwik_Translate('General_Report') . ' '. $websiteName . " - ".$prettyDate;
 
 		if(!file_exists($outputFilename))
 		{
@@ -344,12 +366,13 @@ class Piwik_PDFReports_API
 		$mail->setBodyText($message);
 		$fromEmailName = Piwik_Translate('PDFReports_PiwikReports');
 		$fromEmailAddress = Zend_Registry::get('config')->General->noreply_email_address;
+		$attachmentName = $subject;
 		$mail->setFrom($fromEmailAddress, $fromEmailName);
 		$mail->createAttachment(	$contents, 
 									'application/pdf', 
 									Zend_Mime::DISPOSITION_INLINE, 
 									Zend_Mime::ENCODING_BASE64, 
-									$filename
+									$attachmentName.'.pdf'
 		);
 		
 		foreach ($emails as $email)
@@ -359,8 +382,14 @@ class Piwik_PDFReports_API
     		try {
     			$mail->send();
     		} catch(Exception $e) {
-    			throw new Exception("An error occured while sending the PDF Report ".
-    								" to ". implode(', ',$mail->getRecipients()). ". Error was '". $e->getMessage()."'");
+    			
+    			// If running from piwik.php with debug, we ignore the 'email not sent' error 
+    			if(!isset($GLOBALS['PIWIK_TRACKER_DEBUG']) || !$GLOBALS['PIWIK_TRACKER_DEBUG'])
+				{
+					throw new Exception("An error occured while sending '$filename' ".
+    								" to ". implode(', ',$mail->getRecipients()). ". 
+    								Error was '". $e->getMessage()."'");
+				}
     		}
     		$mail->clearRecipients();
 		}
@@ -370,8 +399,11 @@ class Piwik_PDFReports_API
 					"idreport = " . $report['idreport']
 		);	
 		
-		// Remove PDF file
-		unlink($outputFilename);
+		// If running from piwik.php with debug, do not delete the PDF after sending the email  
+		if(!isset($GLOBALS['PIWIK_TRACKER_DEBUG']) || !$GLOBALS['PIWIK_TRACKER_DEBUG'])
+		{
+			unlink($outputFilename);
+		}
 	}
 	
 	private function checkAdditionalEmails($additionalEmails)

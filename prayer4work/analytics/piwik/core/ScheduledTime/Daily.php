@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Daily.php
+ * @version $Id: Daily.php 3387 2010-11-29 14:38:13Z JulienM $
  * 
  * @category Piwik
  * @package Piwik
@@ -24,7 +24,7 @@ class Piwik_ScheduledTime_Daily extends Piwik_ScheduledTime
 		$currentTime = $this->getTime();
 		
 		// Add one day
-		$rescheduledTime = mktime ( 	date('H', $currentTime), 
+		$rescheduledTime = mktime ( date('H', $currentTime),
 									date('i', $currentTime),
 									date('s', $currentTime),
 									date('n', $currentTime),
@@ -39,11 +39,6 @@ class Piwik_ScheduledTime_Daily extends Piwik_ScheduledTime
 	}
 	
 	public function setDay($_day)
-	{
-		throw new Exception ("Method not supported");
-	}
-	
-	public function setWeek($_week)
 	{
 		throw new Exception ("Method not supported");
 	}

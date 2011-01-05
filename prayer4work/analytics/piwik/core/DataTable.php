@@ -4,11 +4,16 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: DataTable.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: DataTable.php 3143 2010-09-13 01:46:21Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
  */
+
+/**
+ * @see destroy()
+ */
+require_once PIWIK_INCLUDE_PATH . '/core/Common.php';
 
 /**
  * 

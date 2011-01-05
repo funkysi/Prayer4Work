@@ -5,7 +5,7 @@
  *
  * @link http://dev.piwik.org/trac/browser/trunk/libs/UserAgentParser
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
- * @version $Id: UserAgentParser.php 2387 2010-06-27 05:08:29Z vipsoft $
+ * @version $Id: UserAgentParser.php 3113 2010-09-10 16:00:01Z vipsoft $
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -195,6 +195,7 @@ class UserAgentParser
 	// OS regex => OS ID
 	static protected $operatingSystems = array(
 			'Android'				=> 'AND',
+			'Maemo'					=> 'MAE',
 			'Linux'					=> 'LIN',
 
 			'CYGWIN_NT-6.1'			=> 'WI7',
@@ -227,6 +228,11 @@ class UserAgentParser
 			'Win95'					=> 'W95',		
 			'Windows 95'			=> 'W95',
 
+			'Windows Phone OS 7.0'	=> 'WP7',
+			'Windows Mobile 6.5'	=> 'W65',
+			'Windows Mobile 6.1'	=> 'W61',
+			'Windows CE'			=> 'WCE',
+
 			'iPod'					=> 'IPD',
 			'iPad'					=> 'IPA',
 			'iPhone'				=> 'IPH',
@@ -247,9 +253,14 @@ class UserAgentParser
 
 			'BlackBerry'			=> 'BLB',
 
+			'SymbOS'				=> 'SYM',
+			'Symbian OS'			=> 'SYM',
+			'SymbianOS'				=> 'SYM',
+
 			'SunOS'					=> 'SOS',
 			'AIX'					=> 'AIX',
 			'HP-UX'					=> 'HPX',
+			'OpenVMS'				=> 'VMS',
 
 			'FreeBSD'				=> 'BSD',
 			'NetBSD'				=> 'NBS',
@@ -496,6 +507,9 @@ class UserAgentParser
 			'WNT' => 'Win NT',
 			'WME' => 'Win Me',
 			'W95' => 'Win 95',
+			'WP7' => 'WinPhone 7',
+			'W65' => 'WinMo 6.5',
+			'W61' => 'WinMo 6.1',
 			'WCE' => 'Win CE',
 			'WOS' => 'webOS',
 			'UNK' => 'Unknown',

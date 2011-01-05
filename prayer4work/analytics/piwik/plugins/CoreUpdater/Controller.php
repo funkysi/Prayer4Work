@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3553 2011-01-02 00:05:05Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_CoreUpdater
@@ -85,7 +85,7 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 	
 	private function oneClick_Download()
 	{
-		$this->pathPiwikZip = PIWIK_USER_PATH . self::PATH_TO_EXTRACT_LATEST_VERSION . '/latest.zip';
+		$this->pathPiwikZip = PIWIK_USER_PATH . self::PATH_TO_EXTRACT_LATEST_VERSION . 'latest.zip';
 		Piwik::checkDirectoriesWritableOrDie( array(self::PATH_TO_EXTRACT_LATEST_VERSION) );
 
 		// we catch exceptions in the caller (i.e., oneClickUpdate)
@@ -95,14 +95,12 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 	
 	private function oneClick_Unpack()
 	{
-		require_once PIWIK_INCLUDE_PATH . '/libs/PclZip/pclzip.lib.php';
-		$archive = new PclZip($this->pathPiwikZip);
+		$archive = Piwik_Unzip::getDefaultUnzip($this->pathPiwikZip);
 
 		$pathExtracted = PIWIK_USER_PATH . self::PATH_TO_EXTRACT_LATEST_VERSION;
-		if ( false == ($archive_files = $archive->extract(
-							PCLZIP_OPT_PATH, $pathExtracted)) )
+		if ( 0 == ($archive_files = $archive->extract($pathExtracted) ) )
 		{
-			throw new Exception(Piwik_TranslateException('CoreUpdater_ExceptionArchiveIncompatible', $archive->errorInfo(true)));
+			throw new Exception(Piwik_TranslateException('CoreUpdater_ExceptionArchiveIncompatible', $archive->errorInfo()));
 		}	
 	
 		if ( 0 == count($archive_files) )
@@ -110,7 +108,7 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 			throw new Exception(Piwik_TranslateException('CoreUpdater_ExceptionArchiveEmpty'));
 		}
 		unlink($this->pathPiwikZip);
-		$this->pathRootExtractedPiwik = $pathExtracted . '/piwik';
+		$this->pathRootExtractedPiwik = $pathExtracted . 'piwik';
 	}
 	
 	private function oneClick_Verify()
@@ -192,7 +190,7 @@ class Piwik_CoreUpdater_Controller extends Piwik_Controller
 		$language = Piwik_Common::getRequestVar('language', '');
 		if(!empty($language))
 		{
-			Piwik_LanguagesManager_API::getInstance()->setLanguageForSession($language);
+			Piwik_LanguagesManager::setLanguageForSession($language);
 		}
 		$this->runUpdaterAndExit();
 	}

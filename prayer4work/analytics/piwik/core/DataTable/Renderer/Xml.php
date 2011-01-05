@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Xml.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Xml.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -24,16 +24,17 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 {
 	function render()
 	{
-		return $this->renderTable($this->table);
+		self::renderHeader();
+		return '<?xml version="1.0" encoding="utf-8" ?>' .  "\n" . $this->renderTable($this->table);
 	}
 	
 	function renderException()
 	{
+		self::renderHeader();
+
 		$exceptionMessage = self::renderHtmlEntities($this->exception->getMessage());
 		
-		@header("Content-Type: text/xml;charset=utf-8");
-		$return = 
-			"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" .
+		$return = '<?xml version="1.0" encoding="utf-8" ?>' . "\n" .
 			"<result>\n".
 			"\t<error message=\"".$exceptionMessage."\" />\n".
 			"</result>";		
@@ -64,7 +65,7 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 				return $out;
 			}
 			$out = "<results>\n$out</results>";
-			return $this->output($out);
+			return $out;
 		}
 	
 		// integer value of ZERO is a value we want to display
@@ -75,7 +76,7 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 				throw new Exception("Illegal state, what xml shall we return?");
 			}
 			$out = "<result />";
-			return $this->output($out);
+			return $out;
 		}
 		if($table instanceof Piwik_DataTable_Simple)
 		{
@@ -98,9 +99,9 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 			}
 			else
 			{
-				$out = "<result>".$this->formatValue($out)."</result>";
+				$out = "<result>".self::formatValueXml($out)."</result>";
 			}
-			return $this->output($out);
+			return $out;
 		}
 		
 		if($table instanceof Piwik_DataTable)
@@ -111,10 +112,8 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 				return $out;
 			}
 			$out = "<result>\n$out</result>";
-			return $this->output($out);
+			return $out;
 		}
-		
-		
 	}
 	
 	protected function renderDataTableArray($table, $array, $prefixLines = "")
@@ -142,7 +141,7 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 	  			}
 	  			else
 	  			{
-		  			$xml .= $prefixLines . "\t<result $nameDescriptionAttribute=\"$valueAttribute\">".$this->formatValue($value)."</result>\n";	  				
+		  			$xml .= $prefixLines . "\t<result $nameDescriptionAttribute=\"$valueAttribute\">".self::formatValueXml($value)."</result>\n";	  				
 	  			}
 	  		}
 	  		return $xml;
@@ -252,7 +251,7 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 		{
 			if(!is_array($row))
 			{
-				$value = $this->formatValue($row);
+				$value = self::formatValueXml($row);
 				$out .= $prefixLine."\t\t<$rowId>".$value."</$rowId>\n";
 				continue;
 			}
@@ -285,7 +284,7 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 					}
 					else
 					{
-						$value = $this->formatValue($value);
+						$value = self::formatValueXml($value);
 					}
 					$out .= $prefixLine."\t\t<$name>".$value."</$name>\n";
 				} 
@@ -301,31 +300,14 @@ class Piwik_DataTable_Renderer_Xml extends Piwik_DataTable_Renderer
 		$out = '';
 		foreach($array as $keyName => $value)
 		{
-			$out .= $prefixLine."\t<$keyName>".$this->formatValue($value)."</$keyName>\n"; 
+			$out .= $prefixLine."\t<$keyName>".self::formatValueXml($value)."</$keyName>\n"; 
 		}
 		return $out;
 	}
 	
-	protected function formatValue($value)
-	{
-		if(is_string($value)
-			&& !is_numeric($value)) 
-		{
-			$value = html_entity_decode($value, ENT_COMPAT, 'UTF-8');
-			$value = htmlspecialchars($value);
-		}
-		elseif($value===false)
-		{
-			$value = 0;
-		}
-		return $value;
-	}
-	
-	protected function output( $xml )
+	protected static function renderHeader()
 	{
 		// silent fail because otherwise it throws an exception in the unit tests
-		@header("Content-Type: text/xml;charset=utf-8");
-		$xml = '<?xml version="1.0" encoding="utf-8" ?>' .  "\n" . $xml;
-		return $xml;
+		@header('Content-Type: text/xml; charset=utf-8');
 	}
 }

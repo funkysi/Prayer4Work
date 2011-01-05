@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Csv.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Csv.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -63,7 +63,20 @@ class Piwik_DataTable_Renderer_Csv extends Piwik_DataTable_Renderer
 	
 	public function render()
 	{
-		return $this->output($this->renderTable($this->table));
+		$str = $this->renderTable($this->table);
+		if(empty($str))
+		{
+			return 'No data available';
+		}
+
+		self::renderHeader();
+
+		if($this->convertToUnicode 
+			&& function_exists('mb_convert_encoding'))
+		{
+			$str = chr(255) . chr(254) . mb_convert_encoding($str, 'UTF-16LE', 'UTF-8');
+		}
+		return $str;
 	}
 	
 	function renderException()
@@ -258,20 +271,11 @@ class Piwik_DataTable_Renderer_Csv extends Piwik_DataTable_Renderer
 		return $value;
 	}
 	
-	protected function output( $str )
+	protected static function renderHeader()
 	{
-		if(empty($str))
-		{
-			return 'No data available';
-		}
 		// silent fail otherwise unit tests fail
-		@header("Content-Type: application/vnd.ms-excel");
-		@header("Content-Disposition: attachment; filename=piwik-report-export.csv");
-		if($this->convertToUnicode 
-			&& function_exists('mb_convert_encoding'))
-		{
-			$str = chr(255) . chr(254) . mb_convert_encoding($str, 'UTF-16LE', 'UTF-8');
-		}
-		return $str;
+		@header('Content-Type: application/vnd.ms-excel');
+		@header('Content-Disposition: attachment; filename=piwik-report-export.csv');
+		Piwik::overrideCacheControlHeaders();
 	}
 }

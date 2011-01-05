@@ -1,5 +1,5 @@
 {include file="CoreUpdater/templates/header.tpl"}
-{assign var='helpMessage' value='CoreUpdater_HelpMessageContent'|translate:'<a target="_blank" href="misc/redirectToUrl.php?url=http://piwik.org/faq/">':'</a>':'</li><li>'}
+{assign var='helpMessage' value='CoreUpdater_HelpMessageContent'|translate:'<a target="_blank" href="?module=Proxy&action=redirect&url=http://piwik.org/faq/">':'</a>':'</li><li>'}
 
 {if $coreError}
 	<br /><br />
@@ -32,7 +32,7 @@
 						
 	{if count($errorMessages) > 0}
 		<div class="warning">
-			<p><img src="themes/default/images/warning_medium.png" /> {'CoreUpdater_ErrorDuringPluginsUpdates'|translate}</p>
+			<p><img src="themes/default/images/error_medium.png" /> {'CoreUpdater_ErrorDuringPluginsUpdates'|translate}</p>
 			{foreach from=$errorMessages item=message}
 			<pre>{$message}</pre><br />
 			{/foreach}

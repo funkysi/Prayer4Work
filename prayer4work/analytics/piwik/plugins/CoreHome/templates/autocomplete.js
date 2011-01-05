@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: autocomplete.js 2967 2010-08-20 15:12:43Z vipsoft $
  */
 
 $('.but').bind('click', function(e)
@@ -13,7 +12,12 @@ $('.but').bind('click', function(e)
 	return false;
 });
 $(function() {
-	$("#websiteSearch").click(function(e)
+	if($('#websiteSearch').length == 0)
+	{
+		return;
+	}
+
+	$('#websiteSearch').click(function(e)
 	{
 		$(this).val('');
 	});
@@ -24,7 +28,7 @@ $(function() {
 			reset();
 		}
 	});
-	$("#websiteSearch").autocomplete({
+	$('#websiteSearch').autocomplete({
 		minLength: 1,
 		source: '?module=SitesManager&action=getSitesForAutocompleter',
 		select: function(event, ui) {
@@ -68,7 +72,13 @@ $(function() {
 			$(".custom_select_block_show").width(parseInt(widthSitesSelection));
 
 		}
-	});
+	}).data("autocomplete")._renderItem = function( ul, item ) {
+		return $( "<li></li>" )
+		.data( "item.autocomplete", item )
+		.append( $( "<a></a>" ).html( item.label ) )
+		.appendTo( ul );
+	};
+
 	function reset()
 	{
 		$('#websiteSearch').val('');
@@ -80,6 +90,4 @@ $(function() {
 	{
 		reset();
 	});
-
 });
-		

@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:06
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:12:18
          compiled from CoreHome/templates/datatable_footer.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/datatable_footer.tpl', 16, false),)), $this); ?>
@@ -90,9 +90,11 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 					<a target="_blank" methodToCall="<?php echo $this->_tpl_vars['properties']['apiMethodToRequestDataTable']; ?>
 " format="JSON" filter_limit="100">Json</a> |
 					<a target="_blank" methodToCall="<?php echo $this->_tpl_vars['properties']['apiMethodToRequestDataTable']; ?>
-" format="PHP" filter_limit="100">Php</a> | 
-					<a target="_blank" methodToCall="<?php echo $this->_tpl_vars['properties']['apiMethodToRequestDataTable']; ?>
+" format="PHP" filter_limit="100">Php</a>
+					<?php if ($this->_tpl_vars['properties']['show_export_as_rss_feed']): ?>
+						| <a target="_blank" methodToCall="<?php echo $this->_tpl_vars['properties']['apiMethodToRequestDataTable']; ?>
 " format="RSS" filter_limit="100" date="last10"><img border="0" src="themes/default/images/feed.png" /></a>
+					<?php endif; ?>
 				</span>
 				<?php if ($this->_tpl_vars['properties']['show_export_as_image_icon']): ?>
 					<span id="dataTableFooterExportAsImageIcon">
@@ -115,4 +117,4 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 </span>
 </div>
 
-<div class="dataTableSpacer" />
+<div class="dataTableSpacer"></div>

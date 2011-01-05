@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -18,7 +18,6 @@ class Piwik_Live_Controller extends Piwik_Controller
 	function __construct()
 	{
 		parent::__construct();
-		$this->idSite = Piwik_Common::getRequestVar('idSite');
 		$this->minIdVisit = Piwik_Common::getRequestVar('minIdVisit', 0, 'int');
 	}
 
@@ -30,7 +29,7 @@ class Piwik_Live_Controller extends Piwik_Controller
 	public function widget($fetch = false)
 	{
 		$view = Piwik_View::factory('index');
-		$view->idSite = Piwik_Common::getRequestVar('idSite');
+		$view->idSite = $this->idSite;
 		$view->visitorsCountHalfHour = $this->getUsersInLastXMin(30);
 		$view->visitorsCountToday = $this->getUsersInLastXDays(1);
 		$view->pisHalfhour = $this->getPageImpressionsInLastXMin(30);
@@ -40,12 +39,15 @@ class Piwik_Live_Controller extends Piwik_Controller
 		echo $view->render();
 	}
 
-	public function getLastVisitsDetails($fetch = false)
+	public function getVisitorLog($fetch = false)
 	{
+		$limit = 20;
+		$_GET['limit'] = $limit;
 		$view = Piwik_ViewDataTable::factory();
 		$view->init( $this->pluginName,
 							__FUNCTION__,
-						'Live.getLastVisitsDetails');
+						'Live.getLastVisitsDetails'
+						);
 
 		// All colomns in DB which could be shown
 		//'ip', 'idVisit', 'countActions', 'isVisitorReturning', 'country', 'countryFlag', 'continent', 'provider', 'providerUrl', 'idSite',
@@ -53,9 +55,9 @@ class Piwik_Live_Controller extends Piwik_Controller
 		//'keywords', 'refererUrl', 'searchEngineUrl', 'searchEngineIcon', 'operatingSystem', 'operatingSystemShortName', 'operatingSystemIcon',
 		//'browserFamily', 'browserFamilyDescription', 'browser', 'browserIcon', 'screen', 'resolution', 'screenIcon', 'plugins', 'lastActionDateTime',
 		//'serverDatePretty', 'serverTimePretty', 'actionDetails'
-
+		$view->disableGenericFilters();
 		$view->disableSort();
-		$view->setLimit(20);
+		$view->setLimit($limit);
 		$view->setTemplate("Live/templates/visitorLog.tpl");
 		$view->setSortedColumn('idVisit', 'ASC');
 		$view->disableSearchBox();
@@ -66,14 +68,15 @@ class Piwik_Live_Controller extends Piwik_Controller
 		$view->disableShowAllViewsIcons();
 		// disable the button "show more datas"
 		$view->disableShowAllColumns();
-
+		// disable the RSS feed
+		$view->disableShowExportAsRssFeed();
 		return $this->renderView($view, $fetch);
 	}
 
 	public function getLastVisitsStart($fetch = false)
 	{
 		$view = Piwik_View::factory('lastVisits');
-		$view->idSite = Piwik_Common::getRequestVar('idSite');
+		$view->idSite = $this->idSite;
 
 		$view->visitors = $this->getLastVisits(10);
 
@@ -125,7 +128,7 @@ class Piwik_Live_Controller extends Piwik_Controller
 	public function ajaxTotalVisitors($fetch = false)
 	{
 		$view = Piwik_View::factory('totalVisits');
-		$view->idSite = Piwik_Common::getRequestVar('idSite');
+		$view->idSite = $this->idSite;
 		$view->visitorsCountHalfHour = $this->getUsersInLastXMin(30);
 		$view->visitorsCountToday = $this->getUsersInLastXDays(1);
 		$view->pisHalfhour = $this->getPageImpressionsInLastXMin(30);

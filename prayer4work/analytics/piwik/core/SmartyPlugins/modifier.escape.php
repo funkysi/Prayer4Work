@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: modifier.escape.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: modifier.escape.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package SmartyPlugins
@@ -23,7 +23,7 @@
  * @param html|htmlall|url|quotes|hex|hexentity|javascript
  * @return string
  */
-function smarty_modifier_escape($string, $esc_type = 'html', $char_set = 'ISO-8859-1')
+function smarty_modifier_escape($string, $esc_type = 'html', $char_set = 'UTF-8')
 {
     switch ($esc_type) {
         case 'html':
@@ -45,21 +45,21 @@ function smarty_modifier_escape($string, $esc_type = 'html', $char_set = 'ISO-88
         case 'hex':
             // escape every character into hex
             $return = '';
-            for ($x=0; $x < strlen($string); $x++) {
+            for ($x=0, $len = strlen($string); $x < $len; $x++) {
                 $return .= '%' . bin2hex($string[$x]);
             }
             return $return;
             
         case 'hexentity':
             $return = '';
-            for ($x=0; $x < strlen($string); $x++) {
+            for ($x=0, $len = strlen($string); $x < $len; $x++) {
                 $return .= '&#x' . bin2hex($string[$x]) . ';';
             }
             return $return;
 
         case 'decentity':
             $return = '';
-            for ($x=0; $x < strlen($string); $x++) {
+            for ($x=0, $len = strlen($string); $x < $len; $x++) {
                 $return .= '&#' . ord($string[$x]) . ';';
             }
             return $return;

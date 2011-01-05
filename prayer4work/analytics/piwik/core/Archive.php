@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Archive.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Archive.php 3246 2010-10-14 06:22:46Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -147,8 +147,18 @@ abstract class Piwik_Archive
 		// case we request a single archive
 		else
 		{
+			$oSite = new Piwik_Site($idSite);
+
 			if(is_string($strDate))
 			{
+				if($strDate == 'now' || $strDate == 'today')
+				{
+					$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->getTimestamp());
+				}
+				elseif($strDate == 'yesterday' || $strDate == 'yesterdaySameTime')
+				{
+					$strDate = date('Y-m-d', Piwik_Date::factory('now', $oSite->getTimezone())->subDay(1)->getTimestamp());
+				}
 				$oDate = Piwik_Date::factory($strDate);
 			}
 			else
@@ -166,7 +176,7 @@ abstract class Piwik_Archive
 			
 			$archive = new Piwik_Archive_Single();
 			$archive->setPeriod($oPeriod);
-			$archive->setSite(new Piwik_Site($idSite));
+			$archive->setSite($oSite);
 			$archiveJustProcessed = $archive->prepareArchive();
 			
 			//we don't cache the archives just processed, the datatable were freed from memory 

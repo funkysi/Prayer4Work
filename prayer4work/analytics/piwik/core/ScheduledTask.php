@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ScheduledTask.php
+ * @version $Id: ScheduledTask.php 2968 2010-08-20 15:26:33Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -18,22 +18,22 @@
  */
 class Piwik_ScheduledTask
 {
-    /**
-     * Class name where the specified method is located
-     * @var string 
-     */
+	/**
+	 * Class name where the specified method is located
+	 * @var string 
+	 */
 	var $className;
-#
-    /**
-     * Class method to run when task is scheduled
-     * @var string 
-     */
+
+	/**
+	 * Class method to run when task is scheduled
+	 * @var string 
+	 */
 	var $methodName;
 	
-    /**
-     * The scheduled time policy
-     * @var Piwik_ScheduledTime
-     */
+	/**
+	 * The scheduled time policy
+	 * @var Piwik_ScheduledTime
+	 */
 	var $scheduledTime;
 
 	function __construct( $_className, $_methodName, $_scheduledTime)

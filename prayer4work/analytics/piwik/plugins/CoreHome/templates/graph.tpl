@@ -3,7 +3,7 @@
 
 	{if $flashParameters.isDataAvailable || !$flashParameters.includeData}
 		<div><div id="{$chartDivId}">
-			{'General_RequiresFlash'|translate} >= {$flashParameters.requiredFlashVersion}. <a target="_blank" href="misc/redirectToUrl.php?url={'http://piwik.org/faq/troubleshooting/#faq_53'|escape:"url"}">{'General_GraphHelp'|translate}</a>
+			{'General_RequiresFlash'|translate} >= {$flashParameters.requiredFlashVersion}. <a target="_blank" href="?module=Proxy&action=redirect&url={'http://piwik.org/faq/troubleshooting/#faq_53'|escape:"url"}">{'General_GraphHelp'|translate}</a>
 		</div></div>
 		<script type="text/javascript">
 <!--
@@ -11,7 +11,7 @@
 			piwikHelper.OFC.set("{$chartDivId}", '{$flashParameters.data}');
 			{/if}
 			swfobject.embedSWF(
-				"{$flashParameters.ofcLibraryPath}open-flash-chart.swf?{$tag}",
+				"{$flashParameters.ofcLibraryPath}open-flash-chart.swf?piwik={$piwik_version}",
 				"{$chartDivId}",
 				"{$flashParameters.width}", "{$flashParameters.height}",
 				"{$flashParameters.requiredFlashVersion}",

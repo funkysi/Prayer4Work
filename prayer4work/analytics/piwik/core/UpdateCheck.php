@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: UpdateCheck.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: UpdateCheck.php 3296 2010-11-06 19:24:43Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -37,7 +37,7 @@ class Piwik_UpdateCheck
 			Piwik_SetOption(self::LAST_TIME_CHECKED, time(), $autoload = 1);
 			$parameters = array(
 				'piwik_version' => Piwik_Version::VERSION,
-				'php_version' => phpversion(),
+				'php_version' => PHP_VERSION,
 				'url' => Piwik_Url::getCurrentUrlWithoutQueryString(),
 				'trigger' => Piwik_Common::getRequestVar('module','','string'),
 				'timezone' => Piwik_SitesManager_API::getInstance()->getDefaultTimezone(),

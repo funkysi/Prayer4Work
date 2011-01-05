@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreHome
@@ -66,7 +66,7 @@ class Piwik_CoreHome_Controller extends Piwik_Controller
 		{
 			return;
 		} 
-		$websiteId = Piwik_Common::getRequestVar('idSite', false);
+		$websiteId = Piwik_Common::getRequestVar('idSite', false, 'int');
 		if ($websiteId) {
 			$website = new Piwik_Site($websiteId);
 			$datetimeCreationDate = $this->site->getCreationDate()->getDatetime();
@@ -87,6 +87,40 @@ class Piwik_CoreHome_Controller extends Piwik_Controller
 	{
 		$this->setDateTodayIfWebsiteCreatedToday();
 		$view = $this->getDefaultIndexView();
-		echo $view->render();		
+		echo $view->render();
 	}
+	
+	/*
+	 * This method is called when the asset manager is configured in merged mode.
+	 * It returns the content of the css merged file.
+	 * 
+	 * @see core/AssetManager.php
+	 */
+	public function getCss ()
+	{
+		$cssMergedFile = Piwik_AssetManager::getMergedCssFileLocation();
+		Piwik::serveStaticFile($cssMergedFile, "text/css");
+	}
+	
+	/*
+	 * This method is called when the asset manager is configured in merged mode.
+	 * It returns the content of the js merged file.
+	 * 
+	 * @see core/AssetManager.php
+	 */
+	public function getJs ()
+	{
+		$jsMergedFile = Piwik_AssetManager::getMergedJsFileLocation();
+		Piwik::serveStaticFile($jsMergedFile, "application/javascript; charset=UTF-8");
+	}
+
+	/*
+	 * Returns the CSS3PIE PIE.htc file
+	 *
+	 * @see /libs/CSS3PIE
+	 */
+	public function getPieHtc ()
+	{
+		Piwik::serveStaticFile(PIWIK_INCLUDE_PATH ."/libs/CSS3PIE/PIE.htc", "text/x-component");
+	}	
 }

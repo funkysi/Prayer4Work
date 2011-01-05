@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExampleRssWidget.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ExampleRssWidget.php 3175 2010-09-25 03:52:17Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExampleRssWidget
@@ -114,7 +114,7 @@ class Piwik_ExampleRssWidget_Rss
 			$date = @strftime("%B %e, %Y", strtotime($post->pubDate()));
 			$link = $post->link();
 			
-			$output .= '<li><a class="rss-title" title="" target="_blank" href="misc/redirectToUrl.php?url='.$link.'">'.$title.'</a>'.
+			$output .= '<li><a class="rss-title" title="" target="_blank" href="?module=Proxy&action=redirect&url='.$link.'">'.$title.'</a>'.
 						'<span class="rss-date">'.$date.'</span>';
 			if($this->showDescription) 
 			{

@@ -1,7 +1,6 @@
 /*
 	jQuery Plugin spy (leftlogic.com/info/articles/jquery_spy2)
 	(c) 2006 Remy Sharp (leftlogic.com)
-	$Id: spy.js 1868 2010-02-23 22:47:29Z vipsoft $
 */
 var spyRunning = 1;
 
@@ -20,8 +19,11 @@ $.fn.spy = function(settings) {
 
 	spy.attachHolder = function() {
 		// not mad on this, but the only way to parse HTML collections
-		if (o.method == 'html')
-			$('body').append('<div style="display: none!important;" id="_spyTmp"></div>');
+		if (o.method == 'html') {
+			if ($(o.appendTo).length == 0)
+				o.appendTo = 'body';
+			$(o.appendTo).append('<div style="display: none!important;" id="_spyTmp"></div>');
+		}
 	}
 
 	// returns true for 'no dupe', and false for 'dupe found'
@@ -106,6 +108,7 @@ $.fn.spy = function(settings) {
 		timeout: (settings.timeout || 3000),
 		pushTimeout: (settings.pushTimeout || settings.timeout || 3000),
 		method: (settings.method || 'html').toLowerCase(),
+		appendTo: (settings.appendTo || 'body'),
 		push: (settings.push || spy.push),
 		fadeInSpeed: (settings.fadeInSpeed || 'slow'), // 1400 = crawl
 		customParameterName: settings.customParameterName,

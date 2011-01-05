@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Actions.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Actions.php 3185 2010-09-27 13:50:11Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Actions
@@ -231,7 +231,7 @@ class Piwik_Actions extends Piwik_Plugin
 					WHERE visit_last_action_time >= ?
 						AND visit_last_action_time <= ?
 						AND idsite = ?
-					GROUP BY t3.idaction
+					GROUP BY t3.idaction, name, type
 					ORDER BY nb_hits DESC";
 		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
 		$modified = $this->updateActionsTableWithRowQuery($query);
@@ -250,7 +250,7 @@ class Piwik_Actions extends Piwik_Plugin
 					WHERE visit_last_action_time >= ?
 						AND visit_last_action_time <= ?
 						AND idsite = ?
-					GROUP BY t3.idaction
+					GROUP BY t3.idaction, name, type
 					ORDER BY nb_hits DESC";
 		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
 		$modified = $this->updateActionsTableWithRowQuery($query);
@@ -270,7 +270,7 @@ class Piwik_Actions extends Piwik_Plugin
 					WHERE visit_last_action_time >= ?
 						AND visit_last_action_time <= ?
 						AND idsite = ?
-					GROUP BY visit_entry_idaction_url
+					GROUP BY visit_entry_idaction_url, name, type
 					";
 		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
 		$modified = $this->updateActionsTableWithRowQuery($query);
@@ -288,7 +288,7 @@ class Piwik_Actions extends Piwik_Plugin
 				 	WHERE visit_last_action_time >= ?
 						AND visit_last_action_time <= ?
 				 		AND idsite = ?
-				 	GROUP BY visit_exit_idaction_url
+				 	GROUP BY visit_exit_idaction_url, name, type
 					";
 		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
 		$modified = $this->updateActionsTableWithRowQuery($query);
@@ -305,7 +305,7 @@ class Piwik_Actions extends Piwik_Plugin
 					WHERE visit_last_action_time >= ?
 						AND visit_last_action_time <= ?
 				 		AND idsite = ?
-				 	GROUP BY idaction_url_ref
+				 	GROUP BY idaction_url_ref, name, type
 				";
 		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
 		$modified = $this->updateActionsTableWithRowQuery($query);

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Cloud.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Cloud.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -67,6 +67,7 @@ class Piwik_ViewDataTable_Cloud extends Piwik_ViewDataTable
 		} catch(Exception $e) {
 			$this->isDataAvailable = false;
 		}
+		$this->checkStandardDataTable();
 		$this->view = $this->buildView();
 	}
 	

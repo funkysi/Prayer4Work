@@ -1,12 +1,24 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:15
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:12:31
          compiled from /var/www/prayer4work/analytics/piwik/plugins/UserCountryMap/templates/worldmap.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/UserCountryMap/templates/worldmap.tpl', 35, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/UserCountryMap/templates/worldmap.tpl', 2, false),)), $this); ?>
+<div id="UserCountryMap_content" style="position:relative; overflow:hidden;">
+	<div id="UserCountryMap_map"><?php echo ((is_array($_tmp='General_RequiresFlash')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+</div>
+	<div style="height:3px"></div>
+	<select id="userCountryMapSelectMetrics" style="position:absolute; left: 5px; bottom: 0px;">
+		<?php $_from = $this->_tpl_vars['metrics']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
+    foreach ($_from as $this->_tpl_vars['metric']):
+?>
+			<option value="<?php echo $this->_tpl_vars['metric'][0]; ?>
+" <?php if ($this->_tpl_vars['metric'][0] == $this->_tpl_vars['defaultMetric']): ?>selected="selected"<?php endif; ?>><?php echo $this->_tpl_vars['metric'][1]; ?>
+</option>
+		<?php endforeach; endif; unset($_from); ?>
+	</select>
+</div>
+
 <script type="text/javascript">
-
 <?php echo '
-
-$(document).ready(function() {
 	var fv = {};
 	
 	var params = {
@@ -57,9 +69,9 @@ $(document).ready(function() {
 	var attr = { id:"UserCountryMap" };
 '; ?>
 	
-	swfobject.embedSWF("plugins/UserCountryMap/PiwikMap.swf?piwik=<?php echo $this->_tpl_vars['version']; ?>
+	swfobject.embedSWF("plugins/UserCountryMap/PiwikMap.swf?piwik=<?php echo $this->_tpl_vars['piwik_version']; ?>
 ", "UserCountryMap_map", 
-		"100%", Math.round($('#UserCountryMap_content').width() *.55), "9.0.0", 
+		"100%", Math.round($('#UserCountryMap_content').width() *.55), "10.0.0", 
 		"libs/swfobject/expressInstall.swf", fv, params, attr
 	);
 <?php echo '	
@@ -82,28 +94,12 @@ $(document).ready(function() {
 	$(".userCountryMapFooterIcons a.tableIcon[var=export_png]").click(function() {
 		$("#UserCountryMap")[0].exportPNG();
 	});
-	
-	$(window).resize(function() {
-		$("#UserCountryMap")[0].height = Math.round($(\'#UserCountryMap\').width() *.55);
-	});
-	
-});
 
+	$(window).resize(function() {
+		if($(\'#UserCountryMap\').length) {
+			$("#UserCountryMap").height( Math.round($(\'#UserCountryMap\').width() *.55) );
+		}
+	});
 '; ?>
 
-
 </script>
-<div id="UserCountryMap_content" style="position:relative; overflow:hidden;">
-	<div id="UserCountryMap_map"><?php echo ((is_array($_tmp='General_RequiresFlash')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-</div>
-	<div style="height:3px"></div>
-	<select id="userCountryMapSelectMetrics" style="position:absolute; left: 5px; bottom: 0px;">
-		<?php $_from = $this->_tpl_vars['metrics']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
-    foreach ($_from as $this->_tpl_vars['metric']):
-?>
-			<option value="<?php echo $this->_tpl_vars['metric'][0]; ?>
-" <?php if ($this->_tpl_vars['metric'][0] == $this->_tpl_vars['defaultMetric']): ?>selected="selected"<?php endif; ?>><?php echo $this->_tpl_vars['metric'][1]; ?>
-</option>
-		<?php endforeach; endif; unset($_from); ?>
-	</select>
-</div>

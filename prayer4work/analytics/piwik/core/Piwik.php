@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Piwik.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Piwik.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -23,7 +23,8 @@ require_once PIWIK_INCLUDE_PATH . '/core/Translate.php';
  */
 class Piwik
 {
-	const CLASSES_PREFIX = "Piwik_";
+	const CLASSES_PREFIX = 'Piwik_';
+	const COMPRESSED_FILE_LOCATION = '/tmp/assets/';
 
 	public static $idPeriods =  array(
 			'day'	=> 1,
@@ -44,7 +45,7 @@ class Piwik
 	 */
 	static public function prefixClass( $class )
 	{
-		if(substr_count($class, Piwik::CLASSES_PREFIX) > 0)
+		if(!strncmp($class, Piwik::CLASSES_PREFIX, strlen(Piwik::CLASSES_PREFIX)))
 		{
 			return $class;
 		}
@@ -60,7 +61,7 @@ class Piwik
 	static public function unprefixClass( $class )
 	{
 		$lenPrefix = strlen(Piwik::CLASSES_PREFIX);
-		if(substr($class, 0, $lenPrefix) == Piwik::CLASSES_PREFIX)
+		if(!strncmp($class, Piwik::CLASSES_PREFIX, $lenPrefix))
 		{
 			return substr($class, $lenPrefix);
 		}
@@ -97,6 +98,67 @@ class Piwik
 	static public function isInstalled()
 	{
 		return Piwik_Db_Schema::getInstance()->hasTables();
+	}
+
+/*
+ * HTTP headers
+ */
+	/**
+	 * Returns true if this appears to be a secure HTTPS connection
+	 *
+	 * @return bool
+	 */
+	static public function isHttps()
+	{
+		return Piwik_Url::getCurrentScheme() === 'https' || Zend_Registry::get('config')->General->reverse_proxy;
+	}
+
+	/**
+	 * Set response header, e.g., HTTP/1.0 200 Ok
+	 *
+	 * @return bool
+	 */
+	static public function setHttpStatus($status)
+	{
+		if(substr_compare(PHP_SAPI, '-fcgi', -5))
+		{
+			@header($_SERVER['SERVER_PROTOCOL'] . ' ' . $status);
+		}
+		else
+		{
+			// FastCGI
+			@header('Status: ' . $status);
+		}
+	}
+
+	/**
+	 * Workaround IE bug when downloading certain document types over SSL and
+	 * cache control headers are present, e.g.,
+	 *
+	 *    Cache-Control: no-cache
+	 *    Cache-Control: no-store,max-age=0,must-revalidate
+	 *    Pragma: no-cache
+	 *
+	 * @see http://support.microsoft.com/kb/316431/
+	 * @see RFC2616
+	 *
+	 * @param string $override One of "public", "private", "no-cache", or "no-store". (optional)
+	 */
+	static public function overrideCacheControlHeaders($override = null)
+	{
+		if($override || self::isHttps())
+		{
+			@header('Pragma: ');
+			@header('Expires: ');
+			if(in_array($override, array('public', 'private', 'no-cache', 'no-store')))
+			{
+				@header("Cache-Control: $override, must-revalidate");
+			}
+			else
+			{
+				@header('Cache-Control: must-revalidate');
+			}
+		}
 	}
 
 /*
@@ -176,7 +238,7 @@ class Piwik
 				}
 				else
 				{
-					$message = "For example, on a linux server, if your apache user is www-data you can try to execute:<br />"
+					$message = "For example, on a Linux server, if your Apache httpd user is www-data you can try to execute:<br />"
 					         . "<code>chown -R www-data:www-data ".Piwik_Common::getPathToPiwikRoot()."</code><br />"
 					         . "<code>chmod -R 0755 ".Piwik_Common::getPathToPiwikRoot()."</code><br />";
 				}
@@ -273,11 +335,11 @@ class Piwik
 				}
 			}
 		}
-		$directoryMessage = "<p><b>Piwik couldn't write to some directories</b>.</p> <p>Try to Execute the following commands on your Linux server:</p>"
+		$directoryMessage = "<p><b>Piwik couldn't write to some directories</b>.</p> <p>Try to Execute the following commands on your server:</p>"
 		                  . "<blockquote>$directoryList</blockquote>"
 		                  . "<p>If this doesn't work, you can try to create the directories with your FTP software, and set the CHMOD to 0777 (with your FTP software, right click on the directories, permissions).</p>"
 		                  . "<p>After applying the modifications, you can <a href='index.php'>refresh the page</a>.</p>"
-		                  . "<p>If you need more help, try <a href='misc/redirectToUrl.php?url=http://piwik.org'>Piwik.org</a>.</p>";
+		                  . "<p>If you need more help, try <a href='?module=Proxy&action=redirect&url=http://piwik.org'>Piwik.org</a>.</p>";
 
 		Piwik_ExitWithMessage($directoryMessage, false, true);
 	}
@@ -290,10 +352,6 @@ class Piwik
 	 */
 	static public function checkDirectoriesWritable($directoriesToCheck = null)
 	{
-		static $publicFolders = array(
-			'/tmp/assets/',
-		);
-
 		if( $directoriesToCheck == null )
 		{
 			$directoriesToCheck = array(
@@ -309,7 +367,6 @@ class Piwik
 		$resultCheck = array();
 		foreach($directoriesToCheck as $directoryToCheck)
 		{
-			$overrideUmask = in_array($directoryToCheck, $publicFolders);
 			if( !preg_match('/^'.preg_quote(PIWIK_USER_PATH, '/').'/', $directoryToCheck) )
 			{
 				$directoryToCheck = PIWIK_USER_PATH . $directoryToCheck;
@@ -319,12 +376,6 @@ class Piwik
 			{
 				// the mode in mkdir is modified by the current umask
 				Piwik_Common::mkdir($directoryToCheck, 0755, false);
-
-				// override an overly restrictive umask for public folders only
-				if($overrideUmask)
-				{
-					@chmod($directoryToCheck, 0755);
-				}
 			}
 
 			$directory = Piwik_Common::realpath($directoryToCheck);
@@ -384,6 +435,7 @@ class Piwik
 			'/config',
 			'/core',
 			'/lang',
+			'/tmp',
 		);
 		foreach($directoriesToProtect as $directoryToProtect)
 		{
@@ -393,7 +445,7 @@ class Piwik
 		// more selective allow/deny filters
 		$allowAny = "<Files \"*\">\nAllow from all\nSatisfy any\n</Files>\n";
 		$allowStaticAssets = "<Files ~ \"\\.(test\.php|gif|ico|jpg|png|js|css|swf)$\">\nSatisfy any\nAllow from all\n</Files>\n";
-		$denyDirectPhp = "<Files ~ \"\\.(php|php4|php5|inc|tpl)$\">\nDeny from all\n</Files>\n";
+		$denyDirectPhp = "<Files ~ \"\\.(php|php4|php5|inc|tpl|in)$\">\nDeny from all\n</Files>\n";
 		$directoriesToProtect = array(
 			'/js' => $allowAny,
 			'/libs' => $denyDirectPhp . $allowStaticAssets,
@@ -423,9 +475,14 @@ class Piwik
           <add segment="config" />
           <add segment="core" />
           <add segment="lang" />
+          <add segment="tmp" />
         </hiddenSegments>
         <fileExtensions>
           <add fileExtension=".tpl" allowed="false" />
+          <add fileExtension=".php4" allowed="false" />
+          <add fileExtension=".php5" allowed="false" />
+          <add fileExtension=".inc" allowed="false" />
+          <add fileExtension=".in" allowed="false" />
         </fileExtensions>
       </requestFiltering>
     </security>
@@ -538,6 +595,155 @@ class Piwik
 		return $messages;
 	}
 
+	/**
+	 * Serve static files through php proxy.
+	 *
+	 * It performs the following actions:
+	 * 	- Checks the file is readable or returns "HTTP/1.0 404 Not Found"
+	 *  - Returns "HTTP/1.1 304 Not Modified" after comparing the HTTP_IF_MODIFIED_SINCE
+	 *	  with the modification date of the static file
+	 *	- Will try to compress the static file according to HTTP_ACCEPT_ENCODING. Compressed files are store in
+	 *	  the /tmp directory. If compressing extensions are not available, a manually gzip compressed file
+	 *	  can be provided in the /tmp directory. It has to bear the same name with an added .gz extension.
+	 *	  Using manually compressed static files requires you to manually update the compressed file when
+	 *	  the static file is updated.
+	 *	- Overrides server cache control config to allow caching
+	 *	- Sends Very Accept-Encoding to tell proxies to store different version of the static file according
+	 *	  to users encoding capacities.
+	 *
+	 * Warning:
+	 * 		Compressed filed are stored in the /tmp directory.
+	 * 		If this method is used with two files bearing the same name but located in different locations,
+	 * 		there is a risk of conflict. One file could be served with the content of the other.
+	 * 		A future upgrade of this method would be to recreate the directory structure of the static file
+	 * 		within a /tmp/compressed-static-files directory.
+	 *
+	 * @param string $file The location of the static file to serve
+	 * @param string $contentType The content type of the static file.
+	 */
+	static public function serveStaticFile($file, $contentType)
+	{
+		if (file_exists($file) && function_exists('readfile'))
+		{
+			// conditional GET
+			$modifiedSince = '';
+			if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
+			{
+				$modifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
+			}
+
+			// strip any trailing data appended to header
+			if (false !== ($semicolon = strpos($modifiedSince, ';')))
+			{
+				$modifiedSince = substr($modifiedSince, 0, $semicolon);
+			}
+
+			$fileModifiedTime = @filemtime($file);
+			$lastModified = gmdate('D, d M Y H:i:s', $fileModifiedTime) . ' GMT';
+
+			// set HTTP response headers
+			self::overrideCacheControlHeaders('public');
+			@header('Vary: Accept-Encoding');
+			@header('Content-Disposition: inline; filename='.basename($file));
+
+			// Returns 304 if not modified since
+			if ($modifiedSince == $lastModified)
+			{
+				self::setHttpStatus('304 Not Modified');
+			}
+			else
+			{
+				// optional compression
+				$compressed = false;
+				$encoding = '';
+				$compressedFileLocation = PIWIK_USER_PATH . self::COMPRESSED_FILE_LOCATION . basename($file);
+
+				// Off = ''; On = '1'; otherwise, it's a buffer size
+				$zlibOutputCompression = ini_get('zlib.output_compression');
+				$phpOutputCompressionEnabled = !empty($zlibOutputCompression);
+				if (isset($_SERVER['HTTP_ACCEPT_ENCODING']) && !$phpOutputCompressionEnabled)
+				{
+					$acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'];
+
+					if (extension_loaded('zlib') && function_exists('file_get_contents') && function_exists('file_put_contents'))
+					{
+						if (preg_match('/(?:^|, ?)(deflate)(?:,|$)/', $acceptEncoding, $matches))
+						{
+							$encoding = 'deflate';
+							$filegz = $compressedFileLocation .'.deflate';
+						}
+						else if (preg_match('/(?:^|, ?)((x-)?gzip)(?:,|$)/', $acceptEncoding, $matches))
+						{
+							$encoding = $matches[1];
+							$filegz = $compressedFileLocation .'.gz';
+						}
+
+						if (!empty($encoding))
+						{
+							// compress-on-demand and use cache
+							if(!file_exists($filegz) || ($fileModifiedTime > @filemtime($filegz)))
+							{
+								$data = file_get_contents($file);
+
+								if ($encoding == 'deflate')
+								{
+									$data = gzdeflate($data, 9);
+								}
+								else if ($encoding == 'gzip' || $encoding == 'x-gzip')
+								{
+									$data = gzencode($data, 9);
+								}
+
+								file_put_contents($filegz, $data);
+								$file = $filegz;
+							}
+
+							$compressed = true;
+							$file = $filegz;
+						}
+					}
+					else
+					{
+						// manually compressed
+						$filegz = $compressedFileLocation .'.gz';
+						if (preg_match('/(?:^|, ?)((x-)?gzip)(?:,|$)/', $acceptEncoding, $matches) && file_exists($filegz) && ($fileModifiedTime < @filemtime($filegz)))
+						{
+							$encoding = $matches[1];
+							$compressed = true;
+							$file = $filegz;
+						}
+					}
+				}
+
+				@header('Last-Modified: ' . $lastModified);
+
+				if (!$phpOutputCompressionEnabled)
+				{
+					@header('Content-Length: ' . filesize($file));
+				}
+
+				if(!empty($contentType))
+				{
+					@header('Content-Type: '.$contentType);
+				}
+
+				if ($compressed)
+				{
+					@header('Content-Encoding: ' . $encoding);
+				}
+
+				if (!@readfile($file))
+				{
+					self::setHttpStatus('505 Internal server error');
+				}
+			}
+		}
+		else
+		{
+			self::setHttpStatus('404 Not Found');
+		}
+	}
+
 /*
  * PHP environment settings
  */
@@ -555,7 +761,7 @@ class Piwik
 	}
 
 	/**
-	 * Get php memory_limit
+	 * Get php memory_limit (in Megabytes)
 	 *
 	 * Prior to PHP 5.2.1, or on Windows, --enable-memory-limit is not a
 	 * compile-time default, so ini_get('memory_limit') may return false.
@@ -869,6 +1075,22 @@ class Piwik
  */
 
 	/**
+	 * Returns a list of currency symbols
+	 *
+	 * @return array array( currencyCode => symbol, ... )
+	 */
+	static public function getCurrencyList()
+	{
+		static $currenciesList = null;
+		if(is_null($currenciesList))
+		{
+			require_once PIWIK_INCLUDE_PATH . '/core/DataFiles/Currencies.php';
+			$currenciesList = $GLOBALS['Piwik_CurrencyList'];
+		}
+		return $currenciesList;
+	}
+
+	/**
 	 * Computes the division of i1 by i2. If either i1 or i2 are not number, or if i2 has a value of zero
 	 * we return 0 to avoid the division by zero.
 	 *
@@ -910,13 +1132,15 @@ class Piwik
 	 */
 	static public function getCurrency($idSite)
 	{
-		static $symbols = null;
-		if(is_null($symbols))
-		{
-			$symbols = Piwik_SitesManager_API::getInstance()->getCurrencySymbols();
-		}
+		$symbols = self::getCurrencyList();
 		$site = new Piwik_Site($idSite);
-		return $symbols[$site->getCurrency()];
+		$currency = $site->getCurrency();
+		if(isset($symbols[$currency]))
+		{
+			return $symbols[$currency][0];
+		}
+
+		return '';
 	}
 
 	/**
@@ -942,7 +1166,7 @@ class Piwik
 		}
 		return $value;
 	}
-	
+
 	/**
 	 * Pretty format monetary value for a site
 	 *
@@ -959,7 +1183,7 @@ class Piwik
 		{
 			$space = '&nbsp;';
 		}
-		
+
 		$currencyAfter = '';
 		// manually put the currency symbol after the amount for euro
 		// (maybe more currencies prefer this notation?)
@@ -969,7 +1193,7 @@ class Piwik
 			$currencyBefore = '';
 		}
 
-		// if the input is a number (it could be a string or INPUT form), 
+		// if the input is a number (it could be a string or INPUT form),
 		// and if this number is not an int, we round to precision 2
 		if(is_numeric($value))
 		{
@@ -1021,7 +1245,7 @@ class Piwik
 	static public function getPrettyTimeFromSeconds($numberOfSeconds, $displayTimeAsSentence = true)
 	{
 		$numberOfSeconds = (int)$numberOfSeconds;
-		
+
 		// Display 01:45:17 time format
 		if($displayTimeAsSentence === false)
 		{
@@ -1068,14 +1292,14 @@ class Piwik
 
 	/**
 	 * Returns relative path to the App logo
-	 * 
+	 *
 	 * @return string
 	 */
 	public function getLogoPath()
 	{
 		return Piwik_Common::getPathToPiwikRoot() . '/themes/default/images/logo.png';
 	}
-	
+
 	/**
 	 * Returns the Javascript code to be inserted on every page to track
 	 *
@@ -1088,9 +1312,9 @@ class Piwik
 		$jsTag = file_get_contents( PIWIK_INCLUDE_PATH . "/core/Tracker/javascriptTag.tpl");
 		$jsTag = nl2br(htmlentities($jsTag));
 		$piwikUrl = preg_match('~^(http|https)://(.*)$~', $piwikUrl, $matches);
-		$piwikUrl = $matches[2];
+		$piwikUrl = @$matches[2];
 		$jsTag = str_replace('{$idSite}', $idSite, $jsTag);
-		$jsTag = str_replace('{$piwikUrl}', $piwikUrl, $jsTag);
+		$jsTag = str_replace('{$piwikUrl}', Piwik_Common::sanitizeInputValue($piwikUrl), $jsTag);
 		$jsTag = str_replace('{$hrefTitle}', Piwik::getRandomTitle(), $jsTag);
 		return $jsTag;
 	}
@@ -1120,6 +1344,18 @@ class Piwik
 		$title = $titles[ $id % count($titles)];
 		return $title;
 	}
+	
+	/**
+	 * Number of websites to show in the Website selector
+	 * 
+	 * @return int
+	 */
+	static public function getWebsitesCountToDisplay()
+	{
+		$count = max(Zend_Registry::get('config')->General->site_selector_max_sites,
+					Zend_Registry::get('config')->General->autocomplete_min_sites);
+		return (int)$count;
+	}
 
 /*
  * Access
@@ -1130,7 +1366,7 @@ class Piwik
 		if(!Piwik::isUserIsSuperUser())
 		{
 			$user = Piwik_UsersManager_API::getInstance()->getUser(Piwik::getCurrentUserLogin());
-			return $user['email']; 
+			return $user['email'];
 		}
 		$superuser = Zend_Registry::get('config')->superuser;
 		return $superuser->email;
@@ -1205,15 +1441,20 @@ class Piwik
 			return false;
 		}
 	}
+	
+	static public function isUserIsAnonymous()
+	{
+		return Piwik::getCurrentUserLogin() == 'anonymous';
+	}
 
 	static public function checkUserIsNotAnonymous()
 	{
-		if(Piwik::getCurrentUserLogin() == 'anonymous')
+		if(self::isUserIsAnonymous())
 		{
 			throw new Exception(Piwik_Translate('General_YouMustBeLoggedIn'));
 		}
 	}
-	
+
 	/**
 	 * Helper method user to set the current as Super User.
 	 * This should be used with great care as this gives the user all permissions.
@@ -1382,26 +1623,26 @@ class Piwik
 	{
 		return Piwik_Common::getRequestVar('action', '', 'string');
 	}
-	
+
 	/**
 	 * Helper method used in API function to introduce array elements in API parameters.
 	 * Array elements can be passed by comma separated values, or using the notation
-	 * array[]=value1&array[]=value2 in the URL. 
+	 * array[]=value1&array[]=value2 in the URL.
 	 * This function will handle both cases and return the array.
-	 * 
+	 *
 	 * @param $columns String or array
-	 * @return array 
+	 * @return array
 	 */
 	static public function getArrayFromApiParameter($columns)
 	{
 		return $columns === false
 				? array()
-				: (is_array($columns) 
-					? $columns 
+				: (is_array($columns)
+					? $columns
 					: explode(',', $columns)
 					);
 	}
-	
+
 	/**
 	 * Redirect to module (and action)
 	 *
@@ -1592,7 +1833,7 @@ class Piwik
 		$l = strlen($userLogin);
 		if(!($l >= $loginMinimumLength
 				&& $l <= $loginMaximumLength
-				&& (preg_match('/^[A-Za-z0-9_.-]*$/', $userLogin) > 0))
+				&& (preg_match('/^[A-Za-z0-9_.-@]*$/', $userLogin) > 0))
 		)
 		{
 			throw new Exception(Piwik_TranslateException('UsersManager_ExceptionInvalidLoginFormat', array($loginMinimumLength, $loginMaximumLength)));
@@ -1728,5 +1969,4 @@ class Piwik
 	{
 		return Piwik_Db_Schema::getInstance()->getTablesInstalled($forceReload, $idSite);
 	}
-		
 }

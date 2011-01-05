@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:27
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:12:43
          compiled from /var/www/prayer4work/analytics/piwik/plugins/Live/templates/totalVisits.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/Live/templates/totalVisits.tpl', 6, false),)), $this); ?>
@@ -7,7 +7,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	<thead>
 	<tr>
 	<th id="label" class="sortable label" style="cursor: auto;">
-	<div id="thDIV"><?php echo ((is_array($_tmp='Live_Date')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	<div id="thDIV"><?php echo ((is_array($_tmp='General_Date')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </div></th>
 	<th id="label" class="sortable label" style="cursor: auto;">
 	<div id="thDIV"><?php echo ((is_array($_tmp='General_ColumnNbVisits')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -19,7 +19,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	</thead>
 	<tbody>
 	<tr class="">
-	<td class="columnodd"><?php echo ((is_array($_tmp='General_Today')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	<td class="columnodd"><?php echo ((is_array($_tmp='Live_LastHours')) ? $this->_run_mod_handler('translate', true, $_tmp, 24) : smarty_modifier_translate($_tmp, 24)); ?>
 </td>
 	<td class="columnodd"><?php echo $this->_tpl_vars['visitorsCountToday']; ?>
 </td>
@@ -27,7 +27,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 </td>
 	</tr>
 	<tr class="">
-	<td class="columnodd"><?php echo ((is_array($_tmp='Live_Last30Minutes')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	<td class="columnodd"><?php echo ((is_array($_tmp='Live_LastMinutes')) ? $this->_run_mod_handler('translate', true, $_tmp, 30) : smarty_modifier_translate($_tmp, 30)); ?>
 </td>
 	<td class="columnodd"><?php echo $this->_tpl_vars['visitorsCountHalfHour']; ?>
 </td>

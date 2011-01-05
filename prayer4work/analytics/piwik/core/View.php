@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: View.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: View.php 3572 2011-01-03 10:11:31Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -35,6 +35,7 @@ class Piwik_View implements Piwik_iView
 	private $smarty = false;
 	private $variables = array();
 	private $contentType = 'text/html; charset=utf-8';
+	private $xFrameOptions = null;
 
 	public function __construct( $templateFile, $smConf = array(), $filter = true )
 	{
@@ -69,16 +70,23 @@ class Piwik_View implements Piwik_iView
 		}
 		$this->smarty->error_reporting = $error_reporting;
 
-		$this->smarty->assign('tag', 'piwik=' . Piwik_Version::VERSION);
 		if($filter)
 		{
 			$this->smarty->load_filter('output', 'cachebuster');
-			$this->smarty->load_filter('output', 'ajaxcdn');
+
+			$use_ajax_cdn = Zend_Registry::get('config')->General->use_ajax_cdn;
+			if($use_ajax_cdn)
+			{
+				$this->smarty->load_filter('output', 'ajaxcdn');
+			}
+
 			$this->smarty->load_filter('output', 'trimwhitespace');
 		}
 
 		// global value accessible to all templates: the piwik base URL for the current request
-		$this->piwikUrl = Piwik_Url::getCurrentUrlWithoutFileName();
+		$this->piwikUrl = Piwik_Common::sanitizeInputValue(Piwik_Url::getCurrentUrlWithoutFileName());
+		$this->currentUrlWithoutFilename = Piwik_Common::sanitizeInputValue(Piwik_Url::getCurrentUrlWithoutFileName());
+		$this->piwik_version = Piwik_Version::VERSION;
 	}
 	
 	/**
@@ -116,14 +124,16 @@ class Piwik_View implements Piwik_iView
 			$this->currentModule = Piwik::getModule();
 			$this->userLogin = Piwik::getCurrentUserLogin();
 			
-			$sites = Piwik_SitesManager_API::getInstance()->getSitesWithAtLeastViewAccess(Zend_Registry::get('config')->General->site_selector_max_sites);
+			// workaround for #1331
+			$count = method_exists('Piwik', 'getWebsitesCountToDisplay') ? Piwik::getWebsitesCountToDisplay() : 1;
+
+			$sites = Piwik_SitesManager_API::getInstance()->getSitesWithAtLeastViewAccess($count);
 			usort($sites, create_function('$site1, $site2', 'return strcasecmp($site1["name"], $site2["name"]);'));
 			$this->sites = $sites;
-			$this->url = Piwik_Url::getCurrentUrl();
+			$this->url = Piwik_Common::sanitizeInputValue(Piwik_Url::getCurrentUrl());
 			$this->token_auth = Piwik::getCurrentUserTokenAuth();
 			$this->userHasSomeAdminAccess = Piwik::isUserHasSomeAdminAccess();
 			$this->userIsSuperUser = Piwik::isUserIsSuperUser();
-			$this->piwik_version = Piwik_Version::VERSION;
 			$this->latest_version_available = Piwik_UpdateCheck::isNewestVersionAvailable();
 			if(Zend_Registry::get('config')->General->autocomplete_min_sites <= count($sites))
 			{
@@ -134,7 +144,8 @@ class Piwik_View implements Piwik_iView
 				$this->show_autocompleter = false;
 			}
 
-			$this->loginModule = Piwik::getLoginPluginName();
+			// workaround for #1331
+			$this->loginModule = method_exists('Piwik', 'getLoginPluginName') ? Piwik::getLoginPluginName() : 'Login';
 		} catch(Exception $e) {
 			// can fail, for example at installation (no plugin loaded yet)		
 		}
@@ -147,21 +158,42 @@ class Piwik_View implements Piwik_iView
 			$this->totalNumberOfQueries = 0;
 		}
  
+		// workaround for #1331
+		if(method_exists('Piwik', 'overrideCacheControlHeaders'))
+		{
+			Piwik::overrideCacheControlHeaders('no-store');
+		}
 		@header('Content-Type: '.$this->contentType);
-		@header("Pragma: ");
-		@header("Cache-Control: no-store, must-revalidate");
+		if($this->xFrameOptions)
+		{
+			@header('X-Frame-Options: '.$this->xFrameOptions);
+		}
 		
 		return $this->smarty->fetch($this->template);
 	}
 
 	/**
-	 * Set Content-Type field in HTTP response
+	 * Set Content-Type field in HTTP response.
+	 * Since PHP 5.1.2, header() protects against header injection attacks.
 	 *
 	 * @param string $contentType
 	 */
 	public function setContentType( $contentType )
 	{
 		$this->contentType = $contentType;
+	}
+
+	/**
+	 * Set X-Frame-Options field in the HTTP response.
+	 *
+	 * @param string $option ('deny' or 'sameorigin')
+	 */
+	public function setXFrameOptions( $option = 'deny' )
+	{
+		if($option === 'deny' || $option === 'sameorigin')
+		{
+			$this->xFrameOptions = $option;
+		}
 	}
 
 	/**
@@ -173,7 +205,12 @@ class Piwik_View implements Piwik_iView
 	{
 		if($form instanceof Piwik_QuickForm2)
 		{
-			HTML_QuickForm2_Renderer::register('smarty', 'HTML_QuickForm2_Renderer_Smarty');
+			static $registered = false;
+			if(!$registered)
+			{
+				HTML_QuickForm2_Renderer::register('smarty', 'HTML_QuickForm2_Renderer_Smarty');
+				$registered = true;
+			}
 
 			// Create the renderer object	
 			$renderer = HTML_QuickForm2_Renderer::factory('smarty');

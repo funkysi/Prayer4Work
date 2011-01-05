@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: 0.6-rc1.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: 0.6-rc1.php 3175 2010-09-25 03:52:17Z vipsoft $
  *
  * @category Piwik
  * @package Updates
@@ -40,8 +40,8 @@ class Piwik_Updates_0_6_rc1 extends Piwik_Updates
 	{
 		// first we disable the plugins and keep an array of warnings messages 
 		$pluginsToDisableMessage = array(
-			'SearchEnginePosition' => "SearchEnginePosition plugin was disabled, because it is not compatible with the new Piwik 0.6. \n You can download the latest version of the plugin, compatible with Piwik 0.6.\n<a target='_blank' href='misc/redirectToUrl.php?url=http://dev.piwik.org/trac/ticket/502'>Click here.</a>", 
-			'GeoIP' => "GeoIP plugin was disabled, because it is not compatible with the new Piwik 0.6. \nYou can download the latest version of the plugin, compatible with Piwik 0.6.\n<a target='_blank' href='misc/redirectToUrl.php?url=http://dev.piwik.org/trac/ticket/45'>Click here.</a>"
+			'SearchEnginePosition' => "SearchEnginePosition plugin was disabled, because it is not compatible with the new Piwik 0.6. \n You can download the latest version of the plugin, compatible with Piwik 0.6.\n<a target='_blank' href='?module=Proxy&action=redirect&url=http://dev.piwik.org/trac/ticket/502'>Click here.</a>", 
+			'GeoIP' => "GeoIP plugin was disabled, because it is not compatible with the new Piwik 0.6. \nYou can download the latest version of the plugin, compatible with Piwik 0.6.\n<a target='_blank' href='?module=Proxy&action=redirect&url=http://dev.piwik.org/trac/ticket/45'>Click here.</a>"
 		);
 		$disabledPlugins = array();
 		foreach($pluginsToDisableMessage as $pluginToDisable => $warningMessage) 

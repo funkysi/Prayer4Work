@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FrontController.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: FrontController.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -48,9 +48,8 @@ class Piwik_FrontController
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{			
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -126,6 +125,8 @@ class Piwik_FrontController
 			return call_user_func_array( array($controller, $action ), $parameters);
 		} catch(Piwik_Access_NoAccessException $e) {
 			Piwik_PostEvent('FrontController.NoAccessException', $e);					
+		} catch(Exception $e) {
+			Piwik_ExitWithMessage($e->getMessage(), false, true);
 		}
 	}
 	
@@ -240,17 +241,16 @@ class Piwik_FrontController
 			}
 			
 			Zend_Registry::get('access')->reloadAccess($authAdapter);
-			Piwik_Translate::getInstance()->loadUserTranslation();
 			
-			Piwik::raiseMemoryLimitIfNecessary();
+			Piwik_Translate::getInstance()->reloadLanguage();
 
-			$pluginsManager->setLanguageToLoad( Piwik_Translate::getInstance()->getLanguageToLoad() );
-			$pluginsManager->loadTranslations();
+			Piwik::raiseMemoryLimitIfNecessary();
 			$pluginsManager->postLoadPlugins();
+
 			
 			Piwik_PostEvent('FrontController.checkForUpdates');
 		} catch(Exception $e) {
-			Piwik_ExitWithMessage($e->getMessage(), $e->getTraceAsString(), true);
+			Piwik_ExitWithMessage($e->getMessage(), false, true);
 		}
 	}
 	

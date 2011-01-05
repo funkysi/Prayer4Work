@@ -1,14 +1,15 @@
-<?php	
+<?php
 /**
  * Piwik - Open source web analytics
- * 
+ *
  * @link http://piwik.org
- * @license http://www.gnu.org/licenses/gpl-3.0.html Gpl v3 or later
- * @version $Id: piwik.php 2767 2010-07-28 22:56:04Z matt $
- * 
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * @version $Id: piwik.php 3545 2010-12-29 21:23:50Z vipsoft $
+ *
  * @package Piwik
  */
 $GLOBALS['PIWIK_TRACKER_DEBUG'] = false;
+$GLOBALS['PIWIK_TRACKER_DEBUG_FORCE_SCHEDULED_TASKS'] = false;
 define('PIWIK_ENABLE_TRACKING', true);
 
 if(file_exists('bootstrap.php'))
@@ -17,6 +18,7 @@ if(file_exists('bootstrap.php'))
 }
 $GLOBALS['PIWIK_TRACKER_MODE'] = true;
 error_reporting(E_ALL|E_NOTICE);
+@ini_set('xdebug.show_exception_trace', 0);
 
 define('PIWIK_DOCUMENT_ROOT', dirname(__FILE__)=='/'?'':dirname(__FILE__));
 if(!defined('PIWIK_USER_PATH'))
@@ -26,7 +28,7 @@ if(!defined('PIWIK_USER_PATH'))
 if(!defined('PIWIK_INCLUDE_PATH'))
 {
 	define('PIWIK_INCLUDE_PATH', PIWIK_DOCUMENT_ROOT);
-} 
+}
 
 @ignore_user_abort(true);
 
@@ -39,6 +41,7 @@ require_once PIWIK_INCLUDE_PATH .'/core/Common.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Config.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Db.php';
+require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Cookie.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Visit.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/GoalManager.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Action.php';
@@ -53,6 +56,7 @@ if($GLOBALS['PIWIK_TRACKER_DEBUG'] === true)
 	require_once PIWIK_INCLUDE_PATH .'/core/Loader.php';
 	require_once PIWIK_INCLUDE_PATH .'/core/ErrorHandler.php';
 	require_once PIWIK_INCLUDE_PATH .'/core/ExceptionHandler.php';
+	$timer = new Piwik_Timer();
 	set_error_handler('Piwik_ErrorHandler');
 	set_exception_handler('Piwik_ExceptionHandler');
 	printDebug($_GET);
@@ -71,5 +75,9 @@ if(!defined('PIWIK_ENABLE_TRACKING') || PIWIK_ENABLE_TRACKING)
 	$process = new Piwik_Tracker();
 	$process->main();
 	ob_end_flush();
-	printDebug($_COOKIE);
+	if($GLOBALS['PIWIK_TRACKER_DEBUG'] === true)
+	{	
+		printDebug($_COOKIE);
+		printDebug($timer);
+	}
 }

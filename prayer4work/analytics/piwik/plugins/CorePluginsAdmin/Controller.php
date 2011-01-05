@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3470 2010-12-20 19:03:26Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CorePluginsAdmin
@@ -31,8 +31,7 @@ class Piwik_CorePluginsAdmin_Controller extends Piwik_Controller
 				'alwaysActivated' => Piwik_PluginsManager::getInstance()->isPluginAlwaysActivated($pluginName),
 			);
 		}
-
-		Piwik_PluginsManager::getInstance()->loadTranslations();
+		Piwik_PluginsManager::getInstance()->loadPluginTranslations();
 
 		$loadedPlugins = Piwik_PluginsManager::getInstance()->getLoadedPlugins();
 		foreach($loadedPlugins as $oPlugin)

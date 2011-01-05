@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Nonce.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Nonce.php 3468 2010-12-19 17:55:50Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -35,7 +35,7 @@ class Piwik_Nonce
 	static public function getNonce($id, $ttl = 300)
 	{
 		// save session-dependent nonce
-		$ns = new Zend_Session_Namespace($id);
+		$ns = new Piwik_Session_Namespace($id);
 		$nonce = $ns->nonce;
 
 		// re-use an unexpired nonce (a small deviation from the "used only once" principle, so long as we do not reset the expiration)
@@ -60,7 +60,7 @@ class Piwik_Nonce
 	 */
 	static public function verifyNonce($id, $cnonce)
 	{
-		$ns = new Zend_Session_Namespace($id);
+		$ns = new Piwik_Session_Namespace($id);
 		$nonce = $ns->nonce;
 
 		// validate token
@@ -77,14 +77,65 @@ class Piwik_Nonce
 		}
 
 		// validate origin
-		$origin = Piwik_Url::getOrigin();
+		$origin = self::getOrigin();
 		if(!empty($origin) &&
 			($origin == 'null'
-			|| !in_array($origin, Piwik_Url::getAcceptableOrigins())))
+			|| !in_array($origin, self::getAcceptableOrigins())))
 		{
 			return false;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get ORIGIN header, false if not found
+	 *
+	 * @return string|false
+	 */
+	static public function getOrigin()
+	{
+		if(!empty($_SERVER['HTTP_ORIGIN']))
+		{
+			return $_SERVER['HTTP_ORIGIN'];
+		}
+		return false;
+	}
+
+	/**
+	 * Returns acceptable origins (not simply scheme://host) that
+	 * should handle a variety of proxy and web server (mis)configurations,.
+	 *
+	 * @return array
+	 */
+	static public function getAcceptableOrigins()
+	{
+		$host = Piwik_Url::getCurrentHost(null);
+		$port = '';
+
+		// parse host:port
+		if(preg_match('/^([^:]+):([0-9]+)$/', $host, $matches))
+		{
+			$host = $matches[1];
+			$port = $matches[2];
+		}
+
+		if(empty($host))
+		{
+			return array();
+		}
+
+		// standard ports
+		$origins[] = 'http://'.$host;
+		$origins[] = 'https://'.$host;
+
+		// non-standard ports
+		if(!empty($port) && $port != 80 && $port != 443)
+		{
+			$origins[] = 'http://'.$host.':'.$port;
+			$origins[] = 'https://'.$host.':'.$port;
+		}
+
+		return $origins;
 	}
 }

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: CoreHome.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: CoreHome.php 3299 2010-11-07 00:53:48Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreHome
@@ -44,7 +44,7 @@ class Piwik_CoreHome extends Piwik_Plugin
 		$cssFiles[] = "plugins/CoreHome/templates/menu.css";
 		$cssFiles[] = "plugins/CoreHome/templates/datatable.css";
 		$cssFiles[] = "plugins/CoreHome/templates/cloud.css";
-                $cssFiles[] = "plugins/CoreHome/templates/jquery.ui.autocomplete.css";
+		$cssFiles[] = "plugins/CoreHome/templates/jquery.ui.autocomplete.css";
 	}
 
 	function getJsFiles( $notification )

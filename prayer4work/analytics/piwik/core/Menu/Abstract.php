@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Abstract.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Abstract.php 3302 2010-11-08 02:15:11Z vipsoft $
  *
  * @category Piwik
  * @package Piwik_Menu
@@ -176,4 +176,3 @@ abstract class Piwik_Menu_Abstract {
 	}
 
 }
-?>

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: SearchEngines.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: SearchEngines.php 3393 2010-12-01 07:12:20Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -16,56 +16,74 @@
  * ======================================
  * HOW TO ADD A SEARCH ENGINE TO THE LIST
  * ======================================
- * If you want to add a new entry, please email us the information + icon at hello at piwik.org
+ * If you want to add a new entry, please email us the information + icon at
+ * hello at piwik.org
  *
  * See also: http://piwik.org/faq/general/#faq_39
  *
  * Detail of a line:
  * Url => array( SearchEngineName, KeywordParameter, [path containing the keyword], [charset used by the search engine])
  *
- * The main search engine URL has to be at the top of the list for the given search Engine.
- * You can add new search engines icons by adding the icon in the plugins/Referers/images/SearchEngines directory
- * using the format 'mainSearchEngineUrl.png'. Example: www.google.com.png
- * To help Piwik link directly the search engine result page for the keyword, specify the third entry in the array
- * using the macro {k} that will automatically be replaced by the keyword.
+ * The main search engine URL has to be at the top of the list for the given
+ * search Engine.  This serves as the master record so additional URLs
+ * don't have to duplicate all the information, but can override when needed.
+ * 
+ * The URL, "example.com", will match "example.com", "m.example.com",
+ * "www.example.com", and "search.example.com".
  *
- *  A simple example is:
+ * For region-specific search engines, the URL, "{}.example.com" will match
+ * any ISO3166-1 alpha2 country code against "{}".  Similarly, "example.{}"
+ * will match against valid country TLDs, but should be used sparingly to
+ * avoid false positives.
+ *
+ * The charset should be an encoding supported by mbstring.  If unspecified,
+ * we'll assume it's UTF-8.
+ * Reference: http://www.php.net/manual/en/mbstring.encodings.php
+ *
+ * You can add new search engines icons by adding the icon in the
+ * plugins/Referers/images/searchEngines directory using the format
+ * 'mainSearchEngineUrl.png'. Example: www.google.com.png
+ *
+ * To help Piwik link directly the search engine result page for the keyword,
+ * specify the third entry in the array using the macro {k} that will
+ * automatically be replaced by the keyword.
+ *
+ * A simple example is:
  *  'www.google.com'		=> array('Google', 'q', 'search?q={k}'),
  *
- *  A more complicated example, with an array of possible variable names, and a custom charset:
+ * A more complicated example, with an array of possible variable names, and a custom charset:
  *  'www.baidu.com'			=> array('Baidu', array('wd', 'word', 'kw'), 's?wd={k}', 'gb2312'),
+ *
+ * Another example using a regular expression to parse the path for keywords:
+ *  'infospace.com'         => array('InfoSpace', array('/dir1\/(pattern)\/dir2/'), '/dir1/{k}/dir2/stuff/'),
  */
 if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 {
 	$GLOBALS['Piwik_SearchEngines'] = array(
 		// 1
 		'1.cz'						=> array('1.cz', 'q', 'index.php?q={k}', 'iso-8859-2'),
-		'www.1.cz'					=> array('1.cz', 'q', false, 'iso-8859-2'),
 
 		// 123people
-		'www.123people.com'			=> array('123people', '', 's/{k}'),
-		'www.123people.de'			=> array('123people', ''),
-		'www.123people.es'			=> array('123people', ''),
-		'www.123people.fr'			=> array('123people', ''),
+		'www.123people.com'			=> array('123people', '/s\/([^\/]+)/', 's/{k}'),
+		'123people.{}'				=> array('123people'),
 
 		// 1und1
 		'search.1und1.de'			=> array('1und1', 'su', 'search/web/?su={k}'),
 
 		// Abacho
 		'www.abacho.de'				=> array('Abacho', 'q', 'suche?q={k}'),
-		'www.abacho.com'			=> array('Abacho', 'q', '?q={k}&id=87'),
-		'www.abacho.co.uk'			=> array('Abacho', 'q', '?q={k}&id=94'),
-		'www.se.abacho.com'			=> array('Abacho', 'q', '?q={k}&id=98'),
-		'www.tr.abacho.com'			=> array('Abacho', 'q', '?q={k}&id=114'),
-		'www.abacho.at'				=> array('Abacho', 'q', 'suche?q={k}'),
-		'www.abacho.fr'				=> array('Abacho', 'q', '?q={k}&id=102'),
-		'www.abacho.es'				=> array('Abacho', 'q', '?q={k}&id=106'),
-		'www.abacho.ch'				=> array('Abacho', 'q', 'suche?q={k}'),
-		'www.abacho.it'				=> array('Abacho', 'q', '?q={k}&id=110'),
+		'www.abacho.com'			=> array('Abacho'),
+		'www.abacho.co.uk'			=> array('Abacho'),
+		'www.se.abacho.com'			=> array('Abacho'),
+		'www.tr.abacho.com'			=> array('Abacho'),
+		'www.abacho.at'				=> array('Abacho'),
+		'www.abacho.fr'				=> array('Abacho'),
+		'www.abacho.es'				=> array('Abacho'),
+		'www.abacho.ch'				=> array('Abacho'),
+		'www.abacho.it'				=> array('Abacho'),
 	
 		// ABCsøk
 		'abcsok.no'					=> array('ABCsøk', 'q', '?q={k}'),
-		'www.abcsok.no'				=> array('ABCsøk', 'q'),
 
 		// about
 		'search.about.com'			=> array('About', 'terms', '?terms={k}'),
@@ -74,16 +92,15 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.acoon.de'				=> array('Acoon', 'begriff', 'cgi-bin/search.exe?begriff={k}'),
 
 		// Alexa
-		'www.alexa.com'				=> array('Alexa', 'q', 'search?q={k}'),
-		'alexa.com'					=> array('Alexa', 'q'),
+		'alexa.com'					=> array('Alexa', 'q', 'search?q={k}'),
 
 		// Alice Adsl
 		'rechercher.aliceadsl.fr'	=> array('Alice Adsl', 'qs', 'google.pl?qs={k}'),
 
 		// Allesklar
 		'www.allesklar.de'			=> array('Allesklar', 'words', '?words={k}'),
-		'www.allesklar.at'			=> array('Allesklar', 'words'),
-		'www.allesklar.ch'			=> array('Allesklar', 'words'),
+		'www.allesklar.at'			=> array('Allesklar'),
+		'www.allesklar.ch'			=> array('Allesklar'),
 
 		// AllTheWeb
 		'www.alltheweb.com'			=> array('AllTheWeb', 'q', 'search?q={k}'),
@@ -93,62 +110,52 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Altavista
 		'www.altavista.com'			=> array('AltaVista', 'q', 'web/results?q={k}'),
-		'listings.altavista.com'	=> array('AltaVista', 'q'),
-		'www.altavista.de'			=> array('AltaVista', 'q'),
-		'altavista.fr'				=> array('AltaVista', 'q'),
-		'de.altavista.com'			=> array('AltaVista', 'q'),
-		'fr.altavista.com'			=> array('AltaVista', 'q'),
-		'es.altavista.com'			=> array('AltaVista', 'q'),
-		'www.altavista.fr'			=> array('AltaVista', 'q'),
-		'search.altavista.com'		=> array('AltaVista', 'q'),
-		'search.fr.altavista.com'	=> array('AltaVista', 'q'),
-		'se.altavista.com'			=> array('AltaVista', 'q'),
-		'be-nl.altavista.com'		=> array('AltaVista', 'q'),
-		'be-fr.altavista.com'		=> array('AltaVista', 'q'),
-		'it.altavista.com'			=> array('AltaVista', 'q'),
-		'us.altavista.com'			=> array('AltaVista', 'q'),
-		'nl.altavista.com'			=> array('Altavista', 'q'),
-		'ch.altavista.com'			=> array('AltaVista', 'q'),
+		'search.altavista.com'		=> array('AltaVista'),
+		'listings.altavista.com'	=> array('AltaVista'),
+		'altavista.de'				=> array('AltaVista'),
+		'altavista.fr'				=> array('AltaVista'),
+		'{}.altavista.com'			=> array('AltaVista'),
+		'be-nl.altavista.com'		=> array('AltaVista'),
+		'be-fr.altavista.com'		=> array('AltaVista'),
 
 		// Apollo Latvia
 		'apollo.lv/portal/search/'	=> array('Apollo lv', 'q', '?cof=FORID%3A11&q={k}&search_where=www'),
 
 		// APOLLO7
-		'www.apollo7.de'			=> array('Apollo7', 'query', 'a7db/index.php?query={k}&de_sharelook=true&de_bing=true&de_witch=true&de_google=true&de_yahoo=true&de_lycos=true'),
-		'apollo7.de'				=> array('Apollo7', 'query'),
+		'apollo7.de'				=> array('Apollo7', 'query', 'a7db/index.php?query={k}&de_sharelook=true&de_bing=true&de_witch=true&de_google=true&de_yahoo=true&de_lycos=true'),
 
 		// AOL
 		'search.aol.com'			=> array('AOL', array('query', 'q'), 'aol/search?q={k}'),
-		'aolsearch.aol.com'			=> array('AOL', array('query', 'q')),
-		'www.aolrecherche.aol.fr'	=> array('AOL', array('query', 'q')),
-		'www.aolrecherches.aol.fr'	=> array('AOL', array('query', 'q')),
-		'www.aolimages.aol.fr'		=> array('AOL', array('query', 'q')),
-		'aim.search.aol.com'		=> array('AOL', array('query', 'q')),
-		'www.recherche.aol.fr'		=> array('AOL', array('query', 'q')),
-		'find.web.aol.com'			=> array('AOL', array('query', 'q')),
-		'recherche.aol.ca'			=> array('AOL', array('query', 'q')),
-		'aolsearch.aol.co.uk'		=> array('AOL', array('query', 'q')),
-		'search.aol.co.uk'			=> array('AOL', array('query', 'q')),
-		'aolrecherche.aol.fr'		=> array('AOL', array('query', 'q')),
-		'sucheaol.aol.de'			=> array('AOL', array('query', 'q')),
-		'suche.aol.de'				=> array('AOL', array('query', 'q')),
-		'suche.aolsvc.de'			=> array('AOL', array('query', 'q')),
-		'aolbusqueda.aol.com.mx'	=> array('AOL', array('query', 'q')),
-		'alicesuchet.aol.de'		=> array('AOL', array('query', 'q')),
-		'suche.aolsvc.de'			=> array('AOL', array('query', 'q')),
-		'suche.aol.de'				=> array('AOL', array('query', 'q')),
-		'alicesuche.aol.de'			=> array('AOL', array('query', 'q')),
-		'suchet2.aol.de'			=> array('AOL', array('query', 'q')),
-		'search.hp.my.aol.com.au'	=> array('AOL', array('query', 'q')),
-		'search.hp.my.aol.de'		=> array('AOL', array('query', 'q')),
-		'search-intl.netscape.com'	=> array('AOL', array('query', 'q')),
+		'aolsearch.aol.com'			=> array('AOL'),
+		'www.aolrecherche.aol.fr'	=> array('AOL'),
+		'www.aolrecherches.aol.fr'	=> array('AOL'),
+		'www.aolimages.aol.fr'		=> array('AOL'),
+		'aim.search.aol.com'		=> array('AOL'),
+		'www.recherche.aol.fr'		=> array('AOL'),
+		'find.web.aol.com'			=> array('AOL'),
+		'recherche.aol.ca'			=> array('AOL'),
+		'aolsearch.aol.co.uk'		=> array('AOL'),
+		'search.aol.co.uk'			=> array('AOL'),
+		'aolrecherche.aol.fr'		=> array('AOL'),
+		'sucheaol.aol.de'			=> array('AOL'),
+		'suche.aol.de'				=> array('AOL'),
+		'suche.aolsvc.de'			=> array('AOL'),
+		'aolbusqueda.aol.com.mx'	=> array('AOL'),
+		'alicesuchet.aol.de'		=> array('AOL'),
+		'suche.aolsvc.de'			=> array('AOL'),
+		'suche.aol.de'				=> array('AOL'),
+		'alicesuche.aol.de'			=> array('AOL'),
+		'suchet2.aol.de'			=> array('AOL'),
+		'search.hp.my.aol.com.au'	=> array('AOL'),
+		'search.hp.my.aol.de'		=> array('AOL'),
+		'search.hp.my.aol.it'		=> array('AOL'),
+		'search-intl.netscape.com'	=> array('AOL'),
 
 		// Aport
 		'sm.aport.ru'				=> array('Aport', 'r', 'search?r={k}'),
 
 		// arama
 		'arama.com'					=> array('Arama', 'q', 'search.php3?q={k}'),
-		'www.arama.com'				=> array('Arama', 'q'),
 	
 		// Arcor
 		'www.arcor.de'				=> array('Arcor', 'Keywords', 'content/searchresult.jsp?Keywords={k}'),
@@ -156,36 +163,36 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		// Arianna (Libero.it)
 		'arianna.libero.it'			=> array('Arianna', 'query', 'search/abin/integrata.cgi?query={k}'),
 
-		// Ask
-		'www.ask.com'				=> array('Ask', array('ask', 'q'), 'web?q={k}'),
-		'web.ask.com'				=> array('Ask', array('ask', 'q')),
-		'images.ask.com'			=> array('Ask', 'q'),
-		'ask.reference.com'			=> array('Ask', 'q'),
-		'www.ask.co.uk'				=> array('Ask', 'q'),
-		'uk.ask.com'				=> array('Ask', 'q'),
-		'fr.ask.com'				=> array('Ask', 'q'),
-		'de.ask.com'				=> array('Ask', 'q'),
-		'es.ask.com'				=> array('Ask', 'q'),
-		'it.ask.com'				=> array('Ask', 'q'),
-		'nl.ask.com'				=> array('Ask', 'q'),
-		'jp.ask.com'				=> array('Ask', 'q'),
+		// Ask (IAC Search & Media)
+		'ask.com'					=> array('Ask', array('ask', 'q'), 'web?q={k}'),
+		'web.ask.com'				=> array('Ask'),
+		'images.ask.com'			=> array('Ask'),
+		'ask.reference.com'			=> array('Ask'),
+		'www.askkids.com'			=> array('Ask'),
+		'iwon.ask.com'				=> array('Ask'),
+		'www.ask.co.uk'				=> array('Ask'),
+		'{}.ask.com'				=> array('Ask'),
+		'www.qbyrd.com'				=> array('Ask'),
+		'{}.qbyrd.com'				=> array('Ask'),
+		'www.search-results.com'	=> array('Ask'),
+		'{}.search-results.com'		=> array('Ask'),
 
 		// Atlas
 		'searchatlas.centrum.cz'	=> array('Atlas', 'q', '?q={k}'),
 
 		// Austronaut
 		'www2.austronaut.at'		=> array('Austronaut', 'q'),
-		'www1.austronaut.at'		=> array('Austronaut', 'q'),
+		'www1.austronaut.at'		=> array('Austronaut'),
 	
-		// Babylon
-		'search.babylon.com'		=> array('Babylon (Powered by Google)', 'q', '?q={k}'),
+		// Babylon (Enhanced by Google)
+		'search.babylon.com'		=> array('Babylon', 'q', '?q={k}'),
 
 		// Baidu
 		'www.baidu.com'				=> array('Baidu', array('wd', 'word', 'kw'), 's?wd={k}', 'gb2312'),
-		'www1.baidu.com'			=> array('Baidu', array('wd', 'word', 'kw'), false, 'gb2312'),
-		'zhidao.baidu.com'			=> array('Baidu', array('wd', 'word', 'kw'), false, 'gb2312'),
-		'tieba.baidu.com'			=> array('Baidu', array('wd', 'word', 'kw'), false, 'gb2312'),
-		'news.baidu.com'			=> array('Baidu', array('wd', 'word', 'kw'), false, 'gb2312'),
+		'www1.baidu.com'			=> array('Baidu'),
+		'zhidao.baidu.com'			=> array('Baidu'),
+		'tieba.baidu.com'			=> array('Baidu'),
+		'news.baidu.com'			=> array('Baidu'),
 		'web.gougou.com'			=> array('Baidu', 'search', 'search?search={k}'), // uses baidu search
 	
 		// Bellnet
@@ -195,10 +202,13 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'cgi.search.biglobe.ne.jp'	=> array('Biglobe', 'q', 'cgi-bin/search-st?q={k}'),
 
 		// Bing
-		'www.bing.com'				=> array('Bing', 'q', 'search?q={k}'),
+		'bing.com'					=> array('Bing', array('q', 'Q'), 'search?q={k}'),
+
+		// Bing Cache
+		'cc.bingj.com'				=> array('Bing'),
 
 		// Bing Images
-		'www.bing.com/images/search'=> array('Bing Images', 'q', '?q={k}'),
+		'bing.com/images/search'	=> array('Bing Images', array('q', 'Q'), '?q={k}'),
 
 		// Blogdigger
 		'www.blogdigger.com'		=> array('Blogdigger', 'q'),
@@ -214,7 +224,13 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Centrum
 		'search.centrum.cz'			=> array('Centrum', 'q', '?q={k}'),
-		'morfeo.centrum.cz'			=> array('Centrum', 'q', false),
+		'morfeo.centrum.cz'			=> array('Centrum'),
+
+		// Charter
+		'www.charter.net'			=> array('Charter', 'q', 'search/index.php?q={k}'),
+
+		// Clix (Enhanced by Google)
+		'pesquisa.clix.pt'			=> array('Clix', 'question', 'resultado.html?in=Mundial&question={k}'),
 
 		// Conduit
 		'search.conduit.com'		=> array('Conduit.com', 'q', 'Results.aspx?q={k}'),
@@ -225,21 +241,20 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		// Compuserve
 		'websearch.cs.com'			=> array('Compuserve.com (Enhanced by Google)', 'query', 'cs/search?query={k}'),
 
-		// Copernic
-		'ws.copernic.com'			=> array('Copernic', ''),
-
 		// Cuil
 		'www.cuil.com'				=> array('Cuil', 'q', 'search?q={k}'),
 
 		// Daemon search
-		'www.daemon-search.com'		=> array('Daemon search', 'q', 'explore/web?q={k}'),
-		'daemon-search.com'			=> array('Daemon search', 'q', false),
+		'daemon-search.com'			=> array('Daemon search', 'q', 'explore/web?q={k}'),
 
 		// DasOertliche
 		'www.dasoertliche.de'		=> array('DasOertliche', 'kw'),
 
 		// DasTelefonbuch
 		'www1.dastelefonbuch.de'	=> array('DasTelefonbuch', 'kw'),
+
+		// Daum
+		'search.daum.net'			=> array('Daum', 'q', 'search?q={k}', 'EUC-KR'),
 
 		// Delfi Latvia
 		'smart.delfi.lv'			=> array('Delfi lv', 'q', 'find?q={k}'),
@@ -255,13 +270,7 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// dmoz
 		'dmoz.org'					=> array('dmoz', 'search'),
-		'editors.dmoz.org'			=> array('dmoz', 'search'),
-		'search.dmoz.org'			=> array('dmoz', 'search'),
-		'www.dmoz.org'				=> array('dmoz', 'search'),
-
-		// Dogpile
-		'search.dogpile.com'		=> array('Dogpile', ''),
-		'nbci.dogpile.com'			=> array('Dogpile', 'q'),
+		'editors.dmoz.org'			=> array('dmoz'),
 
 		// DuckDuckGo
 		'duckduckgo.com'			=> array('DuckDuckGo', 'q', '?q={k}'),
@@ -271,7 +280,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Ecosia (powered by Bing)
 		'ecosia.org'				=> array('Ecosia', 'q', 'search.php?q={k}'),
-		'www.ecosia.org'			=> array('Ecosia', 'q'),
 
 		// Eniro
 		'www.eniro.se'				=> array('Eniro', array('q', 'search_word'), 'query?q={k}'),
@@ -290,23 +298,26 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Excite
 		'search.excite.it'			=> array('Excite', 'q', 'web/?q={k}'),
-		'msxml.excite.com'			=> array('Excite', ''),
-		'search.excite.fr'			=> array('Excite', 'q', 'web/?q={k}'),
-		'search.excite.de'			=> array('Excite', 'q', 'web/?q={k}'),
-		'search.excite.co.uk'		=> array('Excite', 'q', 'web/?q={k}'),
-		'search.excite.es'			=> array('Excite', 'q', 'web/?q={k}'),
-		'search.excite.nl'			=> array('Excite', 'q', 'web/?q={k}'),
+		'search.excite.fr'			=> array('Excite'),
+		'search.excite.de'			=> array('Excite'),
+		'search.excite.co.uk'		=> array('Excite'),
+		'search.excite.es'			=> array('Excite'),
+		'search.excite.nl'			=> array('Excite'),
+		'msxml.excite.com'			=> array('Excite', '/\/[^\/]+\/ws\/results\/[^\/]+\/([^\/]+)/'),
 		'www.excite.co.jp'			=> array('Excite', 'search', 'search.gw?search={k}', 'SHIFT_JIS'),
 
 		// Exalead
 		'www.exalead.fr'			=> array('Exalead', 'q', 'search/results?q={k}'),
-		'www.exalead.com'			=> array('Exalead', 'q'),
+		'www.exalead.com'			=> array('Exalead'),
 
 		// eo
 		'eo.st'						=> array('eo', 'x_query', 'cgi-bin/eolost.cgi?x_query={k}'),
 
 		// Facebook
 		'www.facebook.com'			=> array('Facebook', 'q', 'search/?q={k}'),
+
+		// Fast Browser Search
+		'www.fastbrowsersearch.com'	=> array('Fast Browser Search', 'q', 'results/results.aspx?q={k}'),
 
 		// Francite
 		'recherche.francite.com'	=> array('Francite', 'name'),
@@ -324,48 +335,17 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.flix.de'				=> array('Flix.de', 'keyword'),
 
 		// Forestle
-		'de.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'at.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ch.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'us.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'fr.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ar.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'au.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ca.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'cl.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'co.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'cz.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'dk.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'fi.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'hu.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'in.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'id.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'it.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'jp.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'kr.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'my.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'mx.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'nl.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'nz.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'pe.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ph.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ro.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'ru.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'sg.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'es.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'se.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'th.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'uk.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		've.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
-		'vn.forestle.org'			=> array('Forestle', 'q', 'search.php?q={k}'),
+		'forestle.org'				=> array('Forestle', 'q', 'search.php?q={k}'),
+		'{}.forestle.org'			=> array('Forestle'),
+		'forestle.mobi'				=> array('Forestle'),
 
 		// Free
 		'search.free.fr'			=> array('Free', 'q'),
-		'search1-2.free.fr'			=> array('Free', 'q'),
-		'search1-1.free.fr'			=> array('Free', 'q'),
+		'search1-2.free.fr'			=> array('Free'),
+		'search1-1.free.fr'			=> array('Free'),
 
 		// Freecause
-		'search.freecause.com'		=> array('FreeCause', 'q', '?p={k}'),
+		'search.freecause.com'		=> array('FreeCause', 'p', '?p={k}'),
 
 		// Freenet
 		'suche.freenet.de'			=> array('Freenet', 'query', 'suche/?query={k}'),
@@ -378,7 +358,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Geona 
 		'geona.net'					=> array('Geona', 'q', 'search?q={k}'),
-		'www.geona.net'				=> array('Geona', 'q', 'search?q={k}'),
 
 		// Gigablast
 		'www.gigablast.com'			=> array('Gigablast', 'q', 'search?q={k}'),
@@ -392,278 +371,51 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// goo
 		'search.goo.ne.jp'			=> array('goo', 'MT', 'web.jsp?MT={k}'),
-		'ocnsearch.goo.ne.jp'		=> array('goo', 'MT'),
+		'ocnsearch.goo.ne.jp'		=> array('goo'),
 
 		// Google
-		'www.google.com'			=> array('Google', 'q', 'search?q={k}'),
-		'www2.google.com'			=> array('Google', 'q'),
-		'ipv6.google.com'			=> array('Google', 'q'),
-		'w.google.com'				=> array('Google', 'q'),
-		'ww.google.com'				=> array('Google', 'q'),
-		'wwwgoogle.com'				=> array('Google', 'q'),
-		'www.goggle.com'			=> array('Google', 'q'),
-		'www.gogole.com'			=> array('Google', 'q'),
-		'www.gppgle.com'			=> array('Google', 'q'),
-		'go.google.com'				=> array('Google', 'q'),
-		'www.google.ad'				=> array('Google', 'q'),
-		'www.google.ae'				=> array('Google', 'q'),
-		'www.google.am'				=> array('Google', 'q'),
-		'www.google.it.ao'			=> array('Google', 'q'),
-		'www.google.as'				=> array('Google', 'q'),
-		'www.google.at'				=> array('Google', 'q'),
-		'wwwgoogle.at'				=> array('Google', 'q'),
-		'ww.google.at'				=> array('Google', 'q'),
-		'w.google.at'				=> array('Google', 'q'),
-		'www.google.az'				=> array('Google', 'q'),
-		'www.google.ba'				=> array('Google', 'q'),
-		'www.google.be'				=> array('Google', 'q'),
-		'www.google.bf'				=> array('Google', 'q'),
-		'www.google.bg'				=> array('Google', 'q'),
-		'google.bg'					=> array('Google', 'q'),
-		'www.google.bi'				=> array('Google', 'q'),
-		'www.google.bj'				=> array('Google', 'q'),
-		'www.google.bs'				=> array('Google', 'q'),
-		'www.google.ca'				=> array('Google', 'q'),
-		'ww.google.ca'				=> array('Google', 'q'),
-		'w.google.ca'				=> array('Google', 'q'),
-		'www.google.cat'			=> array('Google', 'q'),
-		'www.google.cc'				=> array('Google', 'q'),
-		'www.google.cd'				=> array('Google', 'q'),
-		'google.cf'					=> array('Google', 'q'),
-		'www.google.cg'				=> array('Google', 'q'),
-		'www.google.ch'				=> array('Google', 'q'),
-		'ww.google.ch'				=> array('Google', 'q'),
-		'w.google.ch'				=> array('Google', 'q'),
-		'www.google.ci'				=> array('Google', 'q'),
-		'google.co.ck'				=> array('Google', 'q'),
-		'www.google.cl'				=> array('Google', 'q'),
-		'www.google.cn'				=> array('Google', 'q'),
-		'google.cm'					=> array('Google', 'q'),
-		'www.google.co'				=> array('Google', 'q'),
-		'www.google.cz'				=> array('Google', 'q'),
-		'wwwgoogle.cz'				=> array('Google', 'q'),
-		'www.google.de'				=> array('Google', 'q'),
-		'ww.google.de'				=> array('Google', 'q'),
-		'w.google.de'				=> array('Google', 'q'),
-		'wwwgoogle.de'				=> array('Google', 'q'),
-		'google.dm'					=> array('Google', 'q'),
-		'google.dz'					=> array('Google', 'q'),
-		'www.google.ee'				=> array('Google', 'q'),
-		'www.google.dj'				=> array('Google', 'q'),
-		'www.google.dk'				=> array('Google', 'q'),
-		'www.google.es'				=> array('Google', 'q'),
-		'www.google.fi'				=> array('Google', 'q'),
-		'www.googel.fi'				=> array('Google', 'q'),
-		'www.google.fm'				=> array('Google', 'q'),
-		'gogole.fr'					=> array('Google', 'q'),
-		'www.gogole.fr'				=> array('Google', 'q'),
-		'wwwgoogle.fr'				=> array('Google', 'q'),
-		'ww.google.fr'				=> array('Google', 'q'),
-		'w.google.fr'				=> array('Google', 'q'),
-		'www.google.fr'				=> array('Google', 'q'),
-		'www.google.fr.'			=> array('Google', 'q'),
-		'google.fr'					=> array('Google', 'q'),
-		'www.google.ga'				=> array('Google', 'q'),
-		'google.ge'					=> array('Google', 'q'),
-		'w.google.ge'				=> array('Google', 'q'),
-		'ww.google.ge'				=> array('Google', 'q'),
-		'www.google.ge'				=> array('Google', 'q'),
-		'www.google.gg'				=> array('Google', 'q'),
-		'google.gr'					=> array('Google', 'q'),
-		'www.google.gl'				=> array('Google', 'q'),
-		'www.google.gm'				=> array('Google', 'q'),
-		'www.google.gp'				=> array('Google', 'q'),
-		'www.google.gr'				=> array('Google', 'q'),
-		'www.google.gy'				=> array('Google', 'q'),
-		'www.google.hn'				=> array('Google', 'q'),
-		'www.google.hr'				=> array('Google', 'q'),
-		'www.google.ht'				=> array('Google', 'q'),
-		'www.google.hu'				=> array('Google', 'q'),
-		'www.google.ie'				=> array('Google', 'q'),
-		'www.google.im'				=> array('Google', 'q'),
-		'www.google.is'				=> array('Google', 'q'),
-		'www.google.it'				=> array('Google', 'q'),
-		'www.google.je'				=> array('Google', 'q'),
-		'www.google.jo'				=> array('Google', 'q'),
-		'www.google.ki'				=> array('Google', 'q'),
-		'www.google.kg'				=> array('Google', 'q'),
-		'www.google.kz'				=> array('Google', 'q'),
-		'www.google.la'				=> array('Google', 'q'),
-		'www.google.li'				=> array('Google', 'q'),
-		'www.google.lk'				=> array('Google', 'q'),
-		'www.google.lt'				=> array('Google', 'q'),
-		'www.google.lu'				=> array('Google', 'q'),
-		'www.google.lv'				=> array('Google', 'q'),
-		'www.google.md'				=> array('Google', 'q'),
-		'www.google.me'				=> array('Google', 'q'),
-		'www.google.mg'				=> array('Google', 'q'),
-		'www.google.mk'				=> array('Google', 'q'),
-		'www.google.ml'				=> array('Google', 'q'),
-		'www.google.mn'				=> array('Google', 'q'),
-		'www.google.ms'				=> array('Google', 'q'),
-		'www.google.mu'				=> array('Google', 'q'),
-		'www.google.mv'				=> array('Google', 'q'),
-		'www.google.mw'				=> array('Google', 'q'),
-		'www.google.ne'				=> array('Google', 'q'),
-		'www.google.nl'				=> array('Google', 'q'),
-		'www.google.no'				=> array('Google', 'q'),
-		'www.google.nr'				=> array('Google', 'q'),
-		'www.google.nu'				=> array('Google', 'q'),
-		'www.google.ps'				=> array('Google', 'q'),
-		'www.google.pl'				=> array('Google', 'q'),
-		'www.google.pn'				=> array('Google', 'q'),
-		'www.google.pt'				=> array('Google', 'q'),
-		'www.google.ro'				=> array('Google', 'q'),
-		'www.google.rs'				=> array('Google', 'q'),
-		'www.google.ru'				=> array('Google', 'q'),
-		'www.google.rw'				=> array('Google', 'q'),
-		'www.google.sc'				=> array('Google', 'q'),
-		'www.google.se'				=> array('Google', 'q'),
-		'www.google.sh'				=> array('Google', 'q'),
-		'www.google.si'				=> array('Google', 'q'),
-		'www.google.sk'				=> array('Google', 'q'),
-		'www.google.sm'				=> array('Google', 'q'),
-		'www.google.sn'				=> array('Google', 'q'),
-		'www.google.st'				=> array('Google', 'q'),
-		'www.google.td'				=> array('Google', 'q'),
-		'www.google.tg'				=> array('Google', 'q'),
-		'www.google.tk'				=> array('Google', 'q'),
-		'www.google.tl'				=> array('Google', 'q'),
-		'www.google.tm'				=> array('Google', 'q'),
-		'www.google.to'				=> array('Google', 'q'),
-		'www.google.tt'				=> array('Google', 'q'),
-		'www.google.uz'				=> array('Google', 'q'),
-		'www.google.vu'				=> array('Google', 'q'),
-		'www.google.vg'				=> array('Google', 'q'),
-		'www.google.ws'				=> array('Google', 'q'),
-		'www.google.co.bw'			=> array('Google', 'q'),
-		'www.google.co.cr'			=> array('Google', 'q'),
-		'www.google.co.gg'			=> array('Google', 'q'),
-		'www.google.co.hu'			=> array('Google', 'q'),
-		'www.google.co.id'			=> array('Google', 'q'),
-		'www.google.co.il'			=> array('Google', 'q'),
-		'www.google.co.in'			=> array('Google', 'q'),
-		'www.google.co.je'			=> array('Google', 'q'),
-		'www.google.co.jp'			=> array('Google', 'q'),
-		'www.google.co.ls'			=> array('Google', 'q'),
-		'www.google.co.ke'			=> array('Google', 'q'),
-		'www.google.co.kr'			=> array('Google', 'q'),
-		'www.google.co.ma'			=> array('Google', 'q'),
-		'www.google.co.mz'			=> array('Google', 'q'),
-		'www.google.co.nz'			=> array('Google', 'q'),
-		'www.google.co.th'			=> array('Google', 'q'),
-		'www.google.co.tz'			=> array('Google', 'q'),
-		'www.google.co.ug'			=> array('Google', 'q'),
-		'www.google.co.uk'			=> array('Google', 'q'),
-		'www.google.co.uz'			=> array('Google', 'q'),
-		'www.google.co.vi'			=> array('Google', 'q'),
-		'www.google.co.ve'			=> array('Google', 'q'),
-		'www.google.co.za'			=> array('Google', 'q'),
-		'www.google.co.zm'			=> array('Google', 'q'),
-		'www.google.co.zw'			=> array('Google', 'q'),
-		'www.google.com.af'			=> array('Google', 'q'),
-		'www.google.com.ag'			=> array('Google', 'q'),
-		'www.google.com.ai'			=> array('Google', 'q'),
-		'www.google.com.ar'			=> array('Google', 'q'),
-		'www.google.com.au'			=> array('Google', 'q'),
-		'www.google.com.bd'			=> array('Google', 'q'),
-		'www.google.com.bh'			=> array('Google', 'q'),
-		'www.google.com.bn'			=> array('Google', 'q'),
-		'www.google.com.bo'			=> array('Google', 'q'),
-		'www.google.com.br'			=> array('Google', 'q'),
-		'www.google.com.by'			=> array('Google', 'q'),
-		'www.google.com.bz'			=> array('Google', 'q'),
-		'www.google.com.co'			=> array('Google', 'q'),
-		'www.google.com.cu'			=> array('Google', 'q'),
-		'www.google.com.do'			=> array('Google', 'q'),
-		'www.google.com.ec'			=> array('Google', 'q'),
-		'www.google.com.eg'			=> array('Google', 'q'),
-		'www.google.com.et'			=> array('Google', 'q'),
-		'www.google.com.fj'			=> array('Google', 'q'),
-		'www.google.com.gh'			=> array('Google', 'q'),
-		'www.google.com.gi'			=> array('Google', 'q'),
-		'www.google.com.gr'			=> array('Google', 'q'),
-		'www.google.com.gt'			=> array('Google', 'q'),
-		'www.google.com.hk'			=> array('Google', 'q'),
-		'www.google.com.jm'			=> array('Google', 'q'),
-		'www.google.com.kh'			=> array('Google', 'q'),
-		'www.google.com.kw'			=> array('Google', 'q'),
-		'www.google.com.lb'			=> array('Google', 'q'),
-		'www.google.com.ly'			=> array('Google', 'q'),
-		'www.google.com.mt'			=> array('Google', 'q'),
-		'www.google.com.mx'			=> array('Google', 'q'),
-		'www.google.com.my'			=> array('Google', 'q'),
-		'www.google.com.na'			=> array('Google', 'q'),
-		'www.google.com.nf'			=> array('Google', 'q'),
-		'www.google.com.ng'			=> array('Google', 'q'),
-		'www.google.com.ni'			=> array('Google', 'q'),
-		'www.google.com.np'			=> array('Google', 'q'),
-		'www.google.com.om'			=> array('Google', 'q'),
-		'www.google.com.pa'			=> array('Google', 'q'),
-		'www.google.com.pe'			=> array('Google', 'q'),
-		'www.google.com.ph'			=> array('Google', 'q'),
-		'www.google.com.pk'			=> array('Google', 'q'),
-		'www.google.com.pl'			=> array('Google', 'q'),
-		'www.google.com.pr'			=> array('Google', 'q'),
-		'www.google.com.py'			=> array('Google', 'q'),
-		'www.google.com.qa'			=> array('Google', 'q'),
-		'www.google.com.ru'			=> array('Google', 'q'),
-		'www.google.com.sa'			=> array('Google', 'q'),
-		'www.google.com.sb'			=> array('Google', 'q'),
-		'www.google.com.sg'			=> array('Google', 'q'),
-		'www.google.com.sl'			=> array('Google', 'q'),
-		'www.google.com.sv'			=> array('Google', 'q'),
-		'www.google.com.tj'			=> array('Google', 'q'),
-		'www.google.com.tr'			=> array('Google', 'q'),
-		'www.google.com.tw'			=> array('Google', 'q'),
-		'www.google.com.ua'			=> array('Google', 'q'),
-		'www.google.com.uy'			=> array('Google', 'q'),
-		'www.google.com.vc'			=> array('Google', 'q'),
-		'www.google.com.vn'			=> array('Google', 'q'),
+		'google.com'				=> array('Google', 'q', 'search?q={k}'),
+		'google.{}'					=> array('Google'),
+		'www2.google.com'			=> array('Google'),
+		'ipv6.google.com'			=> array('Google'),
+		'go.google.com'				=> array('Google'),
+
+		// Google vs typo squatters
+		'wwwgoogle.com'				=> array('Google'),
+		'wwwgoogle.{}'				=> array('Google'),
+		'gogole.com'				=> array('Google'),
+		'gogole.{}'					=> array('Google'),
+		'gppgle.com'				=> array('Google'),
+		'gppgle.{}'					=> array('Google'),
+		'googel.com'				=> array('Google'),
+		'googel.{}'					=> array('Google'),
 
 		// Powered by Google
-		'www.charter.net'			=> array('Google', 'q'),
-		'brisbane.t-online.de'		=> array('Google', 'q'),
-		'miportal.bellsouth.net'	=> array('Google', 'string'),
-		'home.bellsouth.net'		=> array('Google', 'string'),
-		'pesquisa.clix.pt'			=> array('Google', 'q'),
-		'google.startsiden.no'		=> array('Google', 'q'),
-		'google.startpagina.nl'		=> array('Google', 'q'),
-		'search.peoplepc.com'		=> array('Google', 'q'),
-		'www.google.interia.pl'		=> array('Google', 'q'),
-		'buscador.terra.es'			=> array('Google', 'query'),
-		'buscador.terra.cl'			=> array('Google', 'query'),
-		'buscador.terra.com.br'		=> array('Google', 'query'),
-		'www.adelphia.net'			=> array('Google', 'q'),
-		'so.qq.com'					=> array('Google', 'word'),
-		'misc.skynet.be'			=> array('Google', 'keywords'),
-		'verden.abcsok.no'			=> array('Google', 'q'),
-		'search3.incredimail.com'	=> array('Google', 'q'),
-		'search.incredimail.com'	=> array('Google', 'q'),
-		'search.sweetim.com'		=> array('Google', 'q'),
+		'verden.abcsok.no'			=> array('Google'),
+		'search.incredimail.com'	=> array('Google'),
+		'search1.incredimail.com'	=> array('Google'),
+		'search2.incredimail.com'	=> array('Google'),
+		'search3.incredimail.com'	=> array('Google'),
+		'search4.incredimail.com'	=> array('Google'),
+		'search.sweetim.com'		=> array('Google'),
+		'darkoogle.com'				=> array('Google'),
+		'search.darkoogle.com'		=> array('Google'),
+		'search.hiyo.com'			=> array('Google'),
 
 		// Google Earth
-		'www.googleearth.de'		=> array('Google', 'q'),
-		'www.googleearth.fr'		=> array('Google', 'q'),
+		// - 2010-09-13: are these redirects now?
+		'www.googleearth.de'		=> array('Google'),
+		'www.googleearth.fr'		=> array('Google'),
+
+		// Google Cache
+		'webcache.googleusercontent.com'=> array('Google', '/\/search\?q=cache:[A-Za-z0-9]+:[^+]+([^&]+)/', 'search?q={k}'),
 
 		// Google SSL 
 		'encrypted.google.com'		=> array('Google SSL', 'q', 'search?q={k}'), 
 
 		// Google Blogsearch
 		'blogsearch.google.com'		=> array('Google Blogsearch', 'q', 'blogsearch?q={k}'),
-		'blogsearch.google.net'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.at'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.be'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.ch'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.de'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.es'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.fr'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.it'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.nl'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.pl'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.ru'		=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.co.in'	=> array('Google Blogsearch', 'q'),
-		'blogsearch.google.co.uk'	=> array('Google Blogsearch', 'q'),
+		'blogsearch.google.{}'		=> array('Google Blogsearch'),
 
 		// Google Custom Search
 		'www.google.com/cse'		=> array('Google Custom Search', 'q'),
@@ -673,95 +425,15 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Google Images
 		'images.google.com'			=> array('Google Images', 'q', 'images?q={k}'),
-		'images.google.at'			=> array('Google Images', 'q'),
-		'images.google.be'			=> array('Google Images', 'q'),
-		'images.google.bg'			=> array('Google Images', 'q'),
-		'images.google.ca'			=> array('Google Images', 'q'),
-		'images.google.ch'			=> array('Google Images', 'q'),
-		'images.google.ci'			=> array('Google Images', 'q'),
-		'images.google.cz'			=> array('Google Images', 'q'),
-		'images.google.de'			=> array('Google Images', 'q'),
-		'images.google.dk'			=> array('Google Images', 'q'),
-		'images.google.ee'			=> array('Google Images', 'q'),
-		'images.google.es'			=> array('Google Images', 'q'),
-		'images.google.fi'			=> array('Google Images', 'q'),
-		'images.google.fr'			=> array('Google Images', 'q'),
-		'images.google.gg'			=> array('Google Images', 'q'),
-		'images.google.gr'			=> array('Google Images', 'q'),
-		'images.google.hr'			=> array('Google Images', 'q'),
-		'images.google.hu'			=> array('Google Images', 'q'),
-		'images.google.it'			=> array('Google Images', 'q'),
-		'images.google.lt'			=> array('Google Images', 'q'),
-		'images.google.ms'			=> array('Google Images', 'q'),
-		'images.google.nl'			=> array('Google Images', 'q'),
-		'images.google.no'			=> array('Google Images', 'q'),
-		'images.google.pl'			=> array('Google Images', 'q'),
-		'images.google.pt'			=> array('Google Images', 'q'),
-		'images.google.ro'			=> array('Google Images', 'q'),
-		'images.google.ru'			=> array('Google Images', 'q'),
-		'images.google.se'			=> array('Google Images', 'q'),
-		'images.google.sk'			=> array('Google Images', 'q'),
-		'images.google.co.id'		=> array('Google Images', 'q'),
-		'images.google.co.il'		=> array('Google Images', 'q'),
-		'images.google.co.in'		=> array('Google Images', 'q'),
-		'images.google.co.jp'		=> array('Google Images', 'q'),
-		'images.google.co.hu'		=> array('Google Images', 'q'),
-		'images.google.co.kr'		=> array('Google Images', 'q'),
-		'images.google.co.nz'		=> array('Google Images', 'q'),
-		'images.google.co.th'		=> array('Google Images', 'q'),
-		'images.google.co.tw'		=> array('Google Images', 'q'),
-		'images.google.co.uk'		=> array('Google Images', 'q'),
-		'images.google.co.ve'		=> array('Google Images', 'q'),
-		'images.google.co.za'		=> array('Google Images', 'q'),
-		'images.google.com.ar'		=> array('Google Images', 'q'),
-		'images.google.com.au'		=> array('Google Images', 'q'),
-		'images.google.com.br'		=> array('Google Images', 'q'),
-		'images.google.com.cu'		=> array('Google Images', 'q'),
-		'images.google.com.do'		=> array('Google Images', 'q'),
-		'images.google.com.gr'		=> array('Google Images', 'q'),
-		'images.google.com.hk'		=> array('Google Images', 'q'),
-		'images.google.com.kw'		=> array('Google Images', 'q'),
-		'images.google.com.mx'		=> array('Google Images', 'q'),
-		'images.google.com.my'		=> array('Google Images', 'q'),
-		'images.google.com.pe'		=> array('Google Images', 'q'),
-		'images.google.com.sa'		=> array('Google Images', 'q'),
-		'images.google.com.tr'		=> array('Google Images', 'q'),
-		'images.google.com.tw'		=> array('Google Images', 'q'),
-		'images.google.com.ua'		=> array('Google Images', 'q'),
-		'images.google.com.vn'		=> array('Google Images', 'q'),
+		'images.google.{}'			=> array('Google Images'),
 
 		// Google News
 		'news.google.com'			=> array('Google News', 'q'),
-		'news.google.at'			=> array('Google News', 'q'),
-		'news.google.ca'			=> array('Google News', 'q'),
-		'news.google.ch'			=> array('Google News', 'q'),
-		'news.google.cl'			=> array('Google News', 'q'),
-		'news.google.de'			=> array('Google News', 'q'),
-		'news.google.es'			=> array('Google News', 'q'),
-		'news.google.fr'			=> array('Google News', 'q'),
-		'news.google.ie'			=> array('Google News', 'q'),
-		'news.google.it'			=> array('Google News', 'q'),
-		'news.google.lt'			=> array('Google News', 'q'),
-		'news.google.lu'			=> array('Google News', 'q'),
-		'news.google.se'			=> array('Google News', 'q'),
-		'news.google.sm'			=> array('Google News', 'q'),
-		'news.google.co.in'			=> array('Google News', 'q'),
-		'news.google.co.jp'			=> array('Google News', 'q'),
-		'news.google.co.uk'			=> array('Google News', 'q'),
-		'news.google.co.ve'			=> array('Google News', 'q'),
-		'news.google.com.ar'		=> array('Google News', 'q'),
-		'news.google.com.au'		=> array('Google News', 'q'),
-		'news.google.com.co'		=> array('Google News', 'q'),
-		'news.google.com.hk'		=> array('Google News', 'q'),
-		'news.google.com.ly'		=> array('Google News', 'q'),
-		'news.google.com.mx'		=> array('Google News', 'q'),
-		'news.google.com.pe'		=> array('Google News', 'q'),
-		'news.google.com.tw'		=> array('Google News', 'q'),
+		'news.google.{}'			=> array('Google News'),
 
-		// Googe product search
+		// Google product search
 		'froogle.google.com'		=> array('Google Product search', 'q'),
-		'froogle.google.de'			=> array('Google Product search', 'q'),
-		'froogle.google.co.uk'		=> array('Google Product search', 'q'),
+		'froogle.google.{}'			=> array('Google Product search'),
 
 		// Google syndicated search
 		'googlesyndicatedsearch.com'=> array('Google syndicated search', 'q'),
@@ -777,12 +449,11 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Hit-Parade
 		'req.hit-parade.com'		=> array('Hit-Parade', 'p7', 'general/recherche.asp?p7={k}'),
-		'class.hit-parade.com'		=> array('Hit-Parade', 'p7'),
-		'www.hit-parade.com'		=> array('Hit-Parade', 'p7'),
+		'class.hit-parade.com'		=> array('Hit-Parade'),
+		'www.hit-parade.com'		=> array('Hit-Parade'),
 
 		// Holmes.ge
 		'holmes.ge'					=> array('Holmes', 'q', 'search.htm?q={k}'),
-		'www.holmes.ge'				=> array('Holmes', 'q'),
 
 		// Hooseek.com
 		'www.hooseek.com'			=> array('Hooseek', 'recherche', 'web?recherche={k}'),
@@ -795,28 +466,48 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// ICQ
 		'www.icq.com'				=> array('ICQ', 'q', 'search/results.php?q={k}'),
-		'search.icq.com'			=> array('ICQ', 'q'),
+		'search.icq.com'			=> array('ICQ'),
 
 		// Ilse
 		'www.ilse.nl'				=> array('Ilse NL', 'search_for', '?search_for={k}'),
 
-		// Iwon
-		'iwon.ask.com'				=> array('Iwon', 'q', 'web?q={k}'),
+		// InfoSpace (and related web properties)
+		'infospace.com'				=> array('InfoSpace', '/\/[^\/]+\/ws\/results\/[^\/]+\/([^\/]+)/', 'ispace/ws/results/Web/{k}/1/1/content-top-left/Relevance/'),
+		'dogpile.com'				=> array('InfoSpace'),
+		'nbci.dogpile.com'			=> array('InfoSpace'),
+		'search.nation.com'			=> array('InfoSpace'),
+		'search.go2net.com'			=> array('InfoSpace'),
+		'metacrawler.com'			=> array('InfoSpace'),
+		'webfetch.com'				=> array('InfoSpace'),
+		'webcrawler.com'			=> array('InfoSpace'),
+		'search.dogreatgood.com'	=> array('InfoSpace'),
+	
+		/*
+		 * InfoSpace powered metasearches are handled in Piwik_Common::extractSearchEngineInformationFromUrl()
+		 *
+		 * This includes sites such as:
+		 * - search.kiwee.com
+		 * - ws.copernic.com
+		 * - result.iminent.com
+		 */
+
+		// Interia
+		'www.google.interia.pl'		=> array('Interia', 'q', 'szukaj?q={k}'),
 
 		// Ixquick
 		'ixquick.com'				=> array('Ixquick', 'query'),
-		'www.eu.ixquick.com'		=> array('Ixquick', 'query'),
-		'ixquick.de'				=> array('Ixquick', 'query'),
-		'www.ixquick.de'			=> array('Ixquick', 'query'),
-		'us.ixquick.com'			=> array('Ixquick', 'query'),
-		's1.us.ixquick.com'			=> array('Ixquick', 'query'),
-		's2.us.ixquick.com'			=> array('Ixquick', 'query'),
-		's3.us.ixquick.com'			=> array('Ixquick', 'query'),
-		's4.us.ixquick.com'			=> array('Ixquick', 'query'),
-		's5.us.ixquick.com'			=> array('Ixquick', 'query'),
-		'eu.ixquick.com'			=> array('Ixquick', 'query'),
-		's8-eu.ixquick.com'			=> array('Ixquick', 'query'),
-		's1-eu.ixquick.de'			=> array('Ixquick', 'query'),
+		'www.eu.ixquick.com'		=> array('Ixquick'),
+		'ixquick.de'				=> array('Ixquick'),
+		'www.ixquick.de'			=> array('Ixquick'),
+		'us.ixquick.com'			=> array('Ixquick'),
+		's1.us.ixquick.com'			=> array('Ixquick'),
+		's2.us.ixquick.com'			=> array('Ixquick'),
+		's3.us.ixquick.com'			=> array('Ixquick'),
+		's4.us.ixquick.com'			=> array('Ixquick'),
+		's5.us.ixquick.com'			=> array('Ixquick'),
+		'eu.ixquick.com'			=> array('Ixquick'),
+		's8-eu.ixquick.com'			=> array('Ixquick'),
+		's1-eu.ixquick.de'			=> array('Ixquick'),
 
 		// Jyxo
 		'jyxo.1188.cz'				=> array('Jyxo', 'q', 's?q={k}'),
@@ -835,41 +526,17 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// La Toile Du Québec via Google
 		'www.toile.com'				=> array('La Toile Du Québec (Google)', 'q', 'search?q={k}'),
-		'web.toile.com'				=> array('La Toile Du Québec (Google)', 'q'),
+		'web.toile.com'				=> array('La Toile Du Québec (Google)'),
 
 		// Looksmart
 		'www.looksmart.com'			=> array('Looksmart', 'key'),
 
-		// Lo.st
-		'lo.st'						=> array('Lo.st (Powered by Google)', 'x_query', 'cgi-bin/eolost.cgi?x_query={k}'),
+		// Lo.st (Enhanced by Google)
+		'lo.st'						=> array('Lo.st', 'x_query', 'cgi-bin/eolost.cgi?x_query={k}'),
 
 		// Lycos
 		'search.lycos.com'			=> array('Lycos', 'query', '?query={k}'),
-		'search.lycos.com.au'		=> array('Lycos', 'query'),
-		'search.lycos.com.ar'		=> array('Lycos', 'query'),
-		'search.lycos.com.br'		=> array('Lycos', 'query'),
-		'search.lycos.com.co'		=> array('Lycos', 'query'),
-		'search.lycos.at'			=> array('Lycos', 'query'),
-		'search.lycos.be'			=> array('Lycos', 'query'),
-		'search.lycos.ca'			=> array('Lycos', 'query'),
-		'search.lycos.cl'			=> array('Lycos', 'query'),
-		'search.lycos.dk'			=> array('Lycos', 'query'),
-		'search.lycos.fi'			=> array('Lycos', 'query'),
-		'search.lycos.fr'			=> array('Lycos', 'query'),
-		'search.lycos.de'			=> array('Lycos', 'query'),
-		'search.lycos.in'			=> array('Lycos', 'query'),
-		'search.lycos.it'			=> array('Lycos', 'query'),
-		'search.lycos.co.jp'		=> array('Lycos', 'query'),
-		'search.lycos.co.kr'		=> array('Lycos', 'query'),
-		'search.lycos.mx'			=> array('Lycos', 'query'),
-		'search.lycos.nl'			=> array('Lycos', 'query'),
-		'search.lycos.co.nz'		=> array('Lycos', 'query'),
-		'search.lycos.com.pe'		=> array('Lycos', 'query'),
-		'search.lycos.es'			=> array('Lycos', 'query'),
-		'search.lycos.se'			=> array('Lycos', 'query'),
-		'search.lycos.ch'			=> array('Lycos', 'query'),
-		'search.lycos.co.uk'		=> array('Lycos', 'query'),
-		'search.lycos.com.ve'		=> array('Lycos', 'query'),
+		'lycos.{}'					=> array('Lycos'),
 	
 		// maailm.com
 		'www.maailm.com'			=> array('maailm.com', 'tekst'),
@@ -879,42 +546,37 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Mamma
 		'www.mamma.com'				=> array('Mamma', 'query', 'result.php?q={k}'),
-		'mamma75.mamma.com'			=> array('Mamma', 'query'),
+		'mamma75.mamma.com'			=> array('Mamma'),
 
 		// Meta
 		'meta.ua'					=> array('Meta.ua', 'q', 'search.asp?q={k}'),
-		'www.meta.ua'				=> array('Meta.ua', 'q'),
 
-		// Metacrawler
-		'search.metacrawler.com'	=> array('Metacrawler', 'qkw'),
-
-		// MetaCrawler DE
+		// MetaCrawler.de
 		's1.metacrawler.de'			=> array('MetaCrawler DE', 'qry', '?qry={k}'),
-		's2.metacrawler.de'			=> array('MetaCrawler DE', 'qry'),
-		's3.metacrawler.de'			=> array('MetaCrawler DE', 'qry'),
+		's2.metacrawler.de'			=> array('MetaCrawler DE'),
+		's3.metacrawler.de'			=> array('MetaCrawler DE'),
 
 		// Metager
 		'meta.rrzn.uni-hannover.de'	=> array('Metager', 'eingabe', 'meta/cgi-bin/meta.ger1?eingabe={k}'),
-		'www.metager.de'			=> array('Metager', 'eingabe'),
+		'www.metager.de'			=> array('Metager'),
 
 		// Metager2
-		'www.metager2.de'			=> array('Metager2', 'q', 'search/index.php?q={k}'),
-		'metager2.de'				=> array('Metager2', 'q'),
+		'metager2.de'				=> array('Metager2', 'q', 'search/index.php?q={k}'),
 
 		// Meinestadt
 		'www.meinestadt.de'			=> array('Meinestadt.de', 'words'),
 
 		// Mister Wong
 		'www.mister-wong.com'		=> array('Mister Wong', 'keywords', 'search/?keywords={k}'),
-		'www.mister-wong.de'		=> array('Mister Wong', 'keywords'),
+		'www.mister-wong.de'		=> array('Mister Wong'),
 
 		// Monstercrawler
 		'www.monstercrawler.com'	=> array('Monstercrawler', 'qry'),
 
 		// Mozbot
 		'www.mozbot.fr'				=> array('mozbot', 'q', 'results.php?q={k}'),
-		'www.mozbot.co.uk'			=> array('mozbot', 'q'),
-		'www.mozbot.com'			=> array('mozbot', 'q'),
+		'www.mozbot.co.uk'			=> array('mozbot'),
+		'www.mozbot.com'			=> array('mozbot'),
 
 		// El Mundo
 		'ariadna.elmundo.es'		=> array('El Mundo', 'q'),
@@ -924,19 +586,22 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// MySearch / MyWay / MyWebSearch (default: powered by Ask.com)
 		'www.mysearch.com'			=> array('MyWebSearch', 'searchfor', 'search/Ajmain.jhtml?searchfor={k}'),
-		'ms114.mysearch.com'		=> array('MyWebSearch', 'searchfor'),
-		'ms146.mysearch.com'		=> array('MyWebSearch', 'searchfor'),
-		'kf.mysearch.myway.com'		=> array('MyWebSearch', 'searchfor'),
-		'ki.mysearch.myway.com'		=> array('MyWebSearch', 'searchfor'),
-		'search.myway.com'			=> array('MyWebSearch', 'searchfor'),
-		'search.mywebsearch.com'	=> array('MyWebSearch', 'searchfor', 'mywebsearch/Ajmain.jhtml?searchfor={k}'),
+		'ms114.mysearch.com'		=> array('MyWebSearch'),
+		'ms146.mysearch.com'		=> array('MyWebSearch'),
+		'kf.mysearch.myway.com'		=> array('MyWebSearch'),
+		'ki.mysearch.myway.com'		=> array('MyWebSearch'),
+		'search.myway.com'			=> array('MyWebSearch'),
+		'search.mywebsearch.com'	=> array('MyWebSearch'),
 
 
 		// Najdi
 		'www.najdi.si'				=> array('Najdi.si', 'q', 'search.jsp?q={k}'),
 
+		// Nate
+		'search.nate.com'			=> array('Nate', 'q', 'search/all.html?q={k}', 'EUC-KR'),
+
 		// Naver
-		'search.naver.com'			=> array('Naver', 'query', 'search.naver?query={k}', 'x-windows-949'),
+		'search.naver.com'			=> array('Naver', 'query', 'search.naver?query={k}', 'EUC-KR'),
 
 		// Needtofind
 		'ko.search.need2find.com'	=> array('Needtofind', 'searchfor', 'search/AJmain.jhtml?searchfor={k}'),
@@ -951,15 +616,13 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'search.nifty.com'			=> array('Nifty', 'q', 'websearch/search?q={k}'),
 
 		// Nigma
-		'www.nigma.ru'				=> array('Nigma', 's', 'index.php?s={k}'),
-		'nigma.ru'					=> array('Nigma', 's'),
+		'nigma.ru'					=> array('Nigma', 's', 'index.php?s={k}'),
 
 		// Onet
 		'szukaj.onet.pl'			=> array('Onet.pl', 'qt', 'query.html?qt={k}'),
 
 		// Online.no
-		'www.online.no'				=> array('Online.no', 'q', 'google/index.jsp?q={k}'),
-		'online.no'					=> array('Online.no', 'q'),
+		'online.no'					=> array('Online.no', 'q', 'google/index.jsp?q={k}'),
 
 		// Opplysningen 1881
 		'www.1881.no'				=> array('Opplysningen 1881', 'Query', 'Multi/?Query={k}'),
@@ -969,6 +632,9 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 	
 		// Paperball
 		'www.paperball.de'			=> array('Paperball', 'q', 'suche/s/?q={k}'),
+
+		// PeoplePC
+		'search.peoplepc.com'		=> array('PeoplePC', 'q', 'search?q={k}'),
 
 		// Picsearch
 		'www.picsearch.com'			=> array('Picsearch', 'q', 'index.cgi?q={k}'),
@@ -984,9 +650,9 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Qualigo
 		'www.qualigo.at'			=> array('Qualigo', 'q'),
-		'www.qualigo.ch'			=> array('Qualigo', 'q'),
-		'www.qualigo.de'			=> array('Qualigo', 'q'),
-		'www.qualigo.nl'			=> array('Qualigo', 'q'),
+		'www.qualigo.ch'			=> array('Qualigo'),
+		'www.qualigo.de'			=> array('Qualigo'),
+		'www.qualigo.nl'			=> array('Qualigo'),
 
 		// Rakuten
 		'websearch.rakuten.co.jp'	=> array('Rakuten', 'qt', 'WebIS?qt={k}'),
@@ -995,13 +661,18 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'nova.rambler.ru'			=> array('Rambler', array('query', 'words'), 'search?query={k}'),
 
 		// RPMFind
-		'www.rpmfind.net'			=> array('rpmfind', 'query', 'linux/rpm2html/search.php?query={k}'),
-		'rpmfind.net'				=> array('rpmfind', 'query'),
-		'fr2.rpmfind.net'			=> array('rpmfind', 'query'),
+		'rpmfind.net'				=> array('rpmfind', 'query', 'linux/rpm2html/search.php?query={k}'),
+		'fr2.rpmfind.net'			=> array('rpmfind'),
+
+		// Road Runner Search
+		'search.rr.com'				=> array('Road Runner', 'q', '?q={k}'),
 
 		// Sapo
 		'pesquisa.sapo.pt'			=> array('Sapo', 'q', '?q={k}'),
 
+		// scroogle.org
+		'www.scroogle.org'			=> array('Scroogle', ''),
+	
 		// Search.com
 		'www.search.com'			=> array('Search.com', 'q', 'search?q={k}'),
 
@@ -1009,8 +680,10 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.search.ch'				=> array('Search.ch', 'q', '?q={k}'),
 
 		// Searchalot
-		'www.searchalot.com'		=> array('Searchalot', 'q', '?q={k}'),
-		'searchalot.com'			=> array('Searchalot', 'q'),
+		'searchalot.com'			=> array('Searchalot', 'q', '?q={k}'),
+
+		// SearchCanvas
+		'www.searchcanvas.com'		=> array('SearchCanvas', 'q', 'web?q={k}'),
 
 		// Seek
 		'www.seek.fr'				=> array('Seek.fr', ''),
@@ -1019,29 +692,14 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		'www.searchy.co.uk'			=> array('Searchy', 'q', 'index.html?q={k}'),
 
 		// Setooz
+		// 2010-09-13: the mismatches are because subdomains are language codes
+		//             (not country codes)
 		'bg.setooz.com'				=> array('Setooz', 'query', 'search?query={k}'),
-		'el.setooz.com'				=> array('Setooz', 'query'),
-		'et.setooz.com'				=> array('Setooz', 'query'),
-		'fi.setooz.com'				=> array('Setooz', 'query'),
-		'hu.setooz.com'				=> array('Setooz', 'query'),
-		'lt.setooz.com'				=> array('Setooz', 'query'),
-		'lv.setooz.com'				=> array('Setooz', 'query'),
-		'no.setooz.com'				=> array('Setooz', 'query'),
-		'pl.setooz.com'				=> array('Setooz', 'query'),
-		'sk.setooz.com'				=> array('Setooz', 'query'),
-		'sv.setooz.com'				=> array('Setooz', 'query'),
-		'tr.setooz.com'				=> array('Setooz', 'query'),
-		'uk.setooz.com'				=> array('Setooz', 'query'),
-		'ar.setooz.com'				=> array('Setooz', 'query'),
-		'bs.setooz.com'				=> array('Setooz', 'query'),
-		'cs.setooz.com'				=> array('Setooz', 'query'),
-		'da.setooz.com'				=> array('Setooz', 'query'),
-		'hr.setooz.com'				=> array('Setooz', 'query'),
-		'nl.setooz.com'				=> array('Setooz', 'query'),
-		'fa.setooz.com'				=> array('Setooz', 'query'),
-		'ro.setooz.com'				=> array('Setooz', 'query'),
-		'sr.setooz.com'				=> array('Setooz', 'query'),
-		'ur.setooz.com'				=> array('Setooz', 'query'),
+		'da.setooz.com'				=> array('Setooz'),
+		'el.setooz.com'				=> array('Setooz'),
+		'fa.setooz.com'				=> array('Setooz'),
+		'ur.setooz.com'				=> array('Setooz'),
+		'{}.setooz.com'				=> array('Setooz'),
 
 		// Seznam
 		'search.seznam.cz'			=> array('Seznam', 'q', '?q={k}'),
@@ -1063,7 +721,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// suche.info
 		'suche.info'				=> array('Suche.info', 'Keywords', 'suche.php?Keywords={k}'),
-		'www.suche.info'			=> array('Suche.info', 'Keywords'),
 	
 		// Suchmaschine.com
 		'www.suchmaschine.com'		=> array('Suchmaschine.com', 'suchstr', 'cgi-bin/wo.cgi?suchstr={k}'),
@@ -1077,21 +734,30 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 		// Teoma
 		'www.teoma.com'				=> array('Teoma', 'q', 'web?q={k}'),
 
+		// Terra -- referer does not contain search phrase (keywords)
+		'buscador.terra.es'			=> array('Terra'),
+		'buscador.terra.cl'			=> array('Terra'),
+		'buscador.terra.com.br'		=> array('Terra'),
+
 		// Tiscali
 		'search.tiscali.it'			=> array('Tiscali', 'q', '?q={k}'),
-		'search-dyn.tiscali.it'		=> array('Tiscali', 'q'),
-		'hledani.tiscali.cz'		=> array('Tiscali', 'query', false, 'windows-1250'),
+		'search-dyn.tiscali.it'		=> array('Tiscali'),
+		'hledani.tiscali.cz'		=> array('Tiscali', 'query'),
 
 		// Tixuma
 		'www.tixuma.de'				=> array('Tixuma', 'sc', 'index.php?mp=search&stp=&sc={k}&tg=0'),
 
 		// T-Online
-		'suche.t-online.de'			=> array('T-Online', 'q'),
+		'suche.t-online.de'			=> array('T-Online', 'q', 'fast-cgi/tsc?mandant=toi&context=internet-tab&q={k}'),
+		'brisbane.t-online.de'		=> array('T-Online'),
 		'navigationshilfe.t-online.de'=> array('T-Online', 'q', 'dtag/dns/results?mode=search_top&q={k}'),
 
 		// Trouvez.com
 		'www.trouvez.com'			=> array('Trouvez.com', 'query'),
 
+		// TrovaRapido
+		'www.trovarapido.com'		=> array('TrovaRapido', 'q', 'result.php?q={k}'),
+	
 		// Trusted-Search
 		'www.trusted--search.com'	=> array('Trusted Search', 'w', 'search?w={k}'),
 
@@ -1103,23 +769,26 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Vindex
 		'www.vindex.nl'				=> array('Vindex', 'search_for', '/web?search_for={k}'),
-		'search.vindex.nl'			=> array('Vindex', 'search_for'),
+		'search.vindex.nl'			=> array('Vindex'),
 
 		// Virgilio
 		'ricerca.virgilio.it'		=> array('Virgilio', 'qs', 'ricerca?qs={k}'),
+		'ricercaimmagini.virgilio.it'=> array('Virgilio'),
+		'ricercavideo.virgilio.it'	=> array('Virgilio'),
+		'ricercanews.virgilio.it'	=> array('Virgilio'),
 
 		// Voila
 		'search.ke.voila.fr'		=> array('Voila', 'rdata', 'S/voila?rdata={k}'),
-		'www.lemoteur.fr'			=> array('Voila', 'rdata', 'S/voila?rdata={k}'), // uses voila search
+		'www.lemoteur.fr'			=> array('Voila'), // uses voila search
 
 		// Volny
 		'web.volny.cz'				=> array('Volny', 'search', 'fulltext/?search={k}', 'windows-1250'),
 
 		// Walhello 
 		'www.walhello.info'			=> array('Walhello', 'key', 'search?key={k}'),
-		'www.walhello.com'			=> array('Walhello', 'key', 'search?key={k}'),
-		'www.walhello.de'			=> array('Walhello', 'key', 'search?key={k}'),
-		'www.walhello.nl'			=> array('Walhello', 'key', 'search?key={k}'),
+		'www.walhello.com'			=> array('Walhello'),
+		'www.walhello.de'			=> array('Walhello'),
+		'www.walhello.nl'			=> array('Walhello'),
 
 		// Web.de
 		'suche.web.de'				=> array('Web.de', 'su', 'search/web/?su={k}'),
@@ -1147,86 +816,62 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Yahoo
 		'search.yahoo.com'			=> array('Yahoo!', 'p', 'search?p={k}'),
-		'search.yahoo.co.jp'		=> array('Yahoo!', 'p'),
-		'ar.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'au.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'br.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'ch.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'ca.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'cade.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'cf.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'de.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'es.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'espanol.search.yahoo.com'	=> array('Yahoo!', 'p'),
-		'fi.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'fr.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'hk.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'id.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'it.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'kr.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'mx.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'nl.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'qc.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'ru.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'se.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'tw.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'uk.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'us.search.yahoo.com'		=> array('Yahoo!', 'p'),
-		'search.cn.yahoo.com'		=> array('Yahoo!', 'p'),
-		'one.cn.yahoo.com'			=> array('Yahoo!', 'p'),
+		'yahoo.com'					=> array('Yahoo!'),
+		'yahoo.{}'					=> array('Yahoo!'),
+		'{}.search.yahoo.com'		=> array('Yahoo!'),
+		'cade.search.yahoo.com'		=> array('Yahoo!'),
+		'espanol.search.yahoo.com'	=> array('Yahoo!'),
+		'qc.search.yahoo.com'		=> array('Yahoo!'),
+		'{}.yahoo.com'				=> array('Yahoo!'),
+		'cade.yahoo.com'			=> array('Yahoo!'),
+		'espanol.yahoo.com'			=> array('Yahoo!'),
+		'qc.yahoo.com'				=> array('Yahoo!'),
+		'{}.yhs.search.yahoo.com'	=> array('Yahoo!'),
+		'one.cn.yahoo.com'			=> array('Yahoo!'),
+		'siteexplorer.search.yahoo.com'	=> array('Yahoo!'),
+
 		'de.dir.yahoo.com'			=> array('Yahoo! Webverzeichnis', ''),
 		'cf.dir.yahoo.com'			=> array('Yahoo! Directory', ''),
 		'fr.dir.yahoo.com'			=> array('Yahoo! Directory', ''),
 
 		// Yahoo! Images
 		'images.search.yahoo.com'	=> array('Yahoo! Images', 'p', 'search/images?p={k}'),
-		'ar.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'au.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'br.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'ch.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'ca.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'cade.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'cf.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'de.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'es.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'espanol.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'fi.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'fr.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'hk.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'id.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'it.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'kr.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'mx.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'nl.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'qc.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'ru.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'se.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'tw.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'uk.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
-		'us.images.search.yahoo.com'	=> array('Yahoo! Images', 'p'),
+		'{}.images.search.yahoo.com'=> array('Yahoo! Images'),
+		'cade.images.search.yahoo.com'=> array('Yahoo! Images'),
+		'espanol.images.search.yahoo.com'=> array('Yahoo! Images'),
+		'qc.images.search.yahoo.com'=> array('Yahoo! Images'),
+		'images.yahoo.com'			=> array('Yahoo! Images'),
+		'{}.images.yahoo.com'		=> array('Yahoo! Images'),
+		'cade.images.yahoo.com'		=> array('Yahoo! Images'),
+		'espanol.images.yahoo.com'	=> array('Yahoo! Images'),
+		'qc.images.yahoo.com'		=> array('Yahoo! Images'),
 	
 		// Yandex
-		'yandex.ru'					=> array('Yandex', 'text', 'yandsearch?text={k}'),
-		'yandex.ua'					=> array('Yandex', 'text'),
-		'www.yandex.ru'				=> array('Yandex', 'text'),
+		'www.yandex.com'			=> array('Yandex', 'text', 'yandsearch?text={k}'),
+		'www.yandex.ru'				=> array('Yandex'),
+		'www.yandex.ua'				=> array('Yandex'),
+		'www.yandex.by'				=> array('Yandex'),
+		'www.yandex.kz'				=> array('Yandex'),
 
 		// Yandex Images
 		'images.yandex.ru'			=> array('Yandex Images', 'text', 'yandsearch?text={k}'),
-		'images.yandex.ua'			=> array('Yandex Images', 'text'),
+		'images.yandex.ua'			=> array('Yandex Images'),
 
 		// Yasni
 		'www.yasni.de'				=> array('Yasni', 'query'),
-		'www.yasni.com'				=> array('Yasni', 'query'),
-		'www.yasni.co.uk'			=> array('Yasni', 'query'),
-		'www.yasni.ch'				=> array('Yasni', 'query'),
-		'www.yasni.at'				=> array('Yasni', 'query'),
+		'www.yasni.com'				=> array('Yasni'),
+		'www.yasni.co.uk'			=> array('Yasni'),
+		'www.yasni.ch'				=> array('Yasni'),
+		'www.yasni.at'				=> array('Yasni'),
 
 		// Yellowmap
-		'www.yellowmap.de'			=> array('Yellowmap', ' '),
 		'yellowmap.de'				=> array('Yellowmap', ' '),
 
 		// Yippy
 		'search.yippy.com'			=> array('Yippy', 'query', 'search?query={k}'),
+
+		// YouGoo
+		'www.yougoo.fr'				=> array('YouGoo', 'q', '?cx=search&q={k}'),
 
 		// Zoek
 		'www3.zoek.nl'				=> array('Zoek', 'q'),
@@ -1239,7 +884,6 @@ if(!isset($GLOBALS['Piwik_SearchEngines'] ))
 
 		// Zoohoo
 		'zoohoo.cz'					=> array('Zoohoo', 'q', '?q={k}', 'windows-1250'),
-		'www.zoohoo.cz'				=> array('Zoohoo', 'q', false, 'windows-1250'),
 
 		// Zoznam
 		'www.zoznam.sk'				=> array('Zoznam', 's', 'hladaj.fcgi?s={k}&co=svet'),

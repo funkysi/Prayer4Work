@@ -31,7 +31,7 @@
 				{if $infos.isWindows}
 					{'Installation_SystemCheckWinPdoAndMysqliHelp'|translate:"<br /><br /><code>extension=php_mysqli.dll</code><br /><code>extension=php_pdo.dll</code><br /><code>extension=php_pdo_mysql.dll</code><br />"|nl2br}
 				{else}
-					{'Installation_SystemCheckPdoAndMysqliHelp'|translate:"<br /><br /><code>--with-mysqli</code><br /><code>--with-pdo-mysql</code><br />":"<br /><br /><code>extension=mysqli.so</code><br /><code>extension=pdo.so</code><br /><code>extension=pdo_mysql.so</code><br />"|nl2br}
+					{'Installation_SystemCheckPdoAndMysqliHelp'|translate:"<br /><br /><code>--with-mysqli</code><br /><code>--with-pdo-mysql</code><br /><br />":"<br /><br /><code>extension=mysqli.so</code><br /><code>extension=pdo.so</code><br /><code>extension=pdo_mysql.so</code><br />"}
 				{/if}
 				<br />
 				{'Installation_SystemCheckPhpPdoAndMysqliSite'|translate}
@@ -40,29 +40,7 @@
 		</td>
 	</tr>
 	{/if}
-	<tr>
-		<td valign="top">
-			{'Installation_SystemCheckJson'|translate}
-		</td>
-		<td>{if $infos.json || $infos.xml}{$ok}
-			{else}{$error}{/if}
-		</td>
 	</tr>
-	{if !$infos.json && !$infos.xml}
-	<tr>
-		<td colspan="2" class="error">
-			<small>
-				{'Installation_SystemCheckJsonHelp'|translate}
-				<br />
-				{if version_compare($infos.phpVersion, '5.2.0') >= 0}
-					{'Installation_SystemCheckJsonSite'|translate}
-				{else}
-					{'Installation_SystemCheckXmlSite'|translate}
-				{/if}
-			</small>
-		</td>
-	</tr>
-	{/if}
 	<tr>
 		<td class="label">{'Installation_SystemCheckExtensions'|translate}</td>
 		<td>{foreach from=$infos.needed_extensions item=needed_extension}
@@ -152,6 +130,17 @@
 		</td>
 	</tr>
 	<tr>
+		<td class="label">{'Installation_SystemCheckTracker'|translate}</td>
+		<td>
+			{if $infos.tracker_status == 0}
+				{$ok}
+			{else}
+				{$warning} {$infos.tracker_status}
+				<br /><i>{'Installation_SystemCheckTrackerHelp'|translate}</i>
+			{/if}	
+		</td>
+	</tr>
+	<tr>
 		<td class="label">{'Installation_SystemCheckMemoryLimit'|translate}</td>
 		<td>
 			{if $infos.memory_ok}
@@ -177,14 +166,6 @@
 				<br />{$warning} <i>{'Installation_SystemCheckAutoUpdateHelp'|translate}</i>{/if}	
 		</td>
 	</tr>
-	{if $infos.json}
-	<tr>
-		<td class="label">{'Installation_SystemCheckXml'|translate}</td>
-		<td>
-			{if $infos.xml}{$ok}{else}{$warning}<br /><i>{'Installation_SystemCheckXmlHelp'|translate}</i>{/if}
-		</td>
-	</tr>
-	{/if}
 	<tr>
 		<td class="label">{'Installation_SystemCheckGD'|translate}</td>
 		<td>
@@ -202,7 +183,21 @@
 		</td>
 	</tr>
 	<tr>
-		<td class="label">{'Installation_SystemCheckFunctions'|translate}</td>
+		<td class="label">{'Installation_SystemCheckOtherExtensions'|translate}</td>
+		<td>{foreach from=$infos.desired_extensions item=desired_extension}
+				{if in_array($desired_extension, $infos.missing_desired_extensions)}
+					{$warning} {$desired_extension}
+					<p>
+					<i>{$helpMessages[$desired_extension]|translate}</i>
+					</p>
+				{else}
+					{$ok} {$desired_extension}<br />
+				{/if}
+			{/foreach}
+		</td>
+	</tr>
+	<tr>
+		<td class="label">{'Installation_SystemCheckOtherFunctions'|translate}</td>
 		<td>{foreach from=$infos.desired_functions item=desired_function}
 				{if in_array($desired_function, $infos.missing_desired_functions)}
 					{$warning} {$desired_function}
@@ -215,12 +210,14 @@
 			{/foreach}
 		</td>
 	</tr>
+	{if isset($infos.general_infos.reverse_proxy)}
 	<tr>
-		<td class="label">{'Installation_SystemCheckProtocol'|translate}</td>
+		<td class="label">{'Installation_SystemCheckReverseProxy'|translate}</td>
 		<td>
-			{if $infos.protocol_ok}{$ok}{else}{$warning} {$infos.protocol}<br /><i>{'Installation_SystemCheckProtocolHelp'|translate}</i><br /><br /><code>[General]</code><br /><code>reverse_proxy = 1</code><br />{/if}
+			{$warning} {$infos.protocol}<br /><i>{'Installation_SystemCheckReverseProxyHelp'|translate}</i><br /><br /><code>[General]</code><br /><code>reverse_proxy = 1</code><br />
 		</td>
 	</tr>
+	{/if}
 	<tr>
 		<td class="label">{'Installation_SystemCheckIpv4'|translate}</td>
 		<td>
@@ -232,7 +229,7 @@
 {include file="Installation/templates/integrityDetails.tpl"}
 
 <p>
-{$link} <a href="misc/redirectToUrl.php?url=http://piwik.org/docs/requirements/" target="_blank">{'Installation_Requirements'|translate}</a> 
+{$link} <a href="?module=Proxy&action=redirect&url=http://piwik.org/docs/requirements/" target="_blank">{'Installation_Requirements'|translate}</a> 
 </p>
 
 {if !$showNextStep}

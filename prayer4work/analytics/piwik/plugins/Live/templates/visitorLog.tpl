@@ -17,7 +17,7 @@
 	<tr>
 	<th style="display:none"></th>
 	<th id="label" class="sortable label" style="cursor: auto;width:12%" width="12%">
-	<div id="thDIV">{'Live_Date'|translate}<div></th>
+	<div id="thDIV">{'General_Date'|translate}<div></th>
 	<th id="label" class="sortable label" style="cursor: auto;width:13%" width="13%">
 	<div id="thDIV">{'General_Visitors'|translate}<div></th>
 	<th id="label" class="sortable label" style="cursor: auto;width:15%" width="15%">
@@ -66,27 +66,27 @@
 		<div class="referer">
 			{if $visitor.columns.refererType == 'website'}
 				{'Referers_ColumnWebsite'|translate}:
-				<a href="{$visitor.columns.refererUrl}" target="_blank" title="{$visitor.columns.refererUrl}" style="text-decoration:underline;">
-					{$visitor.columns.refererName}
+				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" title="{$visitor.columns.refererUrl|escape:'html'}" style="text-decoration:underline;">
+					{$visitor.columns.refererName|escape:'html'}
 				</a>
 			{/if}
 			{if $visitor.columns.refererType == 'campaign'}
 				{'Referers_Campaigns'|translate}
 				<br />
-				<a href="{$visitor.columns.refererUrl}" target="_blank" title="{$visitor.columns.refererUrl}" style="text-decoration:underline;">
-					{$visitor.columns.refererName}
+				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" title="{$visitor.columns.refererUrl|escape:'html'}" style="text-decoration:underline;">
+					{$visitor.columns.refererName|escape:'html'}
 				</a>
 			{/if}
 			{if $visitor.columns.refererType == 'searchEngine'}
 				{if !empty($visitor.columns.searchEngineIcon)}
-					<img src="{$visitor.columns.searchEngineIcon}" alt="{$visitor.columns.refererName}" /> 
+					<img src="{$visitor.columns.searchEngineIcon}" alt="{$visitor.columns.refererName|escape:'html'}" /> 
 				{/if}
-				{$visitor.columns.refererName}
+				{$visitor.columns.refererName|escape:'html'}
 				<br />
 				{if !empty($visitor.columns.keywords)}{'Referers_Keywords'|translate}:{/if}
-				<a href="{$visitor.columns.refererUrl}" target="_blank" style="text-decoration:underline;">
+				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" style="text-decoration:underline;">
 					{if !empty($visitor.columns.keywords)}
-						"{$visitor.columns.keywords}"
+						"{$visitor.columns.keywords|escape:'html'}"
 					{/if}
 				</a>
 			{/if}
@@ -107,7 +107,7 @@
 			<ol style="list-style:decimal inside none;">
 			{foreach from=$visitor.columns.actionDetails item=action}
 				<li>
-					<a href="{$action.pageUrl}" target="_blank" style="text-decoration:underline;" title="{$action.pageUrl}">{$action.pageUrl|truncate:80:"...":true}</a>
+					<a href="{$action.pageUrl|escape:'html'}" target="_blank" style="text-decoration:underline;" title="{$action.pageUrl|escape:'html'}">{$action.pageUrl|escape:'html'|truncate:80:"...":true}</a>
 					{if $visitor.columns.goalUrl eq $action.pageIdAction}
 						<ul class="actionGoalDetails">
 							<li>
@@ -126,6 +126,14 @@
 	</tbody>
 	</table>
 
+		{/if}
+		
+		{if count($arrayDataTable) == 20}
+		{* We set a fake large rows count so that 'Next' paginate link is forced to display
+		   This is hard coded because the Visitor Log datatable is not fully loaded in memory, 
+		   but needs to fetch only the N rows in the logs
+		   *}
+		{php}$this->_tpl_vars['javascriptVariablesToSet']['totalRows'] = 100000; {/php}
 		{/if}
 		{if $properties.show_footer}
 			{include file="CoreHome/templates/datatable_footer.tpl"}

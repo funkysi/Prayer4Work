@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Installation
@@ -19,15 +19,15 @@ class Piwik_Installation_Controller extends Piwik_Controller
 {
 	// public so plugins can add/delete installation steps
 	public $steps = array(
-			'welcome'				=> 'Installation_Welcome',
-			'systemCheck'			=> 'Installation_SystemCheck',
-			'databaseSetup'			=> 'Installation_DatabaseSetup',
-			'databaseCheck'			=> 'Installation_DatabaseCheck',
-			'tablesCreation'		=> 'Installation_Tables',
-			'generalSetup'			=> 'Installation_GeneralSetup',
-			'firstWebsiteSetup'		=> 'Installation_SetupWebsite',
-			'displayJavascriptCode'	=> 'Installation_JsTag',
-			'finished'				=> 'Installation_Congratulations',
+			'welcome'               => 'Installation_Welcome',
+			'systemCheck'           => 'Installation_SystemCheck',
+			'databaseSetup'         => 'Installation_DatabaseSetup',
+			'databaseCheck'         => 'Installation_DatabaseCheck',
+			'tablesCreation'        => 'Installation_Tables',
+			'generalSetup'          => 'Installation_GeneralSetup',
+			'firstWebsiteSetup'     => 'Installation_SetupWebsite',
+			'displayJavascriptCode' => 'Installation_JsTag',
+			'finished'              => 'Installation_Congratulations',
 		);
 
 	protected $pathView = 'Installation/templates/';
@@ -36,7 +36,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 
 	public function __construct()
 	{
-		$this->session = new Zend_Session_Namespace('Piwik_Installation');
+		$this->session = new Piwik_Session_Namespace('Piwik_Installation');
 		if(!isset($this->session->currentStepDone))
 		{
 			$this->session->currentStepDone = '';
@@ -70,7 +70,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 	/**
 	 * Installation Step 1: Welcome
 	 */
-	function welcome($message)
+	function welcome($message = false)
 	{
 		// Delete merged js/css files to force regenerations based on updated activated plugin list
 		Piwik_AssetManager::removeMergedAssets();
@@ -104,11 +104,16 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		$this->skipThisStep( __FUNCTION__ );
 
 		$view->infos = self::getSystemInformation();
+		$this->session->general_infos = $view->infos['general_infos'];
+
 		$view->helpMessages = array(
 			'zlib'            => 'Installation_SystemCheckZlibHelp',
 			'SPL'             => 'Installation_SystemCheckSplHelp',
 			'iconv'           => 'Installation_SystemCheckIconvHelp',
-			'dom'             => 'Installation_SystemCheckDomHelp',
+			'json'            => 'Installation_SystemCheckWarnJsonHelp',
+			'libxml'          => 'Installation_SystemCheckWarnLibXmlHelp',
+			'dom'             => 'Installation_SystemCheckWarnDomHelp',
+			'SimpleXML'       => 'Installation_SystemCheckWarnSimpleXMLHelp',
 			'set_time_limit'  => 'Installation_SystemCheckTimeLimitHelp',
 			'mail'            => 'Installation_SystemCheckMailHelp',
 			'parse_ini_file'  => 'Installation_SystemCheckParseIniFileHelp',
@@ -116,6 +121,8 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			'debug_backtrace' => 'Installation_SystemCheckDebugBacktraceHelp',
 			'create_function' => 'Installation_SystemCheckCreateFunctionHelp',
 			'eval'            => 'Installation_SystemCheckEvalHelp',
+			'gzcompress'      => 'Installation_SystemCheckGzcompressHelp',
+			'gzuncompress'    => 'Installation_SystemCheckGzuncompressHelp',
 		);
 
 		$view->problemWithSomeDirectories = (false !== array_search(false, $view->infos['directories']));
@@ -162,13 +169,13 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			$port = Piwik_Db_Adapter::getDefaultPortForAdapter($adapter);
 
 			$dbInfos = array(
-				'host' 			=> $form->getSubmitValue('host'),
-				'username' 		=> $form->getSubmitValue('username'),
-				'password' 		=> $form->getSubmitValue('password'),
-				'dbname' 		=> $form->getSubmitValue('dbname'),
+				'host'          => $form->getSubmitValue('host'),
+				'username'      => $form->getSubmitValue('username'),
+				'password'      => $form->getSubmitValue('password'),
+				'dbname'        => $form->getSubmitValue('dbname'),
 				'tables_prefix' => $form->getSubmitValue('tables_prefix'),
-				'adapter' 		=> $adapter,
-				'port'			=> $port,
+				'adapter'       => $adapter,
+				'port'          => $port,
 			);
 
 			if(($portIndex = strpos($dbInfos['host'], '/')) !== false)
@@ -374,10 +381,10 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		if($form->validate())
 		{
 			$superUserInfos = array(
-				'login' 		=> $form->getSubmitValue('login'),
-				'password' 		=> md5( $form->getSubmitValue('password') ),
-				'email' 		=> $form->getSubmitValue('email'),
-				'salt'			=> Piwik_Common::generateUniqId(),
+				'login'    => $form->getSubmitValue('login'),
+				'password' => md5( $form->getSubmitValue('password') ),
+				'email'    => $form->getSubmitValue('email'),
+				'salt'     => Piwik_Common::generateUniqId(),
 			);
 
 			$this->session->superuser_infos = $superUserInfos;
@@ -487,7 +494,6 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		$viewTrackingHelp->displaySiteName = $siteName;
 		$viewTrackingHelp->jsTag = Piwik::getJavascriptCode($idSite, Piwik_Url::getCurrentUrlWithoutFileName());
 		$viewTrackingHelp->idSite = $idSite;
-		$viewTrackingHelp->currentUrlWithoutFilename = Piwik_Url::getCurrentUrlWithoutFileName();
 
 		// Assign the html output to a smarty variable
 		$view->trackingHelp = $viewTrackingHelp->render();
@@ -563,8 +569,14 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		$dbInfos = $this->session->db_infos;
 		$config->database = $dbInfos;
 
+		if(!empty($this->session->general_infos))
+		{
+			$config->General = $this->session->general_infos;
+		}
+
 		unset($this->session->superuser_infos);
 		unset($this->session->db_infos);
+		unset($this->session->general_infos);
 	}
 
 	/**
@@ -573,7 +585,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 	public function saveLanguage()
 	{
 		$language = Piwik_Common::getRequestVar('language');
-		Piwik_LanguagesManager_API::getInstance()->setLanguageForSession($language);
+		Piwik_LanguagesManager::setLanguageForSession($language);
 		Piwik_Url::redirectToReferer();
 	}
 
@@ -624,7 +636,7 @@ class Piwik_Installation_Controller extends Piwik_Controller
 			$message = Piwik_Translate('Installation_ErrorInvalidState',
 						array( '<br /><b>',
 								'</b>',
-								'<a href=\''.Piwik_Url::getCurrentUrlWithoutFileName().'\'>',
+								'<a href=\''.Piwik_Common::sanitizeInputValue(Piwik_Url::getCurrentUrlWithoutFileName()).'\'>',
 								'</a>')
 					);
 			Piwik::exitWithErrorMessage( $message );
@@ -669,22 +681,23 @@ class Piwik_Installation_Controller extends Piwik_Controller
 
 		$infos = array();
 
+		$infos['general_infos'] = array();
 		$infos['directories'] = Piwik::checkDirectoriesWritable();
 		$infos['can_auto_update'] = Piwik::canAutoUpdate();
-
-		$serverSoftware = $_SERVER['SERVER_SOFTWARE'];
+		
+		$serverSoftware = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : '';
 		if(preg_match('/^Microsoft-IIS\/(.+)/', $serverSoftware, $matches) && version_compare($matches[1], '7') >= 0)
 		{
 			Piwik::createWebConfigFiles();
 		}
-		else if(strpos($serverSoftware, 'Apache/') === 0)
+		else if(!strncmp($serverSoftware, 'Apache', 6))
 		{
 			Piwik::createHtAccessFiles();
 		}
 		Piwik::createWebRootFiles();
 
 		$infos['phpVersion_minimum'] = $minimumPhpVersion;
-		$infos['phpVersion'] = phpversion();
+		$infos['phpVersion'] = PHP_VERSION;
 		$infos['phpVersion_ok'] = version_compare( $minimumPhpVersion, $infos['phpVersion']) === -1;
 
 		// critical errors
@@ -713,22 +726,12 @@ class Piwik_Installation_Controller extends Piwik_Controller
 
 		$infos['adapters'] = Piwik_Db_Adapter::getAdapters();
 
-		$infos['json'] = false;
-		if(in_array('json', $extensions))
-		{
-			$infos['json'] = true;
-		}
-
-		$infos['xml'] = false;
-		if(in_array('xml', $extensions))
-		{
-			$infos['xml'] = true;
-		}
-
 		$needed_functions = array(
 			'debug_backtrace',
 			'create_function',
 			'eval',
+			'gzcompress',
+			'gzuncompress',
 		);
 		$infos['needed_functions'] = $needed_functions;
 		$infos['missing_functions'] = array();
@@ -741,6 +744,22 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		}
 
 		// warnings
+		$desired_extensions = array(
+			'json',
+			'libxml',
+			'dom',
+			'SimpleXML',
+		);
+		$infos['desired_extensions'] = $desired_extensions;
+		$infos['missing_desired_extensions'] = array();
+		foreach($desired_extensions as $desired_extension)
+		{
+			if(!in_array($desired_extension, $extensions))
+			{
+				$infos['missing_desired_extensions'][] = $desired_extension;
+			}
+		}
+
 		$desired_functions = array(
 			'set_time_limit',
 			'mail',
@@ -802,21 +821,13 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		$infos['memoryCurrent'] = '-1';
 
 		$raised = Piwik::raiseMemoryLimitIfNecessary();
-		if(	$memoryValue = Piwik::getMemoryLimitValue() )
+		if( $memoryValue = Piwik::getMemoryLimitValue() )
 		{
 			$infos['memoryCurrent'] = $memoryValue.'M';
 			$infos['memory_ok'] = $memoryValue >= $minimumMemoryLimit;
 		}
 
 		$infos['isWindows'] = Piwik_Common::isWindows();
-
-		$infos['protocol_ok'] = true;
-		$infos['protocol'] = self::getProtocolInformation();
-		if(Piwik_Url::getCurrentScheme() == 'http' &&
-			$infos['protocol'] !== null)
-		{
-			$infos['protocol_ok'] = false;
-		}
 
 		$integrityInfo = Piwik::getFileIntegrityInformation();
 		$infos['integrity'] = $integrityInfo[0];
@@ -832,42 +843,24 @@ class Piwik_Installation_Controller extends Piwik_Controller
 		}
 
 		$infos['timezone'] = Piwik::isTimezoneSupportEnabled();
+
+		$infos['tracker_status'] = Piwik_Common::getRequestVar('trackerStatus', 0, 'int');
+
+		$infos['protocol'] = Piwik_ProxyHeaders::getProtocolInformation();
+		if(Piwik_Url::getCurrentScheme() == 'http' && $infos['protocol'] !== null)
+		{
+			$infos['general_infos']['reverse_proxy'] = '1';
+		}
+		if(count($headers = Piwik_ProxyHeaders::getProxyClientHeaders()) > 0)
+		{
+			$infos['general_infos']['proxy_client_headers'] = $headers;
+		}
+		if(count($headers = Piwik_ProxyHeaders::getProxyHostHeaders()) > 0)
+		{
+			$infos['general_infos']['proxy_host_headers'] = $headers;
+		}
+
 		return $infos;
-	}
-
-	/**
-	 * Get protocol information, with the exception of HTTPS
-	 *
-	 * @return string protocol information
-	 */
-	public static function getProtocolInformation()
-	{
-		if(Piwik_Common::getRequestVar('clientProtocol', 'http', 'string') == 'https')
-		{
-			return 'https';
-		}
-
-		if(isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
-		{
-			return 'SERVER_PORT=443';
-		}
-
-		if(isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https')
-		{
-			return 'X-Forwarded-Proto';
-		}
-
-		if(isset($_SERVER['HTTP_X_FORWARDED_SCHEME']) && strtolower($_SERVER['HTTP_X_FORWARDED_SCHEME']) == 'https')
-		{
-			return 'X-Forwarded-Scheme';
-		}
-
-		if(isset($_SERVER['HTTP_X_URL_SCHEME']) && strtolower($_SERVER['HTTP_X_URL_SCHEME']) == 'https')
-		{
-			return 'X-Url-Scheme';
-		}
-
-		return null;
 	}
 
 	/**

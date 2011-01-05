@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FormResetPassword.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: FormResetPassword.php 3529 2010-12-25 04:13:36Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_Login
@@ -45,7 +45,7 @@ class Piwik_Login_FormResetPassword extends Piwik_QuickForm2
 				'form_token' => $resetToken,
 			)));
 
-			$this->attributes['action'] = Piwik_Url::getCurrentQueryStringWithParametersModified( array('token' => null) );
+			$this->attributes['action'] = 'index.php' . Piwik_Url::getCurrentQueryStringWithParametersModified( array('token' => null) );
 		}
 	}
 }

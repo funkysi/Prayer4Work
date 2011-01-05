@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: IndexedBySite.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: IndexedBySite.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -89,11 +89,12 @@ class Piwik_Archive_Array_IndexedBySite extends Piwik_Archive_Array
 	
 	private function loadValuesFromDB($fields)
 	{
+		$inNames = $this->getSqlStringFieldsArray($fields);
  		$sql = "SELECT value, name, idarchive, idsite
 								FROM {$this->getNumericTableName()}
 								WHERE idarchive IN ( {$this->getArchiveIds()} )
-									AND name IN ( {$this->getSqlStringFieldsArray($fields)} )";
-		return Piwik_FetchAll($sql);
+									AND name IN ( $inNames )";
+		return Piwik_FetchAll($sql, $fields);
 	}
 
 	private function getFirstArchive()

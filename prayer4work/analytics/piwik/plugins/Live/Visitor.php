@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Visitor.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Visitor.php 3318 2010-11-16 00:36:05Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -331,16 +331,18 @@ class Piwik_Live_Visitor
 	function getGoalIcon()
 	{
 		if(isset($this->details['goal_match_attribute'])){
-			$goalicon = "";
+			$goalicon = '';
 			switch ($this->details['goal_match_attribute']) {
-				case "url":
-					$goalicon = "themes/default/images/goal.png";
-					break;
 				case "file":
-					$goalicon = "plugins/Live/templates/images/download.png";
+					$goalicon = 'plugins/Live/templates/images/download.png';
 					break;
-				case "external_website":
-					$goalicon = "plugins/Live/templates/images/outboundlink.png";
+				case 'external_website':
+					$goalicon = 'plugins/Live/templates/images/outboundlink.png';
+					break;
+				case 'url':
+				case 'manually':
+				default:
+					$goalicon = 'themes/default/images/goal.png';
 					break;
 			}
 			return $goalicon;

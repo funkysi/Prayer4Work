@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Period.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Period.php 3329 2010-11-24 07:44:27Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -117,8 +117,13 @@ class Piwik_ArchiveProcessing_Period extends Piwik_ArchiveProcessing
 		$records = array();
 		foreach($results as $name => $value)
 		{
-			if($name == 'nb_uniq_visitors' && ($this->periodId == Piwik::$idPeriods['week'] || $this->periodId == Piwik::$idPeriods['month']))
+			if($name == 'nb_uniq_visitors')
 			{
+				// we do not process Unique Visitors for year
+				if($this->periodId == Piwik::$idPeriods['year'])
+				{
+					continue;
+				}
 			    $value = (float) $this->computeNbUniqVisitors();
 			}
 			$records[$name] = new Piwik_ArchiveProcessing_Record_Numeric(

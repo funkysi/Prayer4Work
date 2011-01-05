@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Hourly.php
+ * @version $Id: Hourly.php 3364 2010-11-25 22:38:40Z JulienM $
  * 
  * @category Piwik
  * @package Piwik
@@ -43,10 +43,4 @@ class Piwik_ScheduledTime_Hourly extends Piwik_ScheduledTime
 	{
 		throw new Exception ("Method not supported");
 	}
-	
-	public function setWeek($_week)
-	{
-		throw new Exception ("Method not supported");
-	}
-	
 }

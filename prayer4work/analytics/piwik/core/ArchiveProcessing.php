@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ArchiveProcessing.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ArchiveProcessing.php 3591 2011-01-03 22:26:23Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -22,7 +22,7 @@
  * - date1 		= starting day of the period
  * - date2 		= ending day of the period
  * - period 	= integer that defines the period (day/week/etc.). @see period::getId()
- * - ts_archived = timestamp when the archive was processed
+ * - ts_archived = timestamp when the archive was processed (UTC)
  * - name 		= the name of the report (ex: uniq_visitors or search_keywords_by_search_engines)
  * - value 		= the actual data
  * 
@@ -149,6 +149,14 @@ abstract class Piwik_ArchiveProcessing
 	public $site 	= null;
 	
 	/**
+	 * Current time.
+	 * This value is cached.
+	 *
+	 * @var int
+	 */
+	public $time	= null;
+
+	/**
 	 * Starting datetime in UTC
 	 *
 	 * @var string
@@ -206,6 +214,7 @@ abstract class Piwik_ArchiveProcessing
 	 */
 	public function __construct()
 	{
+		$this->time = time();
 	}
 	
 	/**
@@ -339,12 +348,11 @@ abstract class Piwik_ArchiveProcessing
 		// if the current archive is a DAY and if it's today,
 		// we set this minDatetimeArchiveProcessedUTC that defines the lifetime value of today's archive
 		if( $this->period->getNumberOfSubperiods() == 0
-			&& ($this->startTimestampUTC > time() ||
-				($this->startTimestampUTC <= time() && $this->endTimestampUTC > time()))
+			&& ($this->startTimestampUTC <= $this->time && $this->endTimestampUTC > $this->time)
 			)
 		{
 			$this->temporaryArchive = true;
-			$minDatetimeArchiveProcessedUTC = time() - self::getTodayArchiveTimeToLive();
+			$minDatetimeArchiveProcessedUTC = $this->time - self::getTodayArchiveTimeToLive();
 			// see #1150; if new archives are not triggered from the browser, 
 			// we still want to try and return the latest archive available for today (rather than return nothing)
 			if($this->isArchivingDisabled())
@@ -359,16 +367,15 @@ abstract class Piwik_ArchiveProcessing
 		//   recent enough means minDatetimeArchiveProcessedUTC = 00:00:01 this morning
 		else
 		{
-			if($this->endTimestampUTC <= time())
+			if($this->endTimestampUTC <= $this->time)
 			{
 				$minDatetimeArchiveProcessedUTC = $this->endTimestampUTC+1;
 			}
 			else
 			{
-    			$this->temporaryArchive = true;
-				$minDatetimeArchiveProcessedUTC = Piwik_Date::today()
-													->setTimezone($this->site->getTimezone())
-													->getTimestamp();
+				$this->temporaryArchive = true;
+				$timezone = $this->site->getTimezone();
+				$minDatetimeArchiveProcessedUTC = Piwik_Date::factory(Piwik_Date::factory('now', $timezone)->getDateStartUTC())->setTimezone($timezone)->getTimestamp();
 			}
 		}
 		return $minDatetimeArchiveProcessedUTC;
@@ -389,14 +396,9 @@ abstract class Piwik_ArchiveProcessing
 		$this->idArchive = $this->isArchived();
 	
 		if($this->idArchive === false
-			&& $this->isArchivingDisabled())
+			||	$this->debugAlwaysArchive)
 		{
-			$this->isThereSomeVisits = false;
-		}
-		elseif($this->idArchive === false
-				||	$this->debugAlwaysArchive)
-		{
-			return null;
+			return false;
 		}
 		return $this->idArchive;
 	}
@@ -627,17 +629,16 @@ abstract class Piwik_ArchiveProcessing
 		// @see http://dev.piwik.org/trac/ticket/987
 		$query = "INSERT IGNORE INTO ".$table->getTableName()." (idarchive, idsite, date1, date2, period, ts_archived, name, value)
 					VALUES (?,?,?,?,?,?,?,?)";
-		Piwik_Query($query, 
-							array(	$this->idArchive,
-									$this->idsite, 
-									$this->period->getDateStart()->toString('Y-m-d'), 
-									$this->period->getDateEnd()->toString('Y-m-d'), 
-									$this->periodId, 
-									date("Y-m-d H:i:s"),
-									$record->name,
-									$record->value,
-							)
-					);
+		$bindSql = array(	$this->idArchive,
+							$this->idsite, 
+							$this->period->getDateStart()->toString('Y-m-d'), 
+							$this->period->getDateEnd()->toString('Y-m-d'), 
+							$this->periodId, 
+							date("Y-m-d H:i:s"),
+							$record->name,
+							$record->value,
+		);
+		Piwik_Query($query, $bindSql);
 	}
 	
 	/**
@@ -663,8 +664,8 @@ abstract class Piwik_ArchiveProcessing
 		
 		if($this->minDatetimeArchiveProcessedUTC)
 		{
-    		$timeStampWhere = " AND ts_archived >= ? ";
-    		$bindSQL[] = Piwik_Date::factory($this->minDatetimeArchiveProcessedUTC)->getDatetime();
+			$timeStampWhere = " AND ts_archived >= ? ";
+			$bindSQL[] = Piwik_Date::factory($this->minDatetimeArchiveProcessedUTC)->getDatetime();
 		}
 		
 		$sqlQuery = "	SELECT idarchive, value, name, date1 as startDate
@@ -721,7 +722,7 @@ abstract class Piwik_ArchiveProcessing
 	 *
 	 * @return bool
 	 */
-	protected function isArchivingDisabled()
+	public function isArchivingDisabled()
 	{
 		if(!self::isBrowserTriggerArchivingEnabled()
 			&& !Piwik_Common::isPhpCliMode())

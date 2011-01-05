@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Live.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Live.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -53,11 +53,12 @@ class Piwik_Live extends Piwik_Plugin
 
 	function addMenu()
 	{
-		Piwik_AddMenu('General_Visitors', 'Live_VisitorLog', array('module' => 'Live', 'action' => 'getLastVisitsDetails'));
+		Piwik_AddMenu('General_Visitors', 'Live_VisitorLog', array('module' => 'Live', 'action' => 'getVisitorLog'));
 	}
 
-	public function addWidget() {
-		Piwik_AddWidget('Live!', 'Live Visitors!', 'Live', 'widget');
+	public function addWidget() 
+	{
+		Piwik_AddWidget('Live!', 'Live_VisitorsInRealTime', 'Live', 'widget');
 	}
 
 }

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3192 2010-09-28 15:11:02Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_VisitorGenerator
@@ -24,6 +24,7 @@ class Piwik_VisitorGenerator_Controller extends Piwik_Controller {
 		$view = Piwik_View::factory('index');
 		$this->setBasicVariablesView($view);
 		$view->assign('sitesList', $sitesList);
+		$view->nonce = Piwik_Nonce::getNonce('Piwik_VisitorGenerator.generate');
 
 		$view->menu = Piwik_GetAdminMenu();
 		echo $view->render();
@@ -39,7 +40,10 @@ class Piwik_VisitorGenerator_Controller extends Piwik_Controller {
 		$COOKIE = $_COOKIE;
 		$REQUEST = $_REQUEST;
 
-		if(Piwik_Common::getRequestVar('choice', 'no') != 'yes') {
+		$nonce = Piwik_Common::getRequestVar('form_nonce', '', 'string', $_POST);
+		if(Piwik_Common::getRequestVar('choice', 'no') != 'yes' ||
+				!Piwik_Nonce::verifyNonce('Piwik_VisitorGenerator.generate', $nonce))
+		{
 			Piwik::redirectToModule('VisitorGenerator', 'index');
 		}
 
@@ -47,7 +51,11 @@ class Piwik_VisitorGenerator_Controller extends Piwik_Controller {
 		$maxVisitors = Piwik_Common::getRequestVar('maxVisitors', 100, 'int');
 		$nbActions = Piwik_Common::getRequestVar('nbActions', 10, 'int');
 		$daysToCompute = Piwik_Common::getRequestVar('daysToCompute', 1, 'int');
-		$idSite = Piwik_Common::getRequestVar('idSite');
+
+		// get idSite from POST with fallback to GET
+		$idSite = Piwik_Common::getRequestVar('idSite', false, 'int', $_GET);
+		$idSite = Piwik_Common::getRequestVar('idSite', $idSite, 'int', $_POST);
+
 		Piwik::setMaxExecutionTime(0);
 
 		$loadedPlugins = Piwik_PluginsManager::getInstance()->getLoadedPlugins();

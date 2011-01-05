@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:19:59
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:13:53
          compiled from CoreAdminHome/templates/footer.tpl */ ?>
 </div>
 <?php $_smarty_tpl_vars = $this->_tpl_vars;

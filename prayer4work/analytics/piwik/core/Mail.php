@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mail.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Mail.php 3564 2011-01-03 05:46:28Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -31,7 +31,7 @@ class Piwik_Mail extends Zend_Mail
 	
 	public function setFrom($email, $name = null)
 	{
-		$piwikHost = @$_SERVER['HTTP_HOST'];
+		$piwikHost = Piwik_Url::getCurrentHost();
 		if(strlen($piwikHost) == 0)
 		{
 			$piwikHost = 'piwik.org';
@@ -49,15 +49,17 @@ class Piwik_Mail extends Zend_Mail
 			return;
 		}
 		$smtpConfig = array();
-		if ( !empty($config->auth->type)
-			 || !empty($config->auth->username)
-			 || !empty($config->auth->password)
+		if ( !empty($config->type)
+			 || !empty($config->username)
+			 || !empty($config->password)
+			 || !empty($config->encryption)
 		)
 		{
 			$smtpConfig = array(
-    						'auth' => $config->auth->type,
-            				'username' => $config->auth->username,
-            				'password' => $config->auth->password
+    						'auth' => $config->type,
+            				'username' => $config->username,
+            				'password' => $config->password,
+            				'ssl' => $config->encryption,
 			);
 		}
 		

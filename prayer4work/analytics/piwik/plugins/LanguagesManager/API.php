@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3514 2010-12-22 18:16:33Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_LanguagesManager
@@ -18,12 +18,15 @@
 class Piwik_LanguagesManager_API 
 {
 	static private $instance = null;
+	
+	/**
+	 * @return Piwik_LanguagesManager_API 
+	 */
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -40,6 +43,7 @@ class Piwik_LanguagesManager_API
 	public function isLanguageAvailable($languageCode)
 	{
 		return $languageCode !== false
+			&& Piwik_Common::isValidFilename($languageCode)
 			&& in_array($languageCode, $this->getAvailableLanguages());
 	}
 	
@@ -115,7 +119,11 @@ class Piwik_LanguagesManager_API
 		foreach($filenames as $filename) 
 		{
 			require PIWIK_INCLUDE_PATH . "/lang/$filename.php";
-			$languagesInfo[] = array( 'code' => $filename, 'name' => $translations['General_OriginalLanguageName']);
+			$languagesInfo[] = array( 
+				'code' => $filename, 
+				'name' => $translations['General_OriginalLanguageName'],
+				'english_name' => $translations['General_EnglishLanguageName']
+			);
 		}
 		$this->availableLanguageNames = $languagesInfo;
 		return $this->availableLanguageNames;
@@ -164,37 +172,15 @@ class Piwik_LanguagesManager_API
 	public function setLanguageForUser($login, $languageCode)
 	{
 		Piwik::checkUserIsSuperUserOrTheUser($login);
+		if(!$this->isLanguageAvailable($languageCode))
+		{
+			return false;
+		}
 		$paramsBind = array($login, $languageCode, $languageCode);
 		Piwik_Query('INSERT INTO '.Piwik_Common::prefixTable('user_language') .
 					' (login, language)
 						VALUES (?,?)
 					ON DUPLICATE KEY UPDATE language=?',
 					$paramsBind);
-	}
-
-	/**
-	 * Returns the langage for the session
-	 *
-	 * @return string|null
-	 */
-	public function getLanguageForSession()
-	{
-		$session = new Zend_Session_Namespace("Piwik_LanguagesManager");
-		if(isset($session->language))
-		{
-			return $session->language;
-		}
-		return null;
-	}
-
-	/**
-	 * Set the language for the session
-	 *
-	 * @param string $languageCode ISO language code
-	 */
-	public function setLanguageForSession($languageCode)
-	{
-		$session = new Zend_Session_Namespace("Piwik_LanguagesManager");
-		$session->language = $languageCode;
 	}
 }

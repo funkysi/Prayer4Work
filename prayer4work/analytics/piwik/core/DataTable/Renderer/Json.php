@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Json.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Json.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -21,13 +21,13 @@ class Piwik_DataTable_Renderer_Json extends Piwik_DataTable_Renderer
 {
 	public function render()
 	{
-		Piwik_DataTable_Renderer_Json::renderHeader();
+		self::renderHeader();
 		return $this->renderTable($this->table);
 	}
 	
 	function renderException()
 	{
-		Piwik_DataTable_Renderer_Json::renderHeader();
+		self::renderHeader();
 		
 		$exceptionMessage = self::renderHtmlEntities($this->exception->getMessage());
 		$exceptionMessage = str_replace("\n", "", $exceptionMessage);
@@ -72,8 +72,9 @@ class Piwik_DataTable_Renderer_Json extends Piwik_DataTable_Renderer
 		return $str;
 	}
 	
-	static private function renderHeader ()
+	protected static function renderHeader()
 	{
-		@header( "Content-Type: application/json" );
+		@header('Content-Type: application/json; charset=utf-8');
+		Piwik::overrideCacheControlHeaders();
 	}
 }

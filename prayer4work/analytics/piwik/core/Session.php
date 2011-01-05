@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Session.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Session.php 3552 2011-01-01 20:14:36Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -17,8 +17,13 @@
  */
 class Piwik_Session extends Zend_Session
 {
-    public static function start($options = false)
+	public static function start($options = false)
 	{
+		if(Piwik_Common::isPhpCliMode())
+		{
+			return;
+		}
+
 		// use cookies to store session id on the client side
 		@ini_set('session.use_cookies', '1');
 
@@ -72,6 +77,11 @@ class Piwik_Session extends Zend_Session
 				if($ok)
 				{
 					@ini_set('session.save_path', $sessionPath);
+
+					// garbage collection may disabled by default (e.g., Debian)
+					if(ini_get('session.gc_probability') == 0) {
+						@ini_set('session.gc_probability', 1);
+					}
 				}
 				// else rely on default setting (assuming it is configured to a writeable folder)
 			}
@@ -81,7 +91,7 @@ class Piwik_Session extends Zend_Session
 			Zend_Session::start();
 		} catch(Exception $e) {
 			// This message is not translateable because translations haven't been loaded yet.
-			Piwik_ExitWithMessage('Unable to start session.  Check that session.save_path or tmp/sessions is writeable.');
+			Piwik_ExitWithMessage('Unable to start session.  Check that session.save_path or tmp/sessions is writeable, and session.auto_start = 0.');
 		}
 	}
 }

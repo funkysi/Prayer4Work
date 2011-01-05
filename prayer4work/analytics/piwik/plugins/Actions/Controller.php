@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3474 2010-12-20 19:20:01Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Actions
@@ -214,8 +214,8 @@ class Piwik_Actions_Controller extends Piwik_Controller
 	{
 		$view->setColumnsToDisplay( array('label','nb_visits','nb_hits') );
 		$view->setColumnTranslation('label', Piwik_Translate('Actions_ColumnDownloadURL'));
-		$view->setColumnTranslation('nb_hits', Piwik_Translate('Actions_ColumnDownloads'));
 		$view->setColumnTranslation('nb_visits', Piwik_Translate('Actions_ColumnUniqueDownloads'));
+		$view->setColumnTranslation('nb_hits', Piwik_Translate('Actions_ColumnDownloads'));
 		$view->disableExcludeLowPopulation();
 		$this->configureGenericViewActions($view);
 	}
@@ -227,8 +227,8 @@ class Piwik_Actions_Controller extends Piwik_Controller
 	{
 		$view->setColumnsToDisplay( array('label','nb_visits','nb_hits') );
 		$view->setColumnTranslation('label', Piwik_Translate('Actions_ColumnClickedURL'));
-		$view->setColumnTranslation('nb_hits', Piwik_Translate('Actions_ColumnClicks'));
 		$view->setColumnTranslation('nb_visits', Piwik_Translate('Actions_ColumnUniqueClicks'));
+		$view->setColumnTranslation('nb_hits', Piwik_Translate('Actions_ColumnClicks'));
 		$view->disableExcludeLowPopulation();
 		$this->configureGenericViewActions($view);
 	}

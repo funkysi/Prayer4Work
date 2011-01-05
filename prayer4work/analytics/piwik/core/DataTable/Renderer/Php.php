@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Php.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Php.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -48,6 +48,8 @@ class Piwik_DataTable_Renderer_Php extends Piwik_DataTable_Renderer
 
 	public function render( $dataTable = null )
 	{
+		self::renderHeader();
+
 		if(is_null($dataTable))
 		{
 			$dataTable = $this->table;
@@ -67,6 +69,8 @@ class Piwik_DataTable_Renderer_Php extends Piwik_DataTable_Renderer
 	
 	function renderException()
 	{
+		self::renderHeader();
+
 		$exceptionMessage = self::renderHtmlEntities($this->exception->getMessage());
 		
 		$return = array('result' => 'error', 'message' => $exceptionMessage);
@@ -166,9 +170,13 @@ class Piwik_DataTable_Renderer_Php extends Piwik_DataTable_Renderer
 		{
 			$array = $this->renderSimpleTable($this->table);
 		}
-		else
+		elseif($this->table instanceof Piwik_DataTable)
 		{
 			$array = $this->renderTable($this->table);
+		}
+		else
+		{
+			throw new Exception("Unexpected data type to render.");
 		}
 				
 		if($this->serialize)

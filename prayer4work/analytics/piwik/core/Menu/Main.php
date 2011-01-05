@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Main.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Main.php 3270 2010-10-28 18:21:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik_Menu
@@ -23,9 +23,8 @@ class Piwik_Menu_Main extends Piwik_Menu_Abstract
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{			
-			$c = get_class();
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}

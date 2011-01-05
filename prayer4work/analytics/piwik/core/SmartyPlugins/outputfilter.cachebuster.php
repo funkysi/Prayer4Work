@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: outputfilter.cachebuster.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: outputfilter.cachebuster.php 3529 2010-12-25 04:13:36Z vipsoft $
  * 
  * @category Piwik
  * @package SmartyPlugins
@@ -25,24 +25,31 @@
  *           <code>$smarty->load_filter('output','cachebuster');</code>
  *           from application.
  * @author   Anthon Pang <apang at softwaredevelopment dot ca>
- * @version  1.0
+ * @version  1.1
  * @param string
  * @param Smarty
  */
 function smarty_outputfilter_cachebuster($source, &$smarty)
 {
-	$tag = $smarty->get_template_vars('tag');
+	static $cachebuster = null;
+	if(is_null($cachebuster))
+	{
+		$cachebuster = md5(Piwik_Common::getSalt() . PHP_VERSION . $smarty->get_template_vars('piwik_version'));
+	}
+	$tag = 'cb=' . $cachebuster;
 
 	$pattern = array(
-		'~<script type="text/javascript" src="([^"]+)">~',
-		'~<script src="([^"]+)" type="text/javascript">~',
-		'~<link rel="stylesheet" type="text/css" href="([^"]+)" ?/?>~',
+		'~<script type=[\'"]text/javascript[\'"] src=[\'"]([^\'"]+)[\'"]>~',
+		'~<script src=[\'"]([^\'"]+)[\'"] type=[\'"]text/javascript[\'"]>~',
+		'~<link rel=[\'"]stylesheet[\'"] type=[\'"]text/css[\'"] href=[\'"]([^\'"]+)[\'"] ?/?>~',
+		'~(src|href)=\"index.php\?module=([A-Za-z0-9_]+)&action=([A-Za-z0-9_]+)\?cb=~',
 	);
 
 	$replace = array(
 		'<script type="text/javascript" src="$1?'. $tag .'">',
 		'<script type="text/javascript" src="$1?'. $tag .'">',
 		'<link rel="stylesheet" type="text/css" href="$1?'. $tag .'" />',
+		'$1="index.php?module=$2&action=$3&cb=',
 	);
 
 	return preg_replace($pattern, $replace, $source);

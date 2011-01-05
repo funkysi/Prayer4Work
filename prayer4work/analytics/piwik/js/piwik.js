@@ -1,32 +1,33 @@
 /*!
  * Piwik - Web Analytics
  *
+ * JavaScript tracking client
+ *
  * @link http://piwik.org
- * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: piwik.js 2967 2010-08-20 15:12:43Z vipsoft $
+ * @source http://dev.piwik.org/trac/browser/trunk/js/piwik.js
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD
  */
 
-/*jslint browser:true, forin:true, plusplus:false, onevar:false, eqeqeq:false, strict:false */
-/*global window escape unescape ActiveXObject */
+// Refer to README for build instructions when minifying this file for distribution.
 
-// Note: YUICompressor 2.4.2 won't compress piwik_log() because of the the "evil" eval().
-//       Override this behaviour using http://yuilibrary.com/projects/yuicompressor/ticket/2343811
+/*jslint browser:true, forin:true, plusplus:false, onevar:false, eqeqeq:false, strict:false */
+/*global window escape unescape ActiveXObject _paq:true */
 /*jslint evil:true */
 
 /*
  * Browser [In]Compatibility
  *
  * This version of piwik.js is known to not work with:
- * - IE4 (and below) - try..catch and for..in not introduced until IE5
- *
- * @todo Move to minimum EMCAScript v3 (IE5.5).
+ * - IE4 - try..catch and for..in introduced in IE5
+ * - IE5 - named anonymous functions and array.push introduced in IE5.5
  */
 
-// Guard against loading the script twice
-var Piwik, piwik_log, piwik_track;
-if (!this.Piwik) {
+var
+	// asynchronous tracker (or proxy)
+	_paq = _paq || [],
+
 	// Piwik singleton and namespace
-	Piwik = (function () {
+	Piwik =	Piwik || (function() {
 		/************************************************************
 		 * Private data
 		 ************************************************************/
@@ -41,11 +42,25 @@ if (!this.Piwik) {
 		navigatorAlias = navigator,
 		screenAlias = screen,
 		windowAlias = window,
-		hostnameAlias = windowAlias.location.hostname,
 
 		/* DOM Ready */
 		hasLoaded = false,
-		registeredOnLoadHandlers = [];
+		registeredOnLoadHandlers = [],
+
+		/*
+		 * encode or escape
+		 * - encodeURIComponent added in IE5.5
+		 */
+		escapeWrapper = windowAlias.encodeURIComponent || escape,
+
+		/*
+		 * decode or unescape
+		 * - decodeURIComponent added in IE5.5
+		 */
+		unescapeWrapper = windowAlias.decodeURIComponent || unescape,
+
+		/* asynchronous tracker */
+		asyncTracker;
 
 		/************************************************************
 		 * Private methods
@@ -55,7 +70,25 @@ if (!this.Piwik) {
 		 * Is property (or variable) defined?
 		 */
 		function isDefined(property) {
-			return typeof property !== 'undefined';
+			return (property = typeof property) !== 'undefined' && property !== 'unknown';
+		}
+
+		/*
+		 * apply wrapper
+		 *
+		 * @param array parameterArray An array comprising either:
+		 *      [ 'methodName', optional_parameters ]
+		 * or:
+		 *      [ functionObject, optional_parameters ] 
+		 */
+		function apply(parameterArray) {
+			var f = parameterArray.shift();
+
+			if (typeof f == 'string') {
+				asyncTracker[f].apply(this, parameterArray);
+			} else {
+				f.apply(this, parameterArray);
+			}
 		}
 
 		/*
@@ -65,7 +98,8 @@ if (!this.Piwik) {
 			if (element.addEventListener) {
 				element.addEventListener(eventType, eventHandler, useCapture);
 				return true;
-			} else if (element.attachEvent) {
+			}
+			if (element.attachEvent) {
 				return element.attachEvent('on' + eventType, eventHandler);
 			}
 			element['on' + eventType] = eventHandler;
@@ -91,6 +125,8 @@ if (!this.Piwik) {
 		 * Handle beforeunload event
 		 */
 		function beforeUnloadHandler(unloadEvent /* not used */) {
+			executePluginMethod('unload');
+
 			/*
 			 * Delay/pause (blocks UI)
 			 */
@@ -101,8 +137,6 @@ if (!this.Piwik) {
 					now = new Date();
 				} while (now.getTime() < expireDateTime);
 			}
-
-			executePluginMethod('unload');
 		}
 
 		/*
@@ -124,41 +158,101 @@ if (!this.Piwik) {
 		 */
 		function addReadyListener() {
 			if (documentAlias.addEventListener) {
-//				addEventListener(documentAlias, "DOMContentLoaded", function ready() { // named functions added in IE 5.5
-				addEventListener(documentAlias, "DOMContentLoaded", function () {
-//                        documentAlias.removeEventListener("DOMContentLoaded", ready, false);
-                        documentAlias.removeEventListener("DOMContentLoaded", arguments.callee, false);
+				addEventListener(documentAlias, 'DOMContentLoaded', function ready() {
+                        documentAlias.removeEventListener('DOMContentLoaded', ready, false);
 						loadHandler();
 					});
 			} else if (documentAlias.attachEvent) {
-//				documentAlias.attachEvent("onreadystatechange", function ready() {
-				documentAlias.attachEvent("onreadystatechange", function () { // named functions added in IE 5.5
-					if (documentAlias.readyState === "complete") {
-//						documentAlias.detachEvent("onreadystatechange", ready);
-						documentAlias.detachEvent("onreadystatechange", arguments.callee);
+				documentAlias.attachEvent('onreadystatechange', function ready() {
+					if (documentAlias.readyState === 'complete') {
+						documentAlias.detachEvent('onreadystatechange', ready);
 						loadHandler();
 					}
 				});
 
 				if (documentAlias.documentElement.doScroll && windowAlias == windowAlias.top) {
-//					(function ready() { // named functions added in IE 5.5
-					(function () {
-						if (hasLoaded) {
-							return;
+					(function ready() {
+						if (!hasLoaded) {
+							try {
+								documentAlias.documentElement.doScroll('left');
+							} catch (error) {
+								setTimeout(ready, 0);
+								return;
+							}
+							loadHandler();
 						}
-						try {
-							documentAlias.documentElement.doScroll("left");
-						} catch (error) {
-//							setTimeout(ready, 0);
-							setTimeout(arguments.callee, 0);
-							return;
-						}
-						loadHandler();
 					}());
 				}
 			}
 			// fallback
 			addEventListener(windowAlias, 'load', loadHandler, false);
+		}
+
+		/*
+		 * Get page referrer
+		 */
+		function getReferrer() {
+			var referrer = '';
+			try {
+				referrer = top.document.referrer;
+			} catch (e) {
+				if (parent) {
+					try {
+						referrer = parent.document.referrer;
+					} catch (e2) {
+						referrer = '';
+					}
+				}
+			}
+			if (referrer === '') {
+				referrer = documentAlias.referrer;
+			}
+
+			return referrer;
+		}
+
+		/*
+		 * Extract hostname from URL
+		 */
+		function getHostname(url) {
+			// scheme : // [username [: password] @] hostame [: port] [/ [path] [? query] [# fragment]]
+			var e = new RegExp('^(?:(?:https?|ftp):)/*(?:[^@]+@)?([^:/#]+)'),
+				matches = e.exec(url);
+			return matches ? matches[1] : url;
+		}
+
+		/*
+		 * Extract parameter from URL
+		 */
+		function getParameter(url, varName) {
+			// scheme : // [username [: password] @] hostame [: port] [/ [path] [? query] [# fragment]]
+			var e = new RegExp('^(?:https?|ftp)(?::/*(?:[^?]+)[?])([^#]+)'),
+				matches = e.exec(url),
+				f = new RegExp('(?:^|&)'+varName+'=([^&]*)'),
+				result = matches ? f.exec(matches[1]) : 0;
+				return result ? unescapeWrapper(result[1]) : '';
+		}
+
+		/*
+		 * Fix-up URL when page rendered from search engine cache or translated page
+		 */
+		function urlFixup(hostname, href, referrer) {
+			if (hostname == 'webcache.googleusercontent.com' || // Google
+					hostname == 'cc.bingj.com' ||				// Bing
+					hostname.substr(0, 5) == '74.6.')			// Yahoo (via Inktomi 74.6.0.0/16)
+			{
+				href = documentAlias.links[0].href;
+				hostname = getHostname(href);
+			}
+			else if(hostname == 'translate.googleusercontent.com')	// Google
+			{
+				if (referrer === '') {
+					referrer = href;
+				}
+				href = getParameter(href, 'u');
+				hostname = getHostname(href);
+			}
+			return [hostname, href, referrer];
 		}
 
 		/*
@@ -169,11 +263,29 @@ if (!this.Piwik) {
 		 * See: Tracker.setTrackerUrl() and Tracker.setSiteId()
 		 */
 		function Tracker(trackerUrl, siteId) {
+
 			/************************************************************
 			 * Private members
 			 ************************************************************/
 
-			var	// Tracker URL
+			var
+/*<DEBUG>*/
+			/*
+			 * registered test hooks
+			 */
+			registeredHooks = {},
+/*</DEBUG>*/
+
+			// Current URL and Referrer URL
+			locationArray = urlFixup(windowAlias.location.hostname, windowAlias.location.href, getReferrer()),
+			locationHostnameAlias = locationArray[0],
+			locationHrefAlias = locationArray[1],
+			configReferrerUrl = locationArray[2],
+
+			// Request method (GET or POST)
+			configRequestMethod = 'GET',
+
+			// Tracker URL
 			configTrackerUrl = trackerUrl || '',
 
 			// Site ID
@@ -186,10 +298,10 @@ if (!this.Piwik) {
 			configTitle = documentAlias.title,
 
 			// Extensions to be treated as download links
-			configDownloadExtensions = '7z|aac|arc|arj|asf|asx|avi|bin|csv|deb|dmg|doc|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt|qtm?|ra(m|r)?|rpm|sea|sit|tar|t?bz2?|tgz|torrent|txt|wav|wma|wmv|wpd||xls|xml|z|zip',
+			configDownloadExtensions = '7z|aac|ar[cj]|as[fx]|avi|bin|csv|deb|dmg|doc|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|ms[ip]|od[bfgpst]|og[gv]|pdf|phps|png|ppt|qtm?|ra[mr]?|rpm|sea|sit|tar|t?bz2?|tgz|torrent|txt|wav|wm[av]|wpd||xls|xml|z|zip',
 
 			// Hosts or alias(es) to not treat as outlinks
-			configHostsAlias = [hostnameAlias],
+			configHostsAlias = [locationHostnameAlias],
 
 			// Anchor classes to not track
 			configIgnoreClasses = [],
@@ -208,7 +320,6 @@ if (!this.Piwik) {
 
 			// Client-side data collection
 			browserHasCookies = '0',
-			pageReferrer,
 
 			// Plugin, Parameter name, MIME type, detected
 			pluginMap = {
@@ -229,18 +340,6 @@ if (!this.Piwik) {
 
 			// Guard against installing the link tracker more than once per Tracker instance
 			linkTrackingInstalled = false,
-
-			/*
-			 * encode or escape
-			 * - encodeURIComponent added in IE5.5
-			 */
-			escapeWrapper = windowAlias.encodeURIComponent || escape,
-
-			/*
-			 * decode or unescape
-			 * - decodeURIComponent added in IE5.5
-			 */
-			unescapeWrapper = windowAlias.decodeURIComponent || unescape,
 
 			/*
 			 * stringify
@@ -326,19 +425,18 @@ if (!this.Piwik) {
 						// if (Object.prototype.toString.call(value)=="[object Date]") {	// call added in IE5.5
 						if (value instanceof Date) {
 							return quote(value.getUTCFullYear()   + '-' +
-							           f(value.getUTCMonth() + 1) + '-' +
-							           f(value.getUTCDate())      + 'T' +
-							           f(value.getUTCHours())     + ':' +
-							           f(value.getUTCMinutes())   + ':' +
-							           f(value.getUTCSeconds())   + 'Z');
+								f(value.getUTCMonth() + 1) + '-' +
+								f(value.getUTCDate())      + 'T' +
+								f(value.getUTCHours())     + ':' +
+								f(value.getUTCMinutes())   + ':' +
+								f(value.getUTCSeconds())   + 'Z');
 						}
 
 						// Otherwise, iterate through all of the keys in the object.
 						for (k in value) {
 							v = str(k, value);
 							if (v) {
-								// partial.push(quote(k) + ':' + v); // array.push added in IE5.5
-								partial[partial.length] = quote(k) + ':' + v;
+								partial.push(quote(k) + ':' + v);
 							}
 						}
 
@@ -350,12 +448,7 @@ if (!this.Piwik) {
 				}
 
 				return str('', {'': value});
-			},
-
-			/*
-			 * registered (user-defined) hooks
-			 */
-			registeredHooks = {};
+			};
 
 			/*
 			 * Set cookie value
@@ -371,10 +464,10 @@ if (!this.Piwik) {
 				}
 
 				documentAlias.cookie = cookieName + '=' + escapeWrapper(value) +
-					                  (daysToExpire ? ';expires=' + expiryDate.toGMTString() : '') +
-					                  ';path=' + (path ? path : '/') +
-					                  (domain ? ';domain=' + domain : '') +
-					                  (secure ? ';secure' : '');
+					(daysToExpire ? ';expires=' + expiryDate.toGMTString() : '') +
+					';path=' + (path ? path : '/') +
+					(domain ? ';domain=' + domain : '') +
+					(secure ? ';secure' : '');
 			}
 
 			/*
@@ -405,14 +498,47 @@ if (!this.Piwik) {
 			 * Send image request to Piwik server using GET.
 			 * The infamous web bug is a transparent, single pixel (1x1) image
 			 */
-			function getImage(url, delay) {
-				var now = new Date(),
-				    image = new Image(1, 1);
+			function getImage(request) {
+				var image = new Image(1, 1);
+				image.onLoad = function () { };
+				image.src = configTrackerUrl + '?' + request;
+			}
 
+			/*
+			 * POST request to Piwik server using XMLHttpRequest.
+			 */
+			function sendXmlHttpRequest(request) {
+				try {
+					// we use the progid Microsoft.XMLHTTP because
+					// IE5.5 included MSXML 2.5; the progid MSXML2.XMLHTTP
+					// is pinned to MSXML2.XMLHTTP.3.0
+					var xhr = windowAlias.XMLHttpRequest ? new windowAlias.XMLHttpRequest() :
+						windowAlias.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') :
+						null;
+					xhr.open('POST', configTrackerUrl, true);
+					xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+					xhr.setRequestHeader('Content-Length', request.length);
+					xhr.setRequestHeader('Connection', 'close');
+					xhr.send(request);
+				} catch(e) {
+					// fallback
+					getImage(request);
+				}
+			}
+
+			/*
+			 * Send request
+			 */
+			function sendRequest(request, delay)
+			{
+				var now = new Date();
 				expireDateTime = now.getTime() + delay;
 
-				image.onLoad = function () { };
-				image.src = url;
+				if (configRequestMethod == 'POST') {
+					sendXmlHttpRequest(request);
+				} else {
+					getImage(request);
+				}
 			}
 
 			/*
@@ -423,7 +549,7 @@ if (!this.Piwik) {
 
 				// Safari and Opera
 				// IE6: typeof navigator.javaEnabled == 'unknown'
-				if (typeof navigatorAlias.javaEnabled !== 'undefined' && navigatorAlias.javaEnabled()) {
+				if (isDefined(navigatorAlias.javaEnabled) && navigatorAlias.javaEnabled()) {
 					pluginMap.java[2] = '1';
 				}
 
@@ -443,29 +569,6 @@ if (!this.Piwik) {
 			}
 
 			/*
-			 * Get page referrer
-			 */
-			function getReferrer() {
-				var referrer = '';
-				try {
-					referrer = top.document.referrer;
-				} catch (e) {
-					if (parent) {
-						try {
-							referrer = parent.document.referrer;
-						} catch (e2) {
-							referrer = '';
-						}
-					}
-				}
-				if (referrer === '') {
-					referrer = documentAlias.referrer;
-				}
-
-				return referrer;
-			}
-
-			/*
 			 * Does browser have cookies enabled (for this site)?
 			 */
 			function hasCookies() {
@@ -480,91 +583,76 @@ if (!this.Piwik) {
 
 			/*
 			 * Returns the URL to call piwik.php, 
-			 * with the standard parameters (plugins, resolution, url, referer, etc.)
+			 * with the standard parameters (plugins, resolution, url, referer, etc.).
+			 * Sends the pageview and browser settings with every request in case of race conditions.
 			 */
-			function getRequest() {
-				var i, now, request;
-				now = new Date();
+			function getRequest(customData, pluginMethod) {
+				var i,
+				now = new Date(),
 				request = 'idsite=' + configTrackerSiteId +
-						'&rec=1' + 
-				        '&url=' + escapeWrapper(isDefined(configCustomUrl) ? configCustomUrl : documentAlias.location.href) +
-				        '&res=' + screenAlias.width + 'x' + screenAlias.height +
-				        '&h=' + now.getHours() + '&m=' + now.getMinutes() + '&s=' + now.getSeconds() +
-				        '&cookie=' + browserHasCookies +
-				        '&urlref=' + escapeWrapper(pageReferrer) +
-				        '&rand=' + Math.random();
-				// plugin data
+					'&rec=1' + 
+					'&rand=' + Math.random() +
+					'&h=' + now.getHours() + '&m=' + now.getMinutes() + '&s=' + now.getSeconds() +
+
+					'&url=' + escapeWrapper(isDefined(configCustomUrl) ? configCustomUrl : locationHrefAlias) +
+					'&urlref=' + escapeWrapper(configReferrerUrl) +
+					'&res=' + screenAlias.width + 'x' + screenAlias.height +
+					'&cookie=' + browserHasCookies;
+
+				// browser plugin data
 				for (i in pluginMap) {
 					request += '&' + pluginMap[i][0] + '=' + pluginMap[i][2];
 				}
 
-				request =  configTrackerUrl + '?' + request;
+				// custom data
+				if (isDefined(customData)) {
+					if (customData !== null) {
+						request += '&data=' + escapeWrapper(stringify(customData));
+					}
+				} else if (isDefined(configCustomData)) {
+					request += '&data=' + escapeWrapper(stringify(configCustomData));
+				}
+
+				// tracker plugin hook
+				request += executePluginMethod(pluginMethod);
+
 				return request;
 			}
 
 			/*
 			 * Log the page view / visit
 			 */
-			function logPageView(customTitle) {
-				var request = getRequest();
-				request += '&action_name=' + escapeWrapper(isDefined(customTitle) ? customTitle : configTitle); // refs #530;
+			function logPageView(customTitle, customData) {
+				var request = getRequest(customData, 'log') +
+					'&action_name=' + escapeWrapper(isDefined(customTitle) ? customTitle : configTitle); // refs #530;
 
-				// encode custom data
-				if (isDefined(configCustomData)) {
-					request += '&data=' + escapeWrapper(stringify(configCustomData));
-				}
-
-				request += executePluginMethod('log');
-				getImage(request, configTrackerPause);
+				sendRequest(request, configTrackerPause);
 			}
 			
 			/*
 			 * Log the goal with the server
 			 */
 			function logGoal(idGoal, customRevenue, customData) {
-				var request = getRequest();
-				request += '&idgoal=' + idGoal;
+				var request = getRequest(customData, 'goal') +
+					'&idgoal=' + idGoal;
 
+				// custom revenue
 				if (isDefined(customRevenue) && customRevenue !== null) {
 					request += '&revenue=' + customRevenue;
 				}
 
-				// encode custom data
-				if (isDefined(customData)) {
-					if (customData !== null) {
-						request += '&data=' + escapeWrapper(stringify(customData));
-					}
-				} else if (isDefined(configCustomData)) {
-					request += '&data=' + escapeWrapper(stringify(configCustomData));
-				}
-
-				request += executePluginMethod('goal');
-				getImage(request, configTrackerPause);
+				sendRequest(request, configTrackerPause);
 			}
 			
 			/*
 			 * Log the link or click  with the server
 			 */
 			function logLink(url, linkType, customData) {
-				var request;
-				request = 'idsite=' + configTrackerSiteId +
-						  '&rec=1' + 
-				          '&' + linkType + '=' + escapeWrapper(url) +
-				          '&rand=' + Math.random() +
-				          '&redirect=0';
+				var request = getRequest(customData, 'click') +
+					'&' + linkType + '=' + escapeWrapper(url) +
+					'&redirect=0';
 
-				// encode custom data
-				if (isDefined(customData)) {
-					if (customData !== null) {
-						request += '&data=' + escapeWrapper(stringify(customData));
-					}
-				} else if (isDefined(configCustomData)) {
-					request += '&data=' + escapeWrapper(stringify(configCustomData));
-				}
-
-				request += executePluginMethod('click');
-				request = configTrackerUrl + '?' + request;
-				getImage(request, configTrackerPause);
+				sendRequest(request, configTrackerPause);
 			}
 
 			/*
@@ -574,7 +662,7 @@ if (!this.Piwik) {
 				var i, alias, offset;
 
 				for (i = 0; i < configHostsAlias.length; i++) {
-					alias = configHostsAlias[i];
+					alias = configHostsAlias[i].toLowerCase();
 
 					if (hostName == alias) {
 						return true;
@@ -670,7 +758,7 @@ if (!this.Piwik) {
 				}
 
 				while ((parentElement = sourceElement.parentNode) &&
-				       ((tag = sourceElement.tagName) != 'A' && tag != 'AREA')) {
+						((tag = sourceElement.tagName) != 'A' && tag != 'AREA')) {
 					sourceElement = parentElement;
 				}
 
@@ -720,10 +808,10 @@ if (!this.Piwik) {
 				}
 			}
 
+/*<DEBUG>*/
 			/*
-			 * Register a user-defined hook
-			 * - if userHook is a string, object construction is deferred,
-			 *   permitting the addition of privileged members
+			 * Register a test hook.  Using eval() permits access to otherwise
+			 * privileged membmers.
 			 */
 			function registerHook(hookName, userHook) {
 				var hookObj = null;
@@ -741,6 +829,7 @@ if (!this.Piwik) {
 				}
 				return hookObj;
 			}
+/*</DEBUG>*/
 
 			/************************************************************
 			 * Constructor
@@ -749,27 +838,30 @@ if (!this.Piwik) {
 			/*
 			 * initialize tracker
 			 */
-			pageReferrer = getReferrer();
 			browserHasCookies = hasCookies();
 			detectBrowserPlugins();
 
+/*<DEBUG>*/
 			/*
-			 * initialize plugins
+			 * initialize test plugin
 			 */
 			executePluginMethod('run', registerHook);
+/*</DEBUG>*/
 
 			/************************************************************
 			 * Public data and methods
 			 ************************************************************/
 
 			return {
+/*<DEBUG>*/
 				/*
-				 * Hook accessors
+				 * Test hook accessors
 				 */
 				hook: registeredHooks,
 				getHook: function (hookName) {
 					return registeredHooks[hookName];
 				},
+/*</DEBUG>*/
 
 				/*
 				 * Specify the Piwik server URL
@@ -831,10 +923,9 @@ if (!this.Piwik) {
 				setDomains: function (hostsAlias) {
 					if (typeof hostsAlias == 'object' && hostsAlias instanceof Array) {
 						configHostsAlias = hostsAlias;
-						// configHostAlias.push(hostnameAlias); // array.push added in IE5.5
-						configHostsAlias[configHostsAlias.length] = hostnameAlias;
+						configHostsAlias.push(locationHostnameAlias);
 					} else if (typeof hostsAlias == 'string') {
-						configHostsAlias = [hostsAlias, hostnameAlias];
+						configHostsAlias = [hostsAlias, locationHostnameAlias];
 					}
 				},
 
@@ -846,6 +937,22 @@ if (!this.Piwik) {
 						configIgnoreClasses = ignoreClasses;
 					} else if (typeof ignoreClasses == 'string') {
 						configIgnoreClasses = [ignoreClasses];
+					}
+				},
+
+				/*
+				 * Set request method (GET or POST; default is GET)
+				 */
+				setRequestMethod: function (method) {
+					configRequestMethod = method || 'GET';
+				},
+
+				/*
+				 * Override referrer
+				 */
+				setReferrerUrl: function (url) {
+					if (isDefined(url)) {
+						configReferrerUrl = url;
 					}
 				},
 
@@ -951,9 +1058,19 @@ if (!this.Piwik) {
 				/*
 				 * Log visit to this page
 				 */
-				trackPageView: function (customTitle) {
-					logPageView(customTitle);
+				trackPageView: function (customTitle, customData) {
+					logPageView(customTitle, customData);
 				}
+			};
+		}
+		
+		/************************************************************
+		 * Proxy object
+		 ************************************************************/
+
+		function TrackerProxy() {
+			return {
+				push: apply
 			};
 		}
 
@@ -964,6 +1081,15 @@ if (!this.Piwik) {
 		// initialize the Piwik singleton
 		addEventListener(windowAlias, 'beforeunload', beforeUnloadHandler, false);
 		addReadyListener();
+
+		asyncTracker = new Tracker();
+
+		for (var i = 0; i < _paq.length; i++) {
+			apply(_paq[i]);
+		}
+
+		// replace initialization array with proxy object
+		_paq = new TrackerProxy();
 
 		/************************************************************
 		 * Public data and methods
@@ -978,13 +1104,13 @@ if (!this.Piwik) {
 			},
 
 			/*
-			 * Get Tracker
+			 * Get Tracker (factory method)
 			 */
 			getTracker: function (piwikUrl, siteId) {
 				return new Tracker(piwikUrl, siteId);
 			}
 		};
-	}());
+	}()),
 
 	/************************************************************
 	 * Deprecated functionality below
@@ -997,6 +1123,7 @@ if (!this.Piwik) {
 	 *   var piwik_install_tracker, piwik_tracker_pause, piwik_download_extensions, piwik_hosts_alias, piwik_ignore_classes;
 	 */
 
+	piwik_track,
 
 	/*
 	 * Track page visit
@@ -1043,4 +1170,3 @@ if (!this.Piwik) {
 			piwikTracker.enableLinkTracking();
 		}
 	};
-}

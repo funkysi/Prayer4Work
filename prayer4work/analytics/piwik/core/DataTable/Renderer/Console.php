@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Console.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Console.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -22,11 +22,13 @@ class Piwik_DataTable_Renderer_Console extends Piwik_DataTable_Renderer
 	
 	function render()
 	{
+		self::renderHeader();
 		return $this->renderTable($this->table);
 	}
 	
 	function renderException()
 	{
+		self::renderHeader();
 		$exceptionMessage = self::renderHtmlEntities($this->exception->getMessage());
 		return 'Error: '.$exceptionMessage;
 	}
@@ -130,6 +132,5 @@ class Piwik_DataTable_Renderer_Console extends Piwik_DataTable_Renderer
 		}
 		
 		return $output;
-		
-	}	
+	}
 }

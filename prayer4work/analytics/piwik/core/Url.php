@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Url.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Url.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -151,21 +151,38 @@ class Piwik_Url
 	 * If current URL is "http://example.org/dir1/dir2/index.php?param1=value1&param2=value2"
 	 * will return "example.org"
 	 *
+	 * @param string $default Default value to return if host unknown
 	 * @return string
 	 */
-	static public function getCurrentHost()
+	static public function getCurrentHost($default = 'unknown')
 	{
-		if (!empty($_SERVER['HTTP_X_FORWARDED_HOST']))
+		static $hostHeaders = null;
+		if(is_null($hostHeaders))
 		{
-			return Piwik_Common::getFirstIpFromList($_SERVER['HTTP_X_FORWARDED_HOST']);
+			$config = Zend_Registry::get('config');
+			if($config !== false && isset($config->General->proxy_host_headers))
+			{
+				$hostHeaders = $config->General->proxy_host_headers->toArray();
+			}
+			if(!is_array($hostHeaders))
+			{
+				$hostHeaders = array();
+			}
 		}
 
 		if(isset($_SERVER['HTTP_HOST']))
 		{
-			return $_SERVER['HTTP_HOST'];
+			$default = Piwik_Common::sanitizeInputValue($_SERVER['HTTP_HOST']);
 		}
 
-		return 'unknown';
+		$default = Piwik_Common::sanitizeInputValue($default);
+		// @todo temporary workaround for #1331
+		if(!method_exists('Piwik_Common', 'getProxyFromHeader'))
+		{
+			return $default;
+		}
+
+		return Piwik_Common::getProxyFromHeader($default, $hostHeaders);
 	}
 
 	/**
@@ -236,7 +253,8 @@ class Piwik_Url
 		$query = '';
 		foreach($parameters as $name => $value)
 		{
-			if(empty($value))
+			if(is_null($value)
+				|| $value === false)
 			{
 				continue;
 			}
@@ -277,7 +295,7 @@ class Piwik_Url
 	 */
 	static public function redirectToUrl( $url )
 	{
-		header("Location: $url");
+		@header("Location: $url");
 		exit;
 	}
 
@@ -307,7 +325,7 @@ class Piwik_Url
 		$pathContains = Piwik_Common::isWindows() ? 'stripos' : 'strpos';
 
 		// test the scheme/protocol portion of the reconstructed "current" URL
-		if(stripos($url, 'http://') === 0 || stripos($url, 'https://') === 0)
+		if(!strncasecmp($url, 'http://', 7) || !strncasecmp($url, 'https://', 8))
 		{
 			// determine the offset to begin the comparison
 			$offset = strpos($url, '://');
@@ -335,56 +353,5 @@ class Piwik_Url
 		}
 
 		return false;
-	}
-
-	/**
-	 * Get ORIGIN header, false if not found
-	 *
-	 * @return string|false
-	 */
-	static public function getOrigin()
-	{
-		if(!empty($_SERVER['HTTP_ORIGIN']))
-		{
-			return $_SERVER['HTTP_ORIGIN'];
-		}
-		return false;
-	}
-
-	/**
-	 * Get acceptable origins
-	 *
-	 * @return array
-	 */
-	static public function getAcceptableOrigins()
-	{
-		$host = self::getCurrentHost();
-		if($host == 'unknown')
-		{
-			return array();
-		}
-
-		// parse host:port
-		$port = 80;
-		if(preg_match('/^([^:]+):([0-9]+)$/', $host, $matches))
-		{
-			$host = $matches[1];
-			$port = $matches[2];
-		}
-
-		// assume standard ports
-		$origins = array(
-			'http' => "http://$host",
-			'https' => "https://$host",
-		);
-
-		// handle non-standard port
-		if($port != 80 && $port != 443)
-		{
-			$scheme = self::getCurrentScheme();
-			$origins[$scheme] = "$scheme://$host:$port";
-		}
-
-		return $origins;
 	}
 }

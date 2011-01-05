@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ResponseBuilder.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ResponseBuilder.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -383,7 +383,7 @@ class Piwik_API_ResponseBuilder
             	} 
             } else { 
                 $xml.= $marginLeft . 
-                		"<$key>".$value."</$key>\n"; 
+                		"<$key>".Piwik_DataTable_Renderer::formatValueXml($value)."</$key>\n"; 
             } 
         } 
         return $xml; 

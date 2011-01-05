@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Goals
@@ -23,9 +23,8 @@ class Piwik_Goals_API
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -38,6 +37,7 @@ class Piwik_Goals_API
 	 */
 	public function getGoals( $idSite )
 	{
+		Piwik::checkUserHasViewAccess($idSite);
 		$goals = Piwik_FetchAll("SELECT * 
 								FROM ".Piwik_Common::prefixTable('goal')." 
 								WHERE idsite = ?
@@ -201,9 +201,6 @@ class Piwik_Goals_API
 		{
 			$dataTable->renameColumn($oldName, $columns[$id]);
 		}
-		// conversion_rate has an appended % for consistency with other API outputs
-		// This filter will work both on DataTable and DataTable_Array
-		$dataTable->filter('ColumnCallbackReplace', array('conversion_rate', create_function('$label', 'return $label . "%";')));
 		return $dataTable;
 	}
 	

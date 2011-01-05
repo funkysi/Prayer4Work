@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PluginsManager.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: PluginsManager.php 3470 2010-12-20 19:03:26Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -37,20 +37,21 @@ class Piwik_PluginsManager
 	public $dispatcher;
 	
 	protected $pluginsToLoad = array();
-	protected $languageToLoad = null;
 
 	protected $doLoadPlugins = true;
 	protected $loadedPlugins = array();
 	
 	protected $doLoadAlwaysActivatedPlugins = true;
-	protected $pluginToAlwaysActivate = array(  'CoreHome', 
-												'CoreUpdater', 
-												'CoreAdminHome', 
-												'CorePluginsAdmin', 
-												'Installation', 
-												'SitesManager', 
-												'UsersManager',
-												'API',
+	protected $pluginToAlwaysActivate = array(
+		'CoreHome', 
+		'CoreUpdater', 
+		'CoreAdminHome', 
+		'CorePluginsAdmin', 
+		'Installation', 
+		'SitesManager', 
+		'UsersManager',
+		'API',
+		'Proxy',
 	);
 
 	static private $instance = null;
@@ -63,9 +64,8 @@ class Piwik_PluginsManager
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{			
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -192,13 +192,17 @@ class Piwik_PluginsManager
 		$this->doLoadAlwaysActivatedPlugins = false;
 	}
 
-	public function loadTranslations()
+	public function loadPluginTranslations($language = false)
 	{
+		if(empty($language))
+		{
+			$language = Piwik_Translate::getInstance()->getLanguageToLoad();
+		}
 		$plugins = $this->getLoadedPlugins();
 
 		foreach($plugins as $plugin)
 		{
-			$this->loadTranslation( $plugin, $this->languageToLoad );
+			$this->loadTranslation( $plugin, $language );
 		}
 	}
 
@@ -326,11 +330,6 @@ class Piwik_PluginsManager
 		return $newPlugin;
 	}
 	
-	public function setLanguageToLoad( $code )
-	{
-		$this->languageToLoad = $code;
-	}
-
 	/**
 	 * @param Piwik_Plugin $plugin
 	 */

@@ -17,7 +17,8 @@ function initSpy()
 			timeout: 8000,
 			customParameterName: 'minIdVisit',
 			customParameterValueCallback: lastIdVisit,
-			fadeInSpeed: 600
+			fadeInSpeed: 600,
+			appendTo: 'div#content'
 		});
 	}
 }
@@ -35,33 +36,7 @@ function updateVisitBox()
 </script>
 {/literal}
 
-<div id="visitsTotal">
-	<table class="dataTable" cellspacing="0">
-	<thead>
-	<tr>
-	<th id="label" class="sortable label" style="cursor: auto;">
-	<div id="thDIV">Period<div></th>
-	<th id="label" class="sortable label" style="cursor: auto;">
-	<div id="thDIV">Visits<div></th>
-	<th id="label" class="sortable label" style="cursor: auto;">
-	<div id="thDIV">PageViews<div></th>
-	</tr>
-	</thead>
-	<tbody>
-	<tr>
-	<tr class="">
-	<td class="columnodd">Today</td>
-	<td class="columnodd">{$visitorsCountToday}</td>
-	<td class="columnodd">{$pisToday}</td>
-	</tr>
-	<tr class="">
-	<td class="columnodd">Last 30 minutes</td>
-	<td class="columnodd">{$visitorsCountHalfHour}</td>
-	<td class="columnodd">{$pisHalfhour}</td>
-	</tr>
-	</tbody>
-	</table>
-</div>
+{include file="Live/templates/totalVisits.tpl"}
 
 <div id='visitsLive'>
 {$visitors}
@@ -70,5 +45,5 @@ function updateVisitBox()
 <div class="visitsLiveFooter">
 	<a href="javascript:void(0);" onclick="onClickPause();"><img id="pauseImage" border="0" src="plugins/Live/templates/images/pause_disabled.gif" /></a>
 	<a href="javascript:void(0);" onclick="onClickPlay();"><img id="playImage" border="0" src="plugins/Live/templates/images/play.gif" /></a>
-	&nbsp; <a class="rightLink" href="javascript:broadcast.propagateAjax('module=Live&action=getLastVisitsDetails')">{'Live_LinkVisitorLog'|translate}</a>
+	&nbsp; <a class="rightLink" href="javascript:broadcast.propagateAjax('module=Live&action=getVisitorLog')">{'Live_LinkVisitorLog'|translate}</a>
 </div>

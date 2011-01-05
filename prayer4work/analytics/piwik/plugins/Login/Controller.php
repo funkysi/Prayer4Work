@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3581 2011-01-03 13:28:21Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Login
@@ -37,6 +37,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 	 */
 	function login($messageNoAccess = null)
 	{
+		self::checkForceSslLogin();
+
 		$form = new Piwik_Login_FormLogin();
 		if($form->validate())
 		{
@@ -62,11 +64,23 @@ class Piwik_Login_Controller extends Piwik_Controller
 		$view = Piwik_View::factory('login');
 		$view->AccessErrorString = $messageNoAccess;
 		$view->nonce = Piwik_Nonce::getNonce('Piwik_Login.login');
-		$view->linkTitle = Piwik::getRandomTitle();
 		$view->addForm( $form );
+		$this->configureView($view);
 		echo $view->render();
 	}
 
+	private function configureView($view)
+	{
+		$enableFramedLogins = Zend_Registry::get('config')->General->enable_framed_logins;
+		$view->enableFramedLogins = $enableFramedLogins;
+		if(!$enableFramedLogins)
+		{
+			$view->setXFrameOptions('sameorigin');
+		}
+		$view->forceSslLogin = Zend_Registry::get('config')->General->force_ssl_login;
+		$view->linkTitle = Piwik::getRandomTitle();
+	}
+	
 	/**
 	 * Form-less login
 	 *
@@ -75,6 +89,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 	 */
 	function logme()
 	{
+		self::checkForceSslLogin();
+
 		$password = Piwik_Common::getRequestVar('password', null, 'string');
 		if(strlen($password) != 32)
 		{
@@ -89,7 +105,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 
 		$currentUrl = 'index.php';
 		$urlToRedirect = Piwik_Common::getRequestVar('url', $currentUrl, 'string');
-		$urlToRedirect = htmlspecialchars_decode($urlToRedirect);
+		$urlToRedirect = Piwik_Common::unsanitizeInputValue($urlToRedirect);
 
 		$this->authenticateAndRedirect($login, $password, false, $urlToRedirect);
 	}
@@ -97,11 +113,11 @@ class Piwik_Login_Controller extends Piwik_Controller
 	/**
 	 * Authenticate user and password.  Redirect if successful.
 	 *
-	 * @param string $login (user name)
-	 * @param string $md5Password (md5 hash of password)
+	 * @param string $login user name
+	 * @param string $md5Password md5 hash of password
 	 * @param bool $rememberMe Remember me?
-	 * @param string $urlToRedirect (URL to redirect to, if successfully authenticated)
-	 * @return string (failure message if unable to authenticate)
+	 * @param string $urlToRedirect URL to redirect to, if successfully authenticated
+	 * @return string failure message if unable to authenticate
 	 */
 	protected function authenticateAndRedirect($login, $md5Password, $rememberMe, $urlToRedirect = 'index.php')
 	{
@@ -121,6 +137,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 	 */
 	function lostPassword()
 	{
+		self::checkForceSslLogin();
+
 		$messageNoAccess = null;
 
 		$form = new Piwik_Login_FormPassword();
@@ -132,16 +150,16 @@ class Piwik_Login_Controller extends Piwik_Controller
 
 		$view = Piwik_View::factory('lostPassword');
 		$view->AccessErrorString = $messageNoAccess;
-		$view->linkTitle = Piwik::getRandomTitle();
 		$view->addForm( $form );
+		$this->configureView($view);
 		echo $view->render();
 	}
 
 	/**
 	 * Validate user (by username or email address).
 	 *
-	 * @param string $loginMail (user name or email address)
-	 * @return string (failure message if unable to validate)
+	 * @param string $loginMail user name or email address
+	 * @return string failure message if unable to validate
 	 */
 	protected function lostPasswordFormValidated($loginMail)
 	{
@@ -185,8 +203,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 		{
 			$view->ErrorString = $e->getMessage();
 		}
-
-		$view->linkTitle = Piwik::getRandomTitle();
+		$this->configureView($view);
 		echo $view->render();
 
 		exit;
@@ -200,6 +217,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 	 */
 	function resetPassword()
 	{
+		self::checkForceSslLogin();
+
 		$messageNoAccess = null;
 
 		$form = new Piwik_Login_FormResetPassword();
@@ -213,18 +232,19 @@ class Piwik_Login_Controller extends Piwik_Controller
 
 		$view = Piwik_View::factory('resetPassword');
 		$view->AccessErrorString = $messageNoAccess;
-		$view->linkTitle = Piwik::getRandomTitle();
+		$view->forceSslLogin = Zend_Registry::get('config')->General->force_ssl_login;
 		$view->addForm( $form );
+		$this->configureView($view);
 		echo $view->render();
 	}
 
 	/**
 	 * Validate password reset request.  If successful, set new password and redirect.
 	 *
-	 * @param string $loginMail (user name or email address)
-	 * @param string $token (password reset token)
-	 * @param string $pssword (new password)
-	 * @return string (failure message)
+	 * @param string $loginMail user name or email address
+	 * @param string $token password reset token
+	 * @param string $password new password
+	 * @return string failure message
 	 */
 	protected function resetPasswordFormValidated($loginMail, $token, $password)
 	{
@@ -261,7 +281,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 			$view->ErrorString = $e->getMessage();
 		}
 
-		$view->linkTitle = Piwik::getRandomTitle();
+		$this->configureView($view);
+		
 		echo $view->render();
 
 		exit;
@@ -270,7 +291,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 	/**
 	 * Get user information
 	 *
-	 * @param string $loginMail (user login or email address)
+	 * @param string $loginMail user login or email address
 	 * @return array ("login" => '...', "email" => '...', "password" => '...') or null, if user not found
 	 */
 	protected function getUserInformation($loginMail)
@@ -302,9 +323,9 @@ class Piwik_Login_Controller extends Piwik_Controller
 	/**
 	 * Generate a password reset token.  Expires in (roughly) 24 hours.
 	 *
-	 * @param array (user information)
-	 * @param int $timestamp (Unix timestamp)
-	 * @return string (generated token)
+	 * @param array user information
+	 * @param int $timestamp Unix timestamp
+	 * @return string generated token
 	 */
 	protected function generatePasswordResetToken($user, $timestamp = null)
 	{
@@ -326,8 +347,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 	 * Validate token.
 	 *
 	 * @param string $token
-	 * @param array $user (user information)
-	 * @return bool (true if valid, false otherwise)
+	 * @param array $user user information
+	 * @return bool true if valid, false otherwise
 	 */
 	protected function isValidToken($token, $user)
 	{
@@ -337,7 +358,7 @@ class Piwik_Login_Controller extends Piwik_Controller
 		for($i = 0; $i <= 24; $i++)
 		{
 			$generatedToken = self::generatePasswordResetToken($user, $now + $i*60*60);
-			if($generatedToken == $token)
+			if($generatedToken === $token)
 			{
 				return true;
 			}
@@ -359,7 +380,8 @@ class Piwik_Login_Controller extends Piwik_Controller
 		$cookie = new Piwik_Cookie($authCookieName);
 		$cookie->delete();
 
-		Zend_Session::expireSessionCookie();
+		Piwik_Session::expireSessionCookie();
+		Piwik_Session::regenerateId();
 	}
 
 	/**
@@ -372,5 +394,28 @@ class Piwik_Login_Controller extends Piwik_Controller
 	{
 		self::clearSession();
 		Piwik::redirectToModule('CoreHome');
+	}
+
+	/**
+	 * Check force_ssl_login and redirect if connection isn't secure and not using a reverse proxy
+	 *
+	 * @param none
+	 * @return void
+	 */
+	protected function checkForceSslLogin()
+	{
+		$forceSslLogin = Zend_Registry::get('config')->General->force_ssl_login;
+		if($forceSslLogin)
+		{
+			$reverseProxy = Zend_Registry::get('config')->General->reverse_proxy;
+			if(!(Piwik_Url::getCurrentScheme() == 'https' || $reverseProxy))
+			{
+				$url = 'https://'
+					. Piwik_Url::getCurrentHost()
+					. Piwik_Url::getCurrentScriptName()
+					. Piwik_Url::getCurrentQueryString();
+				Piwik_Url::redirectToUrl($url);
+			}
+		}
 	}
 }

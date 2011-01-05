@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: userSettings.js 2967 2010-08-20 15:12:43Z vipsoft $
  */
 
 function getUserSettingsAJAX()
@@ -17,10 +16,10 @@ function getUserSettingsAJAX()
 	}
 
 	var ajaxRequest = piwikHelper.getStandardAjaxConf('ajaxLoadingUserSettings', 'ajaxErrorUserSettings', params);
-	var alias = $('#alias').val();
-	var email = $('#email').val();
-	var password = $('#password').val();
-	var passwordBis = $('#passwordBis').val();
+	var alias = encodeURIComponent( $('#alias').val() );
+	var email = encodeURIComponent( $('#email').val() );
+	var password = encodeURIComponent( $('#password').val() );
+	var passwordBis = encodeURIComponent( $('#passwordBis').val() );
 	var defaultReport = $('input[name=defaultReport]:checked').val();
 	if(defaultReport == 1) {
 		defaultReport = $('#defaultReportWebsite option:selected').val();

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3283 2010-11-02 00:51:29Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
@@ -24,9 +24,8 @@ class Piwik_UsersManager_API
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -312,8 +311,10 @@ class Piwik_UsersManager_API
 		
 		$this->checkLogin($userLogin);
 		$this->checkUserIsNotSuperUser($userLogin);
-		$this->checkPassword($password);
 		$this->checkEmail($email);
+
+		$password = Piwik_Common::unsanitizeInputValue($password);
+		$this->checkPassword($password);
 
 		$alias = $this->getCleanAlias($alias,$userLogin);
 		$passwordTransformed = $this->getCleanPassword($password);
@@ -334,7 +335,6 @@ class Piwik_UsersManager_API
 		
 		// we reload the access list which doesn't yet take in consideration this new user
 		Zend_Registry::get('access')->reloadAccess();
-		
 	}
 	
 	/**
@@ -358,6 +358,7 @@ class Piwik_UsersManager_API
 		}
 		else
 		{
+			$password = Piwik_Common::unsanitizeInputValue($password);
 			$this->checkPassword($password);
 			$password = $this->getCleanPassword($password);
 		}

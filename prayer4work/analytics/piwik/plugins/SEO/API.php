@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3270 2010-10-28 18:21:55Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_SEO
@@ -27,9 +27,8 @@ class Piwik_SEO_API
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{            
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -61,7 +60,7 @@ class Piwik_SEO_API
 			),
 			Piwik_Translate('SEO_AlexaRank') => array(
 				'rank' => $rank->getAlexaRank(),
-				'logo' => Piwik_getSearchEngineLogoFromUrl('http://www.alexa.com'),
+				'logo' => Piwik_getSearchEngineLogoFromUrl('http://alexa.com'),
 				'id' => 'alexa',
 			),
 			Piwik_Translate('SEO_DomainAge') => array(

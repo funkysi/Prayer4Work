@@ -1,10 +1,11 @@
 <?php
+
 /**
  * Piwik - Open source web analytics
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PDFReports.php 2990 2010-08-26 20:06:22Z matt $
+ * @version $Id: PDFReports.php 3524 2010-12-23 10:31:23Z JulienM $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
@@ -39,10 +40,40 @@ class Piwik_PDFReports extends Piwik_Plugin
 	
 	function getScheduledTasks ( $notification )
 	{
+		// Reports have to be sent when the period ends for all websites
+		$maxHourOffset = 0;
+		$sites = Piwik_SitesManager_API::getInstance()->getSitesWithAtLeastViewAccess();
+		$baseDate = Piwik_Date::factory("1971-01-01");
+		foreach($sites as &$site)
+		{
+			$offsetDate = Piwik_Date::factory($baseDate,  $site['timezone']);
+
+			// Earlier means a negative timezone
+			if ( $offsetDate->isEarlier($baseDate) )
+			{
+				// Gets the timezone offset
+				$hourOffset = (24 - date ('H', $offsetDate->getTimestamp()));
+
+				if ( $hourOffset > $maxHourOffset )
+				{
+					$maxHourOffset = $hourOffset;
+				}
+			}
+		}
+
 		$tasks = &$notification->getNotificationObject();
-		$tasks[] = new Piwik_ScheduledTask ( $this, 'dailySchedule', new Piwik_ScheduledTime_Daily() );
-		$tasks[] = new Piwik_ScheduledTask ( $this, 'weeklySchedule', new Piwik_ScheduledTime_Weekly() );
-		$tasks[] = new Piwik_ScheduledTask ( $this, 'monthlySchedule', new Piwik_ScheduledTime_Monthly() );
+
+		$dailySchedule = new Piwik_ScheduledTime_Daily();
+		$dailySchedule->setHour($maxHourOffset);
+		$tasks[] = new Piwik_ScheduledTask ( $this, 'dailySchedule', $dailySchedule );
+
+		$weeklySchedule = new Piwik_ScheduledTime_Weekly();
+		$weeklySchedule->setHour($maxHourOffset);
+		$tasks[] = new Piwik_ScheduledTask ( $this, 'weeklySchedule', $weeklySchedule );
+
+		$monthlySchedule = new Piwik_ScheduledTime_Monthly();
+		$monthlySchedule->setHour($maxHourOffset);
+		$tasks[] = new Piwik_ScheduledTask ( $this, 'monthlySchedule', $monthlySchedule );
 	}
 	
 	function dailySchedule()
@@ -68,9 +99,8 @@ class Piwik_PDFReports extends Piwik_Plugin
 		// For each, generate the file and send the message with the attached report
 		foreach($reportsToGenerate as $report)
 		{
-			Piwik_PDFReports_API::sendEmailReport(	$report['idreport'], 
-													$report['idsite'], 
-													$period);
+			Piwik_PDFReports_API::getInstance()->sendEmailReport(	$report['idreport'], 
+																	$report['idsite']);
 		}
 	}
 		
@@ -89,7 +119,7 @@ class Piwik_PDFReports extends Piwik_Plugin
 					description VARCHAR(255) NOT NULL,
 					period VARCHAR(10) NULL,
 					email_me TINYINT NULL,
-					additional_emails VARCHAR(255) NULL,
+					additional_emails TEXT NULL,
 					reports TEXT NOT NULL,
 					ts_created TIMESTAMP NULL,
 					ts_last_sent TIMESTAMP NULL,
@@ -109,6 +139,4 @@ class Piwik_PDFReports extends Piwik_Plugin
 			}
 		}
 	}
-
-
 }

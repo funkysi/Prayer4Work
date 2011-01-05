@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: pdf.js 2990 2010-08-26 20:06:22Z matt $
  */
 
 function formSetEditReport(idReport)
@@ -19,7 +18,7 @@ function formSetEditReport(idReport)
 	{
 		report = piwik.PDFReports[idReport];
 	}
-	$('#report_description').text(report.description);
+	$('#report_description').html(report.description);
 	$('#report_period option[value='+report.period+']').attr('selected', 'selected');
 	if(report.email_me == 1)
 	{
@@ -28,6 +27,8 @@ function formSetEditReport(idReport)
 	$('#report_additional_emails').text(report.additional_emails);
 	
 	$('#reportsList input').attr('checked', false);
+
+	var key;
 	for(key in report.reports)
 	{
 		$('#'+report.reports[key]).attr('checked','checked');
@@ -97,7 +98,7 @@ function initManagePdf()
 			ajaxRequest.data = parameters;
 			$.ajax( ajaxRequest );
 		}
-		piwikHelper.windowModal( '.dialog#confirm', onDelete)
+		piwikHelper.windowModal( '.dialog#confirm', onDelete);
 	});
 
 	// Edit Report click

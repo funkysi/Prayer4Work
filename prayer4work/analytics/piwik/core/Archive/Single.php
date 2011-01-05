@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Single.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Single.php 3577 2011-01-03 12:38:53Z matt $
  * 
  * 
  * @category Piwik
@@ -155,7 +155,7 @@ class Piwik_Archive_Single extends Piwik_Archive
 		{
 			$this->isThereSomeVisits = false;
 			$this->alreadyChecked = true;
-			$logMessage = "Preparing archive: ";
+			$logMessage = "Preparing archive: " . $this->period->getLabel() . "(" . $this->period->getPrettyString() . ")";
 			// if the END of the period is BEFORE the website creation date
 			// we already know there are no stats for this period
 			// we add one day to make sure we don't miss the day of the website creation
@@ -180,10 +180,17 @@ class Piwik_Archive_Single extends Piwik_Archive
 			$idArchive = $archiveProcessing->loadArchive();
 			if(empty($idArchive))
 			{
-				Piwik::log("$logMessage not archived yet, starting processing...");
-				$archiveJustProcessed = true;
-				$archiveProcessing->launchArchiving();
-				$idArchive = $archiveProcessing->getIdArchive();
+				if($archiveProcessing->isArchivingDisabled())
+				{
+					$archiveProcessing->isThereSomeVisits = false;
+				}
+				else
+				{
+    				Piwik::log("$logMessage not archived yet, starting processing...");
+    				$archiveJustProcessed = true;
+    				$archiveProcessing->launchArchiving();
+    				$idArchive = $archiveProcessing->getIdArchive();
+				}
 			}
 			else
 			{
@@ -267,7 +274,7 @@ class Piwik_Archive_Single extends Piwik_Archive
 		// uncompress when selecting from the BLOB table
 		if($typeValue == 'blob' && $db->hasBlobDataType())
 		{
-			$value = gzuncompress($value);
+			$value = @gzuncompress($value);
 		}
 		
 		if($typeValue == 'numeric' 
@@ -356,7 +363,7 @@ class Piwik_Archive_Single extends Piwik_Archive
 
 			if($hasBlobs)
 			{
-				$this->blobCached[$name] = gzuncompress($value);
+				$this->blobCached[$name] = @gzuncompress($value);
 			}
 			else
 			{

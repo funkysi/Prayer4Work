@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:20:05
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:19:24
          compiled from /var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl', 4, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl', 6, false),)), $this); ?>

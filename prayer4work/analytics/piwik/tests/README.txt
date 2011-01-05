@@ -11,6 +11,10 @@ The file will run all unit tests and integration tests.
 You can also run one test file at a time by executing the test file directly eg. 
 http://path/to/piwik/trunk/tests/core/DataTable.test.php
 
+You can also run tests from the command line:
+  $ cd path/to/piwik
+  $ find . -name '*.test.php' -exec php {} \;
+
  UNIT TESTs
 ===========
 Unit tests use the Simpletest Unit Testing framework.
@@ -39,7 +43,7 @@ piwik.js is unit tested and you can run tests in piwik/tests/javascript/
  WEBTESTS
 =========
 The Installation process is also webtested. They are ran by the continuous integration server.
-http://dev.piwik.org/svn/trunk/tests/webtest/testcases/level0/
+http://dev.piwik.org/svn/trunk/tests/webtest/testcases/
 
  CONTINOUS INTEGRATION
 ======================

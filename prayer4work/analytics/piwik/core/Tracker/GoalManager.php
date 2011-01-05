@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: GoalManager.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: GoalManager.php 3517 2010-12-22 20:51:20Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -98,12 +98,12 @@ class Piwik_Tracker_GoalManager
 			switch($pattern_type)
 			{
 				case 'regex':
-					$pattern = '/' . $goal['pattern'] . '/';
+					$pattern = '/' . str_replace('/', '\\/', $goal['pattern']) . '/';
 					if(!$goal['case_sensitive'])
 					{
 						$pattern .= 'i';
 					}
-					$match = (preg_match($pattern, $url) == 1);
+					$match = (@preg_match($pattern, $url) == 1);
 					break;
 				case 'contains':
 					if($goal['case_sensitive'])
@@ -187,13 +187,23 @@ class Piwik_Tracker_GoalManager
 		$referer_idvisit = $this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_ID_VISIT );
 		if($referer_idvisit !== false)
 		{
-			$goal += array(
-				'referer_idvisit' 			=> $referer_idvisit,
-				'referer_visit_server_date' => date("Y-m-d", $this->cookie->get( Piwik_Tracker::COOKIE_INDEX_REFERER_TIMESTAMP )),
+			$refererTimestamp = (int)$this->cookie->get( Piwik_Tracker::COOKIE_INDEX_REFERER_TIMESTAMP );
+			$goalData = array(
+				'referer_idvisit' 			=> (int)$referer_idvisit,
+				'referer_visit_server_date' => date("Y-m-d", $refererTimestamp),
 				'referer_type' 				=> htmlspecialchars_decode($this->cookie->get( Piwik_Tracker::COOKIE_INDEX_REFERER_TYPE )),
 				'referer_name' 				=> htmlspecialchars_decode($this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_NAME )),
 				'referer_keyword' 			=> htmlspecialchars_decode($this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_KEYWORD )),
 			);
+			
+			// Basic health check on the referer data
+			if($goalData['referer_idvisit'] > 0
+				&& $goalData['referer_type'] > 0
+				&& strlen($goalData['referer_name']) > 1
+				&& $refererTimestamp > Piwik_Tracker::getCurrentTimestamp() - 365.25 * 86400 * 2)
+			{
+				$goal += $goalData;
+			}
 		}
 
 		foreach($this->convertedGoals as $convertedGoal)

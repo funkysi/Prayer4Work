@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mysql.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Mysql.php 3316 2010-11-15 08:40:19Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -113,7 +113,7 @@ class Piwik_Tracker_Db_Pdo_Mysql extends Piwik_Tracker_Db
 			}
 			return $sth->fetchAll(PDO::FETCH_ASSOC);
 		} catch (PDOException $e) {
-			throw new Exception("Error query: ".$e->getMessage());
+			throw new Piwik_Tracker_Db_Exception("Error query: ".$e->getMessage());
 		}
 	}
 	
@@ -136,7 +136,7 @@ class Piwik_Tracker_Db_Pdo_Mysql extends Piwik_Tracker_Db
 			}
 			return $sth->fetch(PDO::FETCH_ASSOC);			
 		} catch (PDOException $e) {
-			throw new Exception("Error query: ".$e->getMessage());
+			throw new Piwik_Tracker_Db_Exception("Error query: ".$e->getMessage());
 		}
 	}
 
@@ -175,7 +175,7 @@ class Piwik_Tracker_Db_Pdo_Mysql extends Piwik_Tracker_Db
 			}
 			return $sth;
 		} catch (PDOException $e) {
-			throw new Exception("Error query: ".$e->getMessage() . "
+			throw new Piwik_Tracker_Db_Exception("Error query: ".$e->getMessage() . "
 								In query: $query
 								Parameters: ".var_export($parameters, true));
 		}

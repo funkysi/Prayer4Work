@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-11-21 11:01:07
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:20:14
          compiled from PDFReports/templates/add.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'PDFReports/templates/add.tpl', 3, false),)), $this); ?>

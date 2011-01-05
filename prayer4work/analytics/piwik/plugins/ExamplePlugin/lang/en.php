@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: en.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: en.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExamplePlugin
@@ -16,4 +16,7 @@ $translations = array(
 	'ExamplePlugin_exampleWidget' => 'Example widget',
 	'ExamplePlugin_blogPiwikRss' => 'Blog Piwik RSS',
 	'ExamplePlugin_photostreamMatt' => 'Matt\'s Photos',
+	'ExamplePlugin_piwikDownloads' => 'Piwik Downloads',
+	'ExamplePlugin_PiwikHasBeenDownloaded' => 'On %s, Piwik was downloaded %s times.'
+	
 );

@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:19:59
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:13:53
          compiled from CoreAdminHome/templates/header.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreAdminHome/templates/header.tpl', 5, false),array('function', 'loadJavascriptTranslations', 'CoreAdminHome/templates/header.tpl', 10, false),array('function', 'includeAssets', 'CoreAdminHome/templates/header.tpl', 14, false),array('function', 'ajaxRequestErrorDiv', 'CoreAdminHome/templates/header.tpl', 30, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreAdminHome/templates/header.tpl', 5, false),array('function', 'loadJavascriptTranslations', 'CoreAdminHome/templates/header.tpl', 10, false),array('function', 'includeAssets', 'CoreAdminHome/templates/header.tpl', 14, false),array('function', 'ajaxRequestErrorDiv', 'CoreAdminHome/templates/header.tpl', 33, false),)), $this); ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -27,6 +27,9 @@ unset($_smarty_tpl_vars);
 <?php echo smarty_function_includeAssets(array('type' => 'js'), $this);?>
 
 
+<!--[if IE]>
+<link rel="stylesheet" type="text/css" href="themes/default/ieonly.css" />
+<![endif]-->
 </head>
 <body>
 <div id="root">

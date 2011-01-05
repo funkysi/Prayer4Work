@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Action.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Action.php 3383 2010-11-29 03:47:22Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -144,9 +144,18 @@ class Piwik_Tracker_Action implements Piwik_Tracker_Action_Interface
 		{
 			return $originalUrl;
 		}
-		$excludedParameters = isset($website['excluded_parameters']) ? $website['excluded_parameters'] : array();
-		$parametersToExclude = array_merge($excludedParameters, self::$queryParametersToExclude);
-		
+		$campaignTrackingParameters = array(
+				Piwik_Tracker_Config::getInstance()->Tracker['campaign_var_name'],
+				Piwik_Tracker_Config::getInstance()->Tracker['campaign_keyword_var_name']);
+				
+		$excludedParameters = isset($website['excluded_parameters']) 
+									? $website['excluded_parameters'] 
+									: array();
+									
+		$parametersToExclude = array_merge( $excludedParameters, 
+											self::$queryParametersToExclude,
+											$campaignTrackingParameters);
+											
 		$parametersToExclude = array_map('strtolower', $parametersToExclude);
 		$queryParameters = Piwik_Common::getArrayFromQueryString($parsedUrl['query']);
 		
@@ -156,7 +165,17 @@ class Piwik_Tracker_Action implements Piwik_Tracker_Action_Interface
 		{
 			if(!in_array(strtolower($name), $parametersToExclude))
 			{
-				$validQuery .= $name.'='.$value.$separator;
+				if (is_array($value))
+				{
+					foreach ($value as $param)
+					{
+						$validQuery .= $name.'[]='.$param.$separator;
+					}
+				}
+				else
+				{
+					$validQuery .= $name.'='.$value.$separator;
+				}
 			}
 		}
 		$parsedUrl['query'] = substr($validQuery,0,-strlen($separator));

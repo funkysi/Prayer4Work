@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Schema.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Schema.php 3270 2010-10-28 18:21:55Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -33,8 +33,7 @@ class Piwik_Db_Schema
 	{
 		if (self::$instance === null)
 		{
-			$c = __CLASS__;
-			self::$instance = new $c();
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}

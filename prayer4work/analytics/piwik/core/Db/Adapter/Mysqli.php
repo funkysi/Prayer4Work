@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mysqli.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Mysqli.php 2968 2010-08-20 15:26:33Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -59,8 +59,9 @@ class Piwik_Db_Adapter_Mysqli extends Zend_Db_Adapter_Mysqli implements Piwik_Db
 	{
 		$serverVersion = $this->getServerVersion();
 		$clientVersion = $this->getClientVersion();
-		if(version_compare($serverVersion, '5') >= 0
-			&& version_compare($clientVersion, '5') < 0)
+		// incompatible change to DECIMAL implementation in 5.0.3
+		if(version_compare($serverVersion, '5.0.3') >= 0
+			&& version_compare($clientVersion, '5.0.3') < 0)
 		{
 			throw new Exception(Piwik_TranslateException('General_ExceptionIncompatibleClientServerVersions', array('MySQL', $clientVersion, $serverVersion)));
 		}

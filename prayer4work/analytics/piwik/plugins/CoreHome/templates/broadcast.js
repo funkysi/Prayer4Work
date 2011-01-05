@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: broadcast.js 2967 2010-08-20 15:12:43Z vipsoft $
  */
 
 /*   broadcast object is to help maintain a hash for link clicks and ajax calls
@@ -24,10 +23,11 @@ broadcast.init = function() {
 		return;
 	}
 	broadcast.isInit = true;
+
 	// Initialize history plugin.
 	// The callback is called at once by present location.hash
 	$.historyInit(broadcast.pageload);
-	
+
 	piwikHelper.showAjaxLoading();
 }
 
@@ -44,14 +44,18 @@ broadcast.init = function() {
 */
 broadcast.pageload = function( hash ) {
 	broadcast.init();
-    // hash doesn't contain the first # character.
-    if( hash ) {
-	// restore ajax loaded state
-        broadcast.loadAjaxContent(hash);
-    } else {
-	// start page
-	$('#content').empty();
-    }
+
+	// Unbind any previously attached resize handlers
+	$(window).unbind('resize');
+
+	// hash doesn't contain the first # character.
+	if( hash ) {
+		// restore ajax loaded state
+		broadcast.loadAjaxContent(hash);
+	} else {
+		// start page
+		$('#content').empty();
+	}
 };
 
 /* ============================================
@@ -220,7 +224,7 @@ broadcast.loadAjaxContent = function(urlAjax)
 broadcast.customAjaxHandleError = function ()
 {
     broadcast.lastUrlRequested = null;
-    ajaxHandleError();
+    piwikHelper.ajaxHandleError();
 };
 
 /*

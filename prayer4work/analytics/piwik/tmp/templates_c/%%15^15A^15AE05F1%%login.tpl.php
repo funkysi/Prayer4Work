@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-04 06:50:29
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:11:18
          compiled from /var/www/prayer4work/analytics/piwik/plugins/Login/templates/login.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/Login/templates/login.tpl', 8, false),)), $this); ?>
@@ -43,7 +43,11 @@ unset($_smarty_tpl_vars);
 :<br />
 		<input type="password" name="form_password" id="form_password" class="input" value="" size="20" tabindex="20" /></label>
 	</p>
-		<p class="submit">
+	<p class="forgetmenot">
+		<label><input name="form_rememberme" type="checkbox" id="form_rememberme" value="1" tabindex="90" <?php if ($this->_tpl_vars['form_data']['form_rememberme']['value']): ?>checked="checked" <?php endif; ?>/> <?php echo ((is_array($_tmp='Login_RememberMe')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+ </label>
+	</p>
+	<p class="submit">
 		<input type="submit" value="<?php echo ((is_array($_tmp='Login_LogIn')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 " tabindex="100" />
 	</p>

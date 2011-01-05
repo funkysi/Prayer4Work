@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Common.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Common.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -33,7 +33,11 @@ class Piwik_Common
 	 * Flag used with htmlspecialchar
 	 * See php.net/htmlspecialchars
 	 */
-	const HTML_ENCODING_QUOTE_STYLE		= ENT_COMPAT;
+	const HTML_ENCODING_QUOTE_STYLE		= ENT_QUOTES;
+
+/*
+ * Database
+ */
 
 	/**
 	 * Returns the table name prefixed by the table prefix.
@@ -63,6 +67,46 @@ class Piwik_Common
 		return $prefixTable . $table;
 	}
 
+/*
+ * Tracker
+ */
+
+	static protected function initCorePiwikInTrackerMode()
+	{
+		static $init = false;
+		if(!empty($GLOBALS['PIWIK_TRACKER_MODE'])
+			&& $init === false)
+		{
+			$init = true;
+			require_once PIWIK_INCLUDE_PATH . '/core/Loader.php';
+			require_once PIWIK_INCLUDE_PATH . '/core/Translate.php';
+			require_once PIWIK_INCLUDE_PATH . '/core/Option.php';
+			try {
+				$access = Zend_Registry::get('access');
+			} catch (Exception $e) {
+				Piwik::createAccessObject();
+			}
+			try {
+				$config = Zend_Registry::get('config');
+			} catch (Exception $e) {
+				Piwik::createConfigObject();
+			}
+			try {
+				$db = Zend_Registry::get('db');
+			} catch (Exception $e) {
+				Piwik::createDatabaseObject();
+			}
+
+			$pluginsManager = Piwik_PluginsManager::getInstance();
+			$pluginsManager->loadPlugins( Zend_Registry::get('config')->Plugins->Plugins->toArray() );
+		}
+		
+	}
+
+/*
+ * File-based Cache
+ */
+
 	/**
 	 * @var Piwik_CacheFile
 	 */
@@ -75,6 +119,7 @@ class Piwik_Common
 		}
 		return self::$trackerCache;
 	}
+
 	/**
 	 * Returns array containing data about the website: goals, URLs, etc.
 	 *
@@ -142,88 +187,6 @@ class Piwik_Common
 		$cache->set($cacheId, $value);
 		return true;
 	}
-	
-	/**
-	 * Tracker requests will automatically trigger the Scheduled tasks.
-	 * This is useful for users who don't setup the cron, 
-	 * but still want daily/weekly/monthly PDF reports emailed automatically.
-	 * 
-	 * This is similar to calling the API CoreAdminHome.runScheduledTasks (see misc/cron/archive.sh)
-	 * @return 
-	 */
-	public static function runScheduledTasks($now)
-	{
-		// Currently, there is no hourly tasks. When there are some, 
-		// this could be too agressive minimum interval (some hours would be skipped in case of low traffic)
-		$minimumInterval = Piwik_Tracker_Config::getInstance()->Tracker['scheduled_tasks_min_interval'];
-		
-		// If the user disabled browser archiving, he has already setup a cron
-		// To avoid parallel requests triggering the Scheduled Tasks, 
-		// Get last time tasks started executing 
-		$cache = Piwik_Common::getCacheGeneral();
-		if($minimumInterval <= 0
-			|| empty($cache['isBrowserTriggerArchivingEnabled']))
-		{
-			printDebug("-> Scheduled tasks not running in Tracker: Browser archiving is disabled.");
-			return;
-		}
-		$nextRunTime = $cache['lastTrackerCronRun'] + $minimumInterval;
-		if($cache['lastTrackerCronRun'] === false
-			|| $nextRunTime < $now )
-		{
-			$cache['lastTrackerCronRun'] = $now;
-			Piwik_Common::setCacheGeneral( $cache );
-			Piwik_Common::initCorePiwikInTrackerMode();
-			printDebug('-> Scheduled Tasks: Starting...');
-			// Scheduled tasks assume Super User is running
-			Piwik::setUserIsSuperUser();
-			// While each plugins should ensure that necessary languages are loaded,
-			// we ensure English translations at least are loaded 
-			Piwik_Translate::getInstance()->loadEnglishTranslation();
-			
-			$resultTasks = Piwik_TaskScheduler::runTasks();
-			Piwik::setUserIsSuperUser(false);
-			printDebug($resultTasks);
-			printDebug('Finished Scheduled Tasks.');
-		}
-		else
-		{
-			printDebug("-> Scheduled tasks not triggered.");
-		}
-		printDebug("Next run will be from: ". date('Y-m-d H:i:s', $nextRunTime) .' UTC');
-	}
-	
-	static protected function initCorePiwikInTrackerMode()
-	{
-		static $init = false;
-		if(!empty($GLOBALS['PIWIK_TRACKER_MODE'])
-			&& $init === false)
-		{
-			$init = true;
-			require_once PIWIK_INCLUDE_PATH . '/core/Loader.php';
-			require_once PIWIK_INCLUDE_PATH . '/core/Translate.php';
-			require_once PIWIK_INCLUDE_PATH . '/core/Option.php';
-			try {
-				$access = Zend_Registry::get('access');
-			} catch (Exception $e) {
-				Piwik::createAccessObject();
-			}
-			try {
-				$config = Zend_Registry::get('config');
-			} catch (Exception $e) {
-				Piwik::createConfigObject();
-			}
-			try {
-				$db = Zend_Registry::get('db');
-			} catch (Exception $e) {
-				Piwik::createDatabaseObject();
-			}
-
-			$pluginsManager = Piwik_PluginsManager::getInstance();
-			$pluginsManager->loadPlugins( Zend_Registry::get('config')->Plugins->Plugins->toArray() );
-		}
-		
-	}
 
 	/**
 	 * Regenerate Tracker cache files
@@ -262,7 +225,61 @@ class Piwik_Common
 		$cache->deleteAll();
 	}
 	
-	
+	/**
+	 * Tracker requests will automatically trigger the Scheduled tasks.
+	 * This is useful for users who don't setup the cron, 
+	 * but still want daily/weekly/monthly PDF reports emailed automatically.
+	 * 
+	 * This is similar to calling the API CoreAdminHome.runScheduledTasks (see misc/cron/archive.sh)
+	 * @return 
+	 */
+	public static function runScheduledTasks($now)
+	{
+		// Currently, there is no hourly tasks. When there are some, 
+		// this could be too agressive minimum interval (some hours would be skipped in case of low traffic)
+		$minimumInterval = Piwik_Tracker_Config::getInstance()->Tracker['scheduled_tasks_min_interval'];
+		
+		// If the user disabled browser archiving, he has already setup a cron
+		// To avoid parallel requests triggering the Scheduled Tasks, 
+		// Get last time tasks started executing 
+		$cache = Piwik_Common::getCacheGeneral();
+		if($minimumInterval <= 0
+			|| empty($cache['isBrowserTriggerArchivingEnabled']))
+		{
+			printDebug("-> Scheduled tasks not running in Tracker: Browser archiving is disabled.");
+			return;
+		}
+		$nextRunTime = $cache['lastTrackerCronRun'] + $minimumInterval;
+		if(	(isset($GLOBALS['PIWIK_TRACKER_DEBUG_FORCE_SCHEDULED_TASKS']) && $GLOBALS['PIWIK_TRACKER_DEBUG_FORCE_SCHEDULED_TASKS'])
+			|| $cache['lastTrackerCronRun'] === false
+			|| $nextRunTime < $now )
+		{
+			$cache['lastTrackerCronRun'] = $now;
+			Piwik_Common::setCacheGeneral( $cache );
+			Piwik_Common::initCorePiwikInTrackerMode();
+			printDebug('-> Scheduled Tasks: Starting...');
+			// Scheduled tasks assume Super User is running
+			Piwik::setUserIsSuperUser();
+			// While each plugins should ensure that necessary languages are loaded,
+			// we ensure English translations at least are loaded 
+			Piwik_Translate::getInstance()->loadEnglishTranslation();
+			
+			$resultTasks = Piwik_TaskScheduler::runTasks();
+			Piwik::setUserIsSuperUser(false);
+			printDebug($resultTasks);
+			printDebug('Finished Scheduled Tasks.');
+		}
+		else
+		{
+			printDebug("-> Scheduled tasks not triggered.");
+		}
+		printDebug("Next run will be from: ". date('Y-m-d H:i:s', $nextRunTime) .' UTC');
+	}
+
+/*
+ * URLs
+ */
+
 	/**
 	 * Returns the path and query part from a URL.
 	 * Eg. http://piwik.org/test/index.php?module=CoreHome will return /test/index.php?module=CoreHome
@@ -283,15 +300,6 @@ class Piwik_Common
 			$result .= '?'.$parsedUrl['query'];
 		}
 		return $result;
-	}
-
-	/**
-	 * ending WITHOUT slash
-	 * @return string
-	 */
-	static public function getPathToPiwikRoot()
-	{
-		return realpath( dirname(__FILE__). "/.." );
 	}
 
 	/**
@@ -345,21 +353,29 @@ class Piwik_Common
 			{
 				$exploded = explode('=',$value);
 				$name = $exploded[0];
+				$value = $exploded[1];
+			}
+			else
+			{
+				$name = $value;
+				$value = '';
+			}
 
-				// if array without indexes
-				if( substr($name,-2,2) == '[]' )
+			// if array without indexes
+			$count = 0;
+			$tmp = preg_replace('/(\[|%5b)(]|%5d)$/i', '', $name, -1, $count);
+			if(!empty($tmp) && $count)
+			{
+				$name = $tmp;
+				if( isset($nameToValue[$name]) == false || is_array($nameToValue[$name]) == false )
 				{
-					$name = substr($name, 0, -2);
-					if( isset($nameToValue[$name]) == false || is_array($nameToValue[$name]) == false )
-					{
-						$nameToValue[$name] = array();
-					}
-					array_push($nameToValue[$name],$exploded[1]);
+					$nameToValue[$name] = array();
 				}
-				else
-				{
-					$nameToValue[$name] = $exploded[1];
-				}
+				array_push($nameToValue[$name], $value);
+			}
+			else if(!empty($name))
+			{
+				$nameToValue[$name] = $value;
 			}
 		}
 		return $nameToValue;
@@ -377,14 +393,14 @@ class Piwik_Common
         	return false;
         }
         
-        $uri = !empty($parsed['scheme']) ? $parsed['scheme'].':'.((strtolower($parsed['scheme']) == 'mailto') ? '' : '//') : '';
+        $uri = !empty($parsed['scheme']) ? $parsed['scheme'].':'.(!strcasecmp($parsed['scheme'], 'mailto') ? '' : '//') : '';
         $uri .= !empty($parsed['user']) ? $parsed['user'].(!empty($parsed['pass']) ? ':'.$parsed['pass'] : '').'@' : '';
         $uri .= !empty($parsed['host']) ? $parsed['host'] : '';
         $uri .= !empty($parsed['port']) ? ':'.$parsed['port'] : '';
         
         if (!empty($parsed['path'])) 
         {
-            $uri .= (substr($parsed['path'], 0, 1) == '/') 
+            $uri .= (!strncmp($parsed['path'], '/', 1))
             			? $parsed['path'] 
             			: ((!empty($uri) ? '/' : '' ) . $parsed['path']);
         }
@@ -393,7 +409,34 @@ class Piwik_Common
         $uri .= !empty($parsed['fragment']) ? '#'.$parsed['fragment'] : '';
         return $uri;
     }
+
+	/**
+	 * Returns true if the string passed may be a URL.
+	 * We don't need a precise test here because the value comes from the website
+	 * tracked source code and the URLs may look very strange.
+	 *
+	 * @param string $url
+	 * @return bool
+	 */
+	static function isLookLikeUrl( $url )
+	{
+		return preg_match('~^(ftp|news|http|https)?://(.*)$~', $url, $matches) !== 0
+				&& strlen($matches[2]) > 0;
+	}
+
+/*
+ * File operations
+ */
     
+	/**
+	 * ending WITHOUT slash
+	 * @return string
+	 */
+	static public function getPathToPiwikRoot()
+	{
+		return realpath( dirname(__FILE__). "/.." );
+	}
+
 	/**
 	 * Create directory if permitted
 	 *
@@ -438,9 +481,9 @@ class Piwik_Common
 	{
 		if (file_exists($path))
 		{
-		    return realpath($path);
+			return realpath($path);
 		}
-	    return $path;
+		return $path;
 	}
 
 	/**
@@ -458,19 +501,9 @@ class Piwik_Common
 		return (0 !== preg_match('/(^[a-zA-Z0-9]+([a-zA-Z_0-9.-]*))$/', $filename));
 	}
 
-	/**
-	 * Returns true if the string passed may be a URL.
-	 * We don't need a precise test here because the value comes from the website
-	 * tracked source code and the URLs may look very strange.
-	 *
-	 * @param string $url
-	 * @return bool
-	 */
-	static function isLookLikeUrl( $url )
-	{
-		return preg_match('~^(ftp|news|http|https)?://(.*)$~', $url, $matches) !== 0
-				&& strlen($matches[2]) > 0;
-	}
+/*
+ * Escaping input
+ */
 
 	/**
 	 * Returns the variable after cleaning operations.
@@ -505,7 +538,7 @@ class Piwik_Common
 			$value = self::sanitizeInputValue($value);
 
 			// Undo the damage caused by magic_quotes; deprecated in php 5.3 but not removed until php 6
-			if ( version_compare(phpversion(), '6') === -1
+			if ( version_compare(PHP_VERSION, '6') === -1
 				&& get_magic_quotes_gpc())
 			{
 				$value = stripslashes($value);
@@ -542,7 +575,10 @@ class Piwik_Common
 	 */
 	static public function sanitizeInputValue($value)
 	{
-		return htmlspecialchars($value, self::HTML_ENCODING_QUOTE_STYLE, 'UTF-8');
+		// $_GET and $_REQUEST already urldecode()'d
+		$value = html_entity_decode($value, self::HTML_ENCODING_QUOTE_STYLE, 'UTF-8');
+		$value = str_replace(array("\n","\r","\0"), "", $value);
+		return htmlspecialchars( $value, self::HTML_ENCODING_QUOTE_STYLE, 'UTF-8' );
 	}
 
 	/**
@@ -566,6 +602,7 @@ class Piwik_Common
 	 * @param string $varName name of the variable
 	 * @param string $varDefault default value. If '', and if the type doesn't match, exit() !
 	 * @param string $varType Expected type, the value must be one of the following: array, int, integer, string
+	 * @param array $requestArrayToUse
 	 *
 	 * @exception if the variable type is not known
 	 * @exception if the variable we want to read doesn't have neither a value nor a default value specified
@@ -579,7 +616,7 @@ class Piwik_Common
 			$requestArrayToUse = $_GET + $_POST;
 		}
 		$varDefault = self::sanitizeInputValues( $varDefault );
-		if($varType == 'int')
+		if($varType === 'int')
 		{
 			// settype accepts only integer
 			// 'int' is simply a shortcut for 'integer'
@@ -617,19 +654,19 @@ class Piwik_Common
 		{
 			$ok = false;
 
-			if($varType == 'string')
+			if($varType === 'string')
 			{
 				if(is_string($value)) $ok = true;
 			}
-			elseif($varType == 'integer')
+			elseif($varType === 'integer')
 			{
 				if($value == (string)(int)$value) $ok = true;
 			}
-			elseif($varType == 'float')
+			elseif($varType === 'float')
 			{
 				if($value == (string)(float)$value) $ok = true;
 			}
-			elseif($varType == 'array')
+			elseif($varType === 'array')
 			{
 				if(is_array($value)) $ok = true;
 			}
@@ -652,33 +689,14 @@ class Piwik_Common
 					return $varDefault;
 				}
 			}
+			settype($value, $varType);
 		}
 		return $value;
 	}
 
-	/**
-	 * Unserialize (serialized) array
-	 *
-	 * @param string
-	 * @return array or original string if not unserializable
-	 */
-	public static function unserialize_array( $str )
-	{
-		// we set the unserialized version only for arrays as you can have set a serialized string on purpose
-		if (preg_match('/^a:[0-9]+:{/', $str)
-			&& !preg_match('/(^|;|{|})O:\+?[0-9]+:"/', $str)
-			&& strpos($str, "\0") === false)
-		{
-			if( ($arrayValue = @unserialize($str)) !== false
-				&& is_array($arrayValue) )
-			{
-				return $arrayValue;
-			}
-		}
-
-		// return original string
-		return $str;
-	}
+/*
+ * Generating unique strings
+ */
 
 	/**
 	 * Returns a 32 characters long uniq ID
@@ -717,9 +735,38 @@ class Piwik_Common
 	}
 
 	/**
+	 * Generate random string
+	 *
+	 * @param string $length string length
+	 * @param string $alphabet characters allowed in random string
+	 * @return string random string with given length
+	 */
+	public static function getRandomString($length = 16, $alphabet = "abcdefghijklmnoprstuvwxyz0123456789")
+	{
+		$chars = $alphabet;
+		$str = '';
+
+		list($usec, $sec) = explode(" ", microtime());
+		$seed = ((float)$sec+(float)$usec)*100000;
+		mt_srand($seed);
+
+		for($i = 0; $i < $length; $i++)
+		{
+			$rand_key = mt_rand(0, strlen($chars)-1);
+			$str .= substr($chars, $rand_key, 1);
+		}
+		return str_shuffle($str);
+	}
+
+/*
+ * IP addresses
+ */
+
+	/**
 	 * Convert dotted IP to a stringified integer representation
 	 *
-	 * @return string ip
+	 * @param string $ipStringFrom optional dotted IP address
+	 * @return string IP address as a stringified integer
 	 */
 	static public function getIp( $ipStringFrom = false )
 	{
@@ -729,7 +776,7 @@ class Piwik_Common
 		}
 
 		// accept ipv4-mapped addresses
-		if(strpos($ipStringFrom, '::ffff:') === 0)
+		if(!strncmp($ipStringFrom, '::ffff:', 7))
 		{
 			$ipStringFrom = substr($ipStringFrom, 7);
 		}
@@ -739,57 +786,96 @@ class Piwik_Common
 
 	/**
 	 * Returns the best possible IP of the current user, in the format A.B.C.D
+	 * For example, this could be the proxy client's IP address.
 	 *
 	 * @return string ip
 	 */
 	static public function getIpString()
 	{
-		// note: these may be spoofed
-		static $clientHeaders = array(
-			// ISP proxy
-			'HTTP_CLIENT_IP',
-
-			// de facto standard
-			'HTTP_X_FORWARDED_FOR',
-		);
-
-		foreach($clientHeaders as $clientHeader)
+		static $clientHeaders = null;
+		if(is_null($clientHeaders))
 		{
-			if(!empty($_SERVER[$clientHeader]))
+			if(!empty($GLOBALS['PIWIK_TRACKER_MODE']))
 			{
-				$ip = self::getFirstIpFromList($_SERVER[$clientHeader]);
-				if(!empty($ip) && stripos($ip, 'unknown') === false)
+				$clientHeaders = @Piwik_Tracker_Config::getInstance()->General['proxy_client_headers'];
+			}
+			else
+			{
+				$config = Zend_Registry::get('config');
+				if($config !== false && isset($config->General->proxy_client_headers))
 				{
-					return $ip;
+					$clientHeaders = $config->General->proxy_client_headers->toArray();
+				}
+			}
+			if(!is_array($clientHeaders))
+			{
+				$clientHeaders = array();
+			}
+		}
+
+		$default = '0.0.0.0';
+		if(isset($_SERVER['REMOTE_ADDR']))
+		{
+			$default = $_SERVER['REMOTE_ADDR'];
+		}
+
+		return self::getProxyFromHeader($default, $clientHeaders);
+	}
+
+	/**
+	 * Returns the proxy
+	 *
+	 * @param string $default Default value to return if no matching proxy header
+	 * @param array $proxyHeaders List of proxy headers
+	 * @return string
+	 */
+	static public function getProxyFromHeader($default, $proxyHeaders)
+	{
+		// examine proxy headers
+		foreach($proxyHeaders as $proxyHeader)
+		{
+			if(!empty($_SERVER[$proxyHeader]))
+			{
+				$proxyIp = self::getLastElementFromList($_SERVER[$proxyHeader], $default);
+				if(strlen($proxyIp) && stripos($proxyIp, 'unknown') === false)
+				{
+					return $proxyIp;
 				}
 			}
 		}
 
-		// default
-		if(isset($_SERVER['REMOTE_ADDR']))
-		{
-			return self::getFirstIpFromList($_SERVER['REMOTE_ADDR']);
-		}
-
-		return '0.0.0.0';
+		return $default;
 	}
 
 	/**
-	 * Returns the first element of a comma separated list of IPs
+	 * Returns the last element of a comma separated list
 	 *
-	 * @param string $ip
+	 * @param string $csv Comma separated list of elements
+	 * @param string $exclude Optional: skip this element, if present
 	 *
-	 * @return string first element before ','
+	 * @return string last element after ','
 	 */
-	static public function getFirstIpFromList($ip)
+	static public function getLastElementFromList($csv, $exclude = null)
 	{
-		$p = strpos($ip, ',');
-		if($p!==false)
+		$p = strrpos($csv, ',');
+		if($p !== false)
 		{
-			return trim(self::sanitizeInputValues(substr($ip, 0, $p)));
+			$elements = explode(',', $csv);
+			for($i = count($elements); $i--; )
+			{
+				$element = trim(self::sanitizeInputValue($elements[$i]));
+				if($exclude === null || $element !== $exclude)
+				{
+					return $element;
+				}
+			}
 		}
-		return trim(self::sanitizeInputValues($ip));
+		return trim(self::sanitizeInputValue($csv));
 	}
+
+/*
+ * DataFiles
+ */
 
 	/**
 	 * Returns the continent of a given country
@@ -808,6 +894,25 @@ class Piwik_Common
 		}
 		return 'unk';
 	}
+	/**
+	 * Returns list of valid country codes
+	 *
+	 * @return array of 2 letter ISO codes
+	 */
+	static public function getCountriesList()
+	{
+		static $countriesList = null;
+		if(is_null($countriesList))
+		{
+			require_once PIWIK_INCLUDE_PATH . '/core/DataFiles/Countries.php';
+			$countriesList = array_keys($GLOBALS['Piwik_CountryList']);
+		}
+		return $countriesList;
+	}
+
+/*
+ * Browser Language
+ */
 
 	/**
 	 * Returns the browser language code, eg. "en-gb,en;q=0.5"
@@ -834,7 +939,7 @@ class Piwik_Common
 			$browserLang = self::sanitizeInputValues(@$_SERVER['HTTP_ACCEPT_LANGUAGE']);
 			if(empty($browserLang) && self::isPhpCliMode())
 			{
-				$browserLang = @$_ENV['LANG'];
+				$browserLang = @getenv('LANG');
 			}
 		}
 
@@ -875,9 +980,9 @@ class Piwik_Common
 	{
 		$country = null;
 		Piwik_PostEvent('Common.getCountry', $country, $ip);
-		if($country)
+		if(!empty($country))
 		{
-			return $country;
+			return strtolower($country);
 		}
 
 		if(empty($lang) || strlen($lang) < 2)
@@ -887,22 +992,6 @@ class Piwik_Common
 
 		$validCountries = self::getCountriesList();
 		return self::extractCountryCodeFromBrowserLanguage($lang, $validCountries, $enableLanguageToCountryGuess);
-	}
-
-	/**
-	 * Returns list of valid country codes
-	 *
-	 * @return array of 2 letter ISO codes
-	 */
-	static public function getCountriesList()
-	{
-		static $countriesList = null;
-		if(is_null($countriesList))
-		{
-			require_once PIWIK_INCLUDE_PATH . '/core/DataFiles/Countries.php';
-			$countriesList = array_keys($GLOBALS['Piwik_CountryList']);
-		}
-		return $countriesList;
 	}
 
 	/**
@@ -980,6 +1069,51 @@ class Piwik_Common
 		return 'xx';
  	}
 
+/*
+ * Referrer
+ */
+
+	/**
+	 * Reduce URL to more minimal form.  2 letter country codes are
+	 * replaced by '{}', while other parts are simply removed.
+	 *
+	 * Examples:
+	 *   www.example.com -> example.com
+	 *   search.example.com -> example.com
+	 *   m.example.com -> example.com
+	 *   de.example.com -> {}.example.com
+	 *   example.de -> example.{}
+	 *   example.co.uk -> example.{}
+	 *
+	 * @param string $url
+	 * @return string
+	 */
+	static public function getLossyUrl($url)
+	{
+		require_once PIWIK_INCLUDE_PATH . '/core/DataFiles/Countries.php';
+
+		static $countries;
+		if(!isset($countries))
+		{
+			$countries = implode('|', array_keys($GLOBALS['Piwik_CountryList']));
+		}
+	
+		return preg_replace(
+			array(
+				'/^(w+[0-9]*|search)\./',
+				'/(^|\.)m\./',
+				'/(\.(com|org|net|co|it|edu))?\.('.$countries.')(\/|$)/',
+				'/^('.$countries.')\./',
+			),
+			array(
+				'',
+				'$1',
+				'.{}$4',
+				'{}.',
+			),
+			$url);
+	}
+
 	/**
 	 * Extracts a keyword from a raw not encoded URL.
 	 * Will only extract keyword if a known search engine has been detected.
@@ -1019,21 +1153,45 @@ class Piwik_Common
 		{
 			$refererPath = $refererParsed['path'];
 		}
+
 		// no search query
 		if(!isset($refererParsed['query']))
 		{
-			return false;
+			$refererParsed['query'] = '';
 		}
+		$query = $refererParsed['query'];
+
 		require_once PIWIK_INCLUDE_PATH . '/core/DataFiles/SearchEngines.php';
 
-		$refererHostPath = $refererHost . $refererPath;
-		if(array_key_exists($refererHostPath, $GLOBALS['Piwik_SearchEngines']))
+		$hostPattern = self::getLossyUrl($refererHost);
+		if(array_key_exists($refererHost . $refererPath, $GLOBALS['Piwik_SearchEngines']))
 		{
-			$refererHost = $refererHostPath;
+			$refererHost = $refererHost . $refererPath;
+		}
+		elseif(array_key_exists($hostPattern . $refererPath, $GLOBALS['Piwik_SearchEngines']))
+		{
+			$refererHost = $hostPattern . $refererPath;
+		}
+		elseif(array_key_exists($hostPattern, $GLOBALS['Piwik_SearchEngines']))
+		{
+			$refererHost = $hostPattern;
 		}
 		elseif(!array_key_exists($refererHost, $GLOBALS['Piwik_SearchEngines']))
 		{
-			return false;
+			if(!strncmp($query, 'cx=partner-pub-', 15))
+			{
+				// Google custom search engine
+				$refererHost = 'www.google.com/cse';
+			}
+			elseif(!strncmp($refererPath, '/pemonitorhosted/ws/results/', 28))
+			{
+				// private-label search powered by InfoSpace Metasearch
+				$refererHost = 'infospace.com';
+			}
+			else
+			{
+				return false;
+			}
 		}
 		$searchEngineName = $GLOBALS['Piwik_SearchEngines'][$refererHost][0];
 		$variableNames = null;
@@ -1050,24 +1208,63 @@ class Piwik_Common
 		{
 			$variableNames = array($variableNames);
 		}
-		$query = $refererParsed['query'];
 
-		if($searchEngineName == 'Google Images'
-			|| ($searchEngineName == 'Google' && strpos($refererUrl, '/imgres') !== false) )
+		if($searchEngineName === 'Google Images'
+			|| ($searchEngineName === 'Google' && strpos($refererUrl, '/imgres') !== false) )
 		{
-			$query = urldecode(trim(strtolower(self::getParameterFromQueryString($query, 'prev'))));
+			$query = urldecode(trim(self::getParameterFromQueryString($query, 'prev')));
 			$query = str_replace('&', '&amp;', strstr($query, '?'));
 			$searchEngineName = 'Google Images';
 		}
-
-		foreach($variableNames as $variableName)
+		else if($searchEngineName === 'Google' && strpos($query, '&as_q=') !== false)
 		{
-			// search for keywords now &vname=keyword
-			$key = strtolower(self::getParameterFromQueryString($query, $variableName));
-			$key = trim(urldecode($key));
+			$keys = array();
+			$key = self::getParameterFromQueryString($query, 'as_q');
 			if(!empty($key))
 			{
-				break;
+				array_push($keys, $key);
+			}
+			$key = self::getParameterFromQueryString($query, 'as_oq');
+			if(!empty($key))
+			{
+				array_push($keys, str_replace('+', ' OR ', $key));
+			}
+			$key = self::getParameterFromQueryString($query, 'as_epq');
+			if(!empty($key))
+			{
+				array_push($keys, "\"$key\"");
+			}
+			$key = self::getParameterFromQueryString($query, 'as_eq');
+			if(!empty($key))
+			{
+				array_push($keys, "-$key");
+			}
+			$key = trim(urldecode(implode(' ', $keys)));
+		}
+
+		if(empty($key))
+		{
+			foreach($variableNames as $variableName)
+			{
+				if($variableName[0] == '/')
+				{
+					// regular expression match
+					if(preg_match($variableName, $refererUrl, $matches))
+					{
+						$key = trim(urldecode($matches[1]));
+						break;
+					}
+				}
+				else
+				{
+					// search for keywords now &vname=keyword
+					$key = self::getParameterFromQueryString($query, $variableName);
+					$key = trim(urldecode($key));
+					if(!empty($key))
+					{
+						break;
+					}
+				}
 			}
 		}
 		if(empty($key))
@@ -1081,38 +1278,25 @@ class Piwik_Common
 			$charset = trim($GLOBALS['Piwik_SearchEngines'][$refererHost][3]);
 			if(!empty($charset))
 			{
-				$key = @iconv($charset, 'utf-8//IGNORE', $key);
+				$newkey = @iconv($charset, 'UTF-8//IGNORE', $key);
+				if(!empty($newkey))
+				{
+					$key = $newkey;
+				}
 			}
 		}
+
+		$key = function_exists('mb_strtolower') ? mb_strtolower($key, 'UTF-8') : strtolower($key);
+
 		return array(
 			'name' => $searchEngineName,
 			'keywords' => $key,
 		);
 	}
 
-	/**
-	 * Generate random string
-	 *
-	 * @param string $length string length
-	 * @param string $alphabet characters allowed in random string
-	 * @return string random string with given length
-	 */
-	public static function getRandomString($length = 16, $alphabet = "abcdefghijklmnoprstuvwxyz0123456789")
-	{
-		$chars = $alphabet;
-		$str = '';
-
-		list($usec, $sec) = explode(" ", microtime());
-		$seed = ((float)$sec+(float)$usec)*100000;
-		mt_srand($seed);
-
-		for($i = 0; $i < $length; $i++)
-		{
-			$rand_key = mt_rand(0, strlen($chars)-1);
-			$str  .= substr($chars, $rand_key, 1);
-		}
-		return str_shuffle($str);
-	}
+/*
+ * System environment
+ */
 
 	/**
 	 * Returns true if PHP was invoked from command-line interface (shell)
@@ -1124,7 +1308,7 @@ class Piwik_Common
 	{
 		$remoteAddr = @$_SERVER['REMOTE_ADDR'];
 		return	PHP_SAPI == 'cli' ||
-				(substr(PHP_SAPI, 0, 3) == 'cgi' && empty($remoteAddr));
+				(!strncmp(PHP_SAPI, 'cgi', 3) && empty($remoteAddr));
 	}
 
 	/**
@@ -1135,12 +1319,13 @@ class Piwik_Common
 	 */
 	static public function isWindows()
 	{
-		return strtoupper(substr(PHP_OS, 0, 3)) == 'WIN';
+		return DIRECTORY_SEPARATOR == '\\';
 	}
 }
 
-
 /**
+ * Mark orphaned object for garbage collection
+ *
  * For more information: @link http://dev.piwik.org/trac/ticket/374
  */
 function destroy(&$var) 

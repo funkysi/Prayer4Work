@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FormDatabaseSetup.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: FormDatabaseSetup.php 3335 2010-11-24 10:03:03Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Installation
@@ -57,7 +57,7 @@ class Piwik_Installation_FormDatabaseSetup extends Piwik_QuickForm2
 
 		// default values
 		$this->addDataSource(new HTML_QuickForm2_DataSource_Array(array(
-			'host' => 'localhost',
+			'host' => '127.0.0.1',
 			'tables_prefix' => 'piwik_',
 		)));
 	}

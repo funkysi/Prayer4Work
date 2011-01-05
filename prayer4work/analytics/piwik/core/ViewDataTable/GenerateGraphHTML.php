@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: GenerateGraphHTML.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: GenerateGraphHTML.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -102,11 +102,16 @@ abstract class Piwik_ViewDataTable_GenerateGraphHTML extends Piwik_ViewDataTable
 		
 		$url = Piwik_Url::getCurrentQueryStringWithParametersModified($this->parametersToModify);
 
-		$this->includeData = Zend_Registry::get('config')->General->serve_widget_and_data;
-		$idSite = Piwik_Common::getRequestVar('idSite', 1);
+		$this->includeData = !Zend_Registry::get('config')->Debug->disable_merged_requests;
+		$idSite = Piwik_Common::getRequestVar('idSite', 1, 'int');
 		
 		Piwik_API_Request::reloadAuthUsingTokenAuth();
-		if(Piwik::isUserHasViewAccess($idSite) && $this->includeData)
+		if(!Piwik::isUserHasViewAccess($idSite))
+		{
+			throw new Exception(Piwik_TranslateException('General_ExceptionPrivilegeAccessWebsite', array("'view'", $idSite)));
+
+		}
+		if($this->includeData)
 		{
 			$this->chartData = $this->getFlashData();
 		}
@@ -159,7 +164,7 @@ abstract class Piwik_ViewDataTable_GenerateGraphHTML extends Piwik_ViewDataTable
 			'height'               => $this->height,
 			'ofcLibraryPath'       => 'libs/open-flash-chart/',
 			'swfLibraryPath'       => 'libs/swfobject/',
-			'requiredFlashVersion' => '9.0.0',
+			'requiredFlashVersion' => '10.0.0',
 			'isDataAvailable'      => $isDataAvailable,
 			'includeData'          => $this->includeData,
 			'data'                 => $this->chartData,

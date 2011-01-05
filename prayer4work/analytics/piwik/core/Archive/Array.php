@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Array.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Array.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -171,18 +171,23 @@ abstract class Piwik_Archive_Array extends Piwik_Archive
 	}
 	
 	/**
-	 * Takes a list of fields defining numeric values and returns a quoted string 
-	 * of the field names fit to be used in the where clause of a SQL Query
+	 * Takes a list of fields defining numeric values and returns the corresponding
+	 * unnamed parameters to be bound to the field names in the where clause of a SQL query
 	 *
-	 * @param array|string $fields array( fieldName1, fieldName2, ...)  Names of the mysql table fields to load
-	 * @return String
+	 * @param array|string $fields array( fieldName1, fieldName2, fieldName3)  Names of the mysql table fields to load
+	 * @return string "?, ?, ?"
 	 */
 	public static function getSqlStringFieldsArray( $fields )
 	{
-		if(!is_array($fields))
+		if(is_string($fields))
 		{
-			return "'$fields'";
+			$fields = array($fields);
 		}
-		return "'" . implode("', '",$fields) . "'";
+		$count = count($fields);
+		if($count == 0)
+		{
+				return "''";
+		}
+		return '?'.str_repeat(',?', $count-1);
 	}
 }

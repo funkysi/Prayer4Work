@@ -8,7 +8,7 @@
 	var allSites = new Array();
 	var params = new Array();
 	{foreach from=$mySites key=i item=site}
-		allSites[{$i}] = new setRowData({$site.idsite}, {$site.visits}, {$site.actions}, {$site.unique}, '{$site.name|escape:"quotes"}', '{$site.main_url}', '{$site.visitsSummaryValue|replace:",":"."}', '{$site.actionsSummaryValue|replace:",":"."}', '{$site.uniqueSummaryValue|replace:",":"."}');
+		allSites[{$i}] = new setRowData({$site.idsite}, {$site.visits}, {$site.actions}, {$site.unique}, '{$site.name|escape:"javascript"}', '{$site.main_url|escape:"javascript"}', '{$site.visitsSummaryValue|replace:",":"."}', '{$site.actionsSummaryValue|replace:",":"."}', '{$site.uniqueSummaryValue|replace:",":"."}');
 	{/foreach}
 	params['period'] = '{$period}';
 	params['date'] = '{$date}';
@@ -19,8 +19,8 @@
 	params['site'] = '{$site}';
 	params['limit'] = '{$limit}';
 	params['page'] = 1;
-	params['prev'] = "{'General_Previous'|translate}";
-	params['next'] = "{'General_Next'|translate}";
+	params['prev'] = "{'General_Previous'|translate|escape:"javascript"}";
+	params['next'] = "{'General_Next'|translate|escape:"javascript"}";
 	params['row'] = '{$row|escape:"javascript"}';
 </script>
 
@@ -53,7 +53,7 @@
 			<span>{'General_ColumnNbUniqVisitors'|translate}</span>
 			<span class="arrow"></span>
 		</th>
-		<th id="evolution" style=" width:350px" colspan="2">
+		<th id="evolution" style=" width:350px" colspan="{if $show_sparklines}2{else}1{/if}">
 		<span class="arrow "></span>
 			<span class="evolution" style="cursor:pointer;" onClick="params = setOrderBy(this,allSites, params, $('#evolution_selector').val() + 'Summary');"> {'MultiSites_Evolution'|translate}</span>
 			<select class="selector" id="evolution_selector" onchange="params['evolutionBy'] = $('#evolution_selector').val(); switchEvolution(params);">

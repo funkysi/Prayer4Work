@@ -1,10 +1,9 @@
-/**
+/*!
  * Copyright 2007, 2008, 2009, 2010  Matthieu Aubry
  * All rights reserved.
  *
  * @link http://dev.piwik.org/trac/browser/trunk/libs/jquery/truncate
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
- * @version $Id: jquery.truncate.js 2387 2010-06-27 05:08:29Z vipsoft $
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are

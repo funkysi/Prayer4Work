@@ -5,10 +5,8 @@
  * Client to record visits, page views, Goals, in a Piwik server.
  * For more information, see http://piwik.org/docs/tracking-api/
  * 
- * Note: Piwik Cookies are not forwarded in the request and from the response
- *
  * @license released under BSD License http://www.opensource.org/licenses/bsd-license.php
- * @version $Id: PiwikTracker.php 2911 2010-08-11 16:48:47Z vipsoft $
+ * @version $Id: PiwikTracker.php 3565 2011-01-03 05:49:45Z matt $
  * @link http://piwik.org/docs/tracking-api/
  *
  * @category Piwik
@@ -25,6 +23,10 @@ class PiwikTracker
 	 */
 	static public $URL = '';
 	
+	/**
+	 * API Version
+	 * @var int
+	 */
 	const VERSION = 1;
 	
 	/**
@@ -37,6 +39,8 @@ class PiwikTracker
 	 */
     function __construct( $idSite, $apiUrl = false )
     {
+    	$this->cookieSupport = true;
+    	
     	$this->userAgent = false;
     	$this->localHour = false;
     	$this->localMinute = false;
@@ -46,6 +50,7 @@ class PiwikTracker
     	$this->customData = false;
     	$this->forcedDatetime = false;
 
+    	$this->requestCookie = '';
     	$this->idSite = $idSite;
     	$this->urlReferer = @$_SERVER['HTTP_REFERER'];
     	$this->pageUrl = self::getCurrentUrl();
@@ -207,6 +212,16 @@ class PiwikTracker
     	$url = $this->getUrlTrackAction($actionUrl, $actionType);
     	return $this->sendRequest($url); 
     }
+    
+    /**
+     * By default, PiwikTracker will read cookies from the response and sets them in the next request.
+     * This can be disabled by calling this function.
+     * @return void
+     */
+    public function disableCookieSupport()
+    {
+    	$this->cookieSupport = false;
+    }
 
     /**
      * @see doTrackPageView()
@@ -279,23 +294,29 @@ class PiwikTracker
 		$timeout = 600; // Allow debug while blocking the request
 		$response = '';
 
+		if(!$this->cookieSupport)
+		{
+			$this->requestCookie = '';
+		}
 		if(function_exists('curl_init'))
 		{
 			$ch = curl_init();
 			curl_setopt_array($ch, array(
 				CURLOPT_URL => $url,
 				CURLOPT_USERAGENT => $this->userAgent,
-				CURLOPT_HEADER => false,
+				CURLOPT_HEADER => true,
 				CURLOPT_TIMEOUT => $timeout,
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_HTTPHEADER => array(
 					'Accept-Language: ' . $this->acceptLanguage,
-					'Cookie: ',
+					'Cookie: '. $this->requestCookie,
 				),
 			));
 			ob_start();
 			$response = @curl_exec($ch);
 			ob_end_clean();
+			
+    		list($header,$content) = explode("\r\n\r\n", $response, $limitCount = 2);
 		}
 		else if(function_exists('stream_context_create'))
 		{
@@ -303,14 +324,23 @@ class PiwikTracker
 				'http' => array(
 					'user_agent' => $this->userAgent,
 					'header' => "Accept-Language: " . $this->acceptLanguage . "\r\n" .
-					            "Cookie: \r\n",
+					            "Cookie: ".$this->requestCookie. "\r\n" ,
 					'timeout' => $timeout, // PHP 5.2.1
 				)
 			);
 			$ctx = stream_context_create($stream_options);
 			$response = file_get_contents($url, 0, $ctx);
+			$header = implode("\r\n", $http_response_header); 
+			$content = $response;
 		}
-		return $response;
+		// The cookie in the response will be set in the next request
+		preg_match('/^Set-Cookie: (.*?);/m', $header, $cookie);
+		if(!empty($cookie[1]))
+		{
+			$this->requestCookie = $cookie[1];
+		}
+
+		return $content;
     }
     
     /**

@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 18:31:06
+<?php /* Smarty version 2.6.26, created on 2011-01-04 23:12:19
          compiled from CoreHome/templates/datatable.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/datatable.tpl', 7, false),array('function', 'logoHtml', 'CoreHome/templates/datatable.tpl', 25, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/datatable.tpl', 7, false),array('modifier', 'escape', 'CoreHome/templates/datatable.tpl', 14, false),)), $this); ?>
 <div id="<?php echo $this->_tpl_vars['properties']['uniqueId']; ?>
 ">
 	<div class="<?php if (isset ( $this->_tpl_vars['javascriptVariablesToSet']['idSubtable'] ) && $this->_tpl_vars['javascriptVariablesToSet']['idSubtable'] != 0): ?>sub<?php endif; ?><?php if ($this->_tpl_vars['javascriptVariablesToSet']['viewDataTable'] == 'tableAllColumns'): ?>dataTableAllColumnsWrapper<?php elseif ($this->_tpl_vars['javascriptVariablesToSet']['viewDataTable'] == 'tableGoals'): ?>dataTableAllColumnsWrapper<?php else: ?>dataTableWrapper<?php endif; ?>">
@@ -24,7 +24,7 @@ if ($this->_foreach['head']['total'] > 0):
         $this->_foreach['head']['iteration']++;
 ?>
 				<th class="sortable <?php if (($this->_foreach['head']['iteration'] <= 1)): ?>first<?php elseif (($this->_foreach['head']['iteration'] == $this->_foreach['head']['total'])): ?>last<?php endif; ?>" id="<?php echo $this->_tpl_vars['column']; ?>
-"><div id="thDIV"><?php echo $this->_tpl_vars['columnTranslations'][$this->_tpl_vars['column']]; ?>
+"><div id="thDIV"><?php echo ((is_array($_tmp=$this->_tpl_vars['columnTranslations'][$this->_tpl_vars['column']])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 </div></th>
 			<?php endforeach; endif; unset($_from); ?>
 			</tr>
@@ -36,19 +36,17 @@ if ($this->_foreach['head']['total'] > 0):
 ?>
 			<tr <?php if ($this->_tpl_vars['row']['idsubdatatable'] && $this->_tpl_vars['javascriptVariablesToSet']['controllerActionCalledWhenRequestSubTable'] != null): ?>class="subDataTable" id="<?php echo $this->_tpl_vars['row']['idsubdatatable']; ?>
 "<?php endif; ?>>
-<?php $_from = $this->_tpl_vars['dataTableColumns']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
+				<?php $_from = $this->_tpl_vars['dataTableColumns']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
     foreach ($_from as $this->_tpl_vars['column']):
 ?>
-<td>
-<?php if (! $this->_tpl_vars['row']['idsubdatatable'] && $this->_tpl_vars['column'] == 'label' && ! empty ( $this->_tpl_vars['row']['metadata']['url'] )): ?><span class="urlLink"><?php echo $this->_tpl_vars['row']['metadata']['url']; ?>
-</span><?php endif; ?>
-<?php if ($this->_tpl_vars['column'] == 'label'): ?><?php echo smarty_function_logoHtml(array('metadata' => $this->_tpl_vars['row']['metadata'],'alt' => $this->_tpl_vars['row']['columns']['label']), $this);?>
-<?php endif; ?>
-<?php if (isset ( $this->_tpl_vars['row']['columns'][$this->_tpl_vars['column']] )): ?><?php echo $this->_tpl_vars['row']['columns'][$this->_tpl_vars['column']]; ?>
-<?php else: ?><?php echo $this->_tpl_vars['defaultWhenColumnValueNotDefined']; ?>
-<?php endif; ?>
-</td>
-<?php endforeach; endif; unset($_from); ?>
+				<td>
+					<?php $_smarty_tpl_vars = $this->_tpl_vars;
+$this->_smarty_include(array('smarty_include_tpl_file' => "CoreHome/templates/datatable_cell.tpl", 'smarty_include_vars' => array()));
+$this->_tpl_vars = $_smarty_tpl_vars;
+unset($_smarty_tpl_vars);
+ ?>
+				</td>
+				<?php endforeach; endif; unset($_from); ?>
 			</tr>
 			<?php endforeach; endif; unset($_from); ?>
 			</tbody>

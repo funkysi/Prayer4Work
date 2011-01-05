@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: LanguagesManager.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: LanguagesManager.php 3515 2010-12-22 18:40:18Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_LanguagesManager
@@ -141,7 +141,7 @@ class Piwik_LanguagesManager extends Piwik_Plugin
 	 */
 	static protected function getLanguageFromPreferences()
 	{
-		if(($language = Piwik_LanguagesManager_API::getInstance()->getLanguageForSession()) != null)
+		if(($language = self::getLanguageForSession()) != null)
 		{
 			return $language;
 		}
@@ -152,5 +152,40 @@ class Piwik_LanguagesManager extends Piwik_Plugin
 		} catch(Exception $e) {
 			return false;
 		}
+	}
+
+
+	/**
+	 * Returns the langage for the session
+	 *
+	 * @return string|null
+	 */
+	static public function getLanguageForSession()
+	{
+		$cookieName = Zend_Registry::get('config')->General->language_cookie_name;
+		$cookie = new Piwik_Cookie($cookieName);
+		if($cookie->isCookieFound())
+		{
+			return $cookie->get('language');
+		}
+		return null;
+	}
+
+	/**
+	 * Set the language for the session
+	 *
+	 * @param string $languageCode ISO language code
+	 */
+	static public function setLanguageForSession($languageCode)
+	{
+		if(!Piwik_LanguagesManager_API::getInstance()->isLanguageAvailable($languageCode))
+		{
+			return false;
+		}
+
+		$cookieName = Zend_Registry::get('config')->General->language_cookie_name;
+		$cookie = new Piwik_Cookie($cookieName, 0);
+		$cookie->set('language', $languageCode);
+		$cookie->save();
 	}
 }

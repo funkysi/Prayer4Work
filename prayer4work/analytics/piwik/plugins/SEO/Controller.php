@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_SEO
@@ -21,12 +21,13 @@ class Piwik_SEO_Controller extends Piwik_Controller
 		$site = new Piwik_Site($idSite);
 
 		$url = urldecode(Piwik_Common::getRequestVar('url', '', 'string'));
-		if(empty($url))
+
+		if(empty($url) || @parse_url($url) === false)
 		{
 			$url = $site->getMainUrl();
 		}
-		$dataTable = Piwik_SEO_API::getInstance()->getRank($url);
 
+		$dataTable = Piwik_SEO_API::getInstance()->getRank($url);
 		
 		$view = Piwik_View::factory('index');
 		$view->urlToRank = $url;

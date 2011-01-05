@@ -116,10 +116,13 @@ if (!function_exists("json_encode")) {
       if (is_array($var) || ($obj=is_object($var))) {
 
          #-- check if array is associative
-         if (!$obj) foreach ((array)$var as $i=>$v) {
-            if (!is_int($i)) {
-               $obj = 1;
-               break;
+         if (!$obj) {
+            $expect = 0;
+            foreach ((array)$var as $i=>$v) {
+               if (!is_int($i) || $i !== $expect++) {
+                  $obj = 1;
+                  break;
+               }
             }
          }
 
@@ -460,24 +463,36 @@ if (in_array('mysqli', @get_loaded_extensions()) && !function_exists('mysqli_set
 if(function_exists('parse_ini_file')) {
 	// provide a wrapper
 	function _parse_ini_file($filename, $process_sections = false) {
-		return parse_ini_file($filename, $process_sections);
+		return file_exists($filename) ? parse_ini_file($filename, $process_sections) : false;
 	}
 } else {
 	// we can't redefine parse_ini_file() if it has been disabled
 	function _parse_ini_file($filename, $process_sections = false)
 	{
+		if(!file_exists($filename)) {
+			return false;
+		}
+
 		if(function_exists('file_get_contents')) {
 			$ini = file_get_contents($filename);
-		} else if(function_exists('file') && version_compare(phpversion(), '6') >= 0) {
-			$ini = implode(file($filename), FILE_TEXT);
+		} else if(function_exists('file')) {
+			if($ini = file($filename)) {
+				$ini = implode("\n", $ini);
+			}
 		} else if(function_exists('fopen') && function_exists('fread')) {
 			$handle = fopen($filename, 'r');
+			if(!$handle) {
+				return false;
+			}
 			$ini = fread($handle, filesize($filename));
 			fclose($handle);
 		} else {
 			return false;
 		}
 
+		if($ini === false) {
+			return false;
+		}
 		if(is_string($ini)) { $ini = explode("\n", str_replace("\r", "\n", $ini)); }
 		if (count($ini) == 0) { return array(); }
 
@@ -621,4 +636,305 @@ if(function_exists('glob')) {
 	function _glob($pattern, $flags = 0) {
 		return false;
 	}
+}
+
+/**
+ * Safe serialize() and unserialize() replacements
+ *
+ * @license Public Domain
+ *
+ * @author anthon (dot) pang (at) gmail (dot) com
+ */
+
+/*
+ * Arbitrary limits for safe_unserialize()
+ */
+define('MAX_SERIALIZED_INPUT_LENGTH', 4096);
+define('MAX_SERIALIZED_ARRAY_LENGTH', 256);
+define('MAX_SERIALIZED_ARRAY_DEPTH', 3);
+
+
+/**
+ * Safe serialize() replacement
+ * - output a strict subset of PHP's native serialized representation
+ * - does not serialize objects
+ *
+ * @param mixed $value
+ * @return string
+ * @throw Exception if $value is malformed or contains unsupported types (e.g., resources, objects)
+ */
+function _safe_serialize( $value )
+{
+	if(is_null($value))
+	{
+		return 'N;';
+	}
+	if(is_bool($value))
+	{
+		return 'b:'.(int)$value.';';
+	}
+	if(is_int($value))
+	{
+		return 'i:'.$value.';';
+	}
+	if(is_float($value))
+	{
+		return 'd:'.$value.';';
+	}
+	if(is_string($value))
+	{
+		return 's:'.strlen($value).':"'.$value.'";';
+	}
+	if(is_array($value))
+	{
+		$out = '';
+		foreach($value as $k => $v)
+		{
+			$out .= _safe_serialize($k) . _safe_serialize($v);
+		}
+		
+		return 'a:'.count($value).':{'.$out.'}';
+	}
+	if(is_resource($value))
+	{
+		// built-in returns 'i:0;'
+		throw new Exception('safe_serialize: resources not supported');
+	}
+	if(is_object($value) || gettype($value) == 'object')
+	{
+		throw new Exception('safe_serialize: objects not supported');
+	}
+	throw new Exception('safe_serialize cannot serialize: '.gettype($value));
+}
+
+/**
+ * Wrapper for _safe_serialize() that handles exceptions and multibyte encoding issue
+ *
+ * @param mixed $value
+ * @return string
+ */
+function safe_serialize( $value )
+{
+	// ensure we use the byte count for strings even when strlen() is overloaded by mb_strlen()
+	if (function_exists('mb_internal_encoding') &&
+		(((int) ini_get('mbstring.func_overload')) & 2))
+	{
+		$mbIntEnc = mb_internal_encoding();
+		mb_internal_encoding('ASCII');
+	}
+
+	try {
+		$out = _safe_serialize($value);
+	} catch(Exception $e) {
+		$out = false;
+	}
+
+	if (isset($mbIntEnc))
+	{
+		mb_internal_encoding($mbIntEnc);
+	}
+	return $out;
+}
+
+/**
+ * Safe unserialize() replacement
+ * - accepts a strict subset of PHP's native serialized representation
+ * - does not unserialize objects
+ *
+ * @param string $str
+ * @return mixed
+ * @throw Exception if $str is malformed or contains unsupported types (e.g., resources, objects)
+ */
+function _safe_unserialize($str)
+{
+	if(strlen($str) > MAX_SERIALIZED_INPUT_LENGTH)
+	{
+		throw new Exception('safe_unserialize: input exceeds ' . MAX_SERIALIZED_INPUT_LENGTH);
+	}
+
+	if(empty($str) || !is_string($str))
+	{
+		return false;
+	}
+
+	$stack = array();
+	$expected = array();
+
+	/*
+	 * states:
+	 *   0 - initial state, expecting a single value or array
+	 *   1 - terminal state
+	 *   2 - in array, expecting end of array or a key
+	 *   3 - in array, expecting value or another array
+	 */
+	$state = 0;
+	while($state != 1)
+	{
+		$type = isset($str[0]) ? $str[0] : '';
+
+		if($type == '}')
+		{
+			$str = substr($str, 1);
+		}
+		else if($type == 'N' && $str[1] == ';')
+		{
+			$value = null;
+			$str = substr($str, 2);
+		}
+		else if($type == 'b' && preg_match('/^b:([01]);/', $str, $matches))
+		{
+			$value = $matches[1] == '1' ? true : false;
+			$str = substr($str, 4);
+		}
+		else if($type == 'i' && preg_match('/^i:(-?[0-9]+);(.*)/s', $str, $matches))
+		{
+			$value = (int)$matches[1];
+			$str = $matches[2];
+		}
+		else if($type == 'd' && preg_match('/^d:(-?[0-9]+\.?[0-9]*(E[+-][0-9]+)?);(.*)/s', $str, $matches))
+		{
+			$value = (float)$matches[1];
+			$str = $matches[3];
+		}
+		else if($type == 's' && preg_match('/^s:([0-9]+):"(.*)/s', $str, $matches) && substr($matches[2], (int)$matches[1], 2) == '";')
+		{
+			$value = substr($matches[2], 0, (int)$matches[1]);
+			$str = substr($matches[2], (int)$matches[1] + 2);
+		}
+		else if($type == 'a' && preg_match('/^a:([0-9]+):{(.*)/s', $str, $matches) && $matches[1] < MAX_SERIALIZED_ARRAY_LENGTH)
+		{
+			$expectedLength = (int)$matches[1];
+			$str = $matches[2];
+		}
+		else if($type == 'O')
+		{
+			throw new Exception('safe_unserialize: objects not supported');
+		}
+		else
+		{
+			throw new Exception('safe_unserialize: unknown/malformed type: '.$type);
+		}
+
+		switch($state)
+		{
+			case 3: // in array, expecting value or another array
+				if($type == 'a')
+				{
+					if(count($stack) >= MAX_SERIALIZED_ARRAY_DEPTH)
+					{
+						throw new Exception('safe_unserialize: array nesting exceeds ' . MAX_SERIALIZED_ARRAY_DEPTH);
+					}
+
+					$stack[] = &$list;
+					$list[$key] = array();
+					$list = &$list[$key];
+					$expected[] = $expectedLength;
+					$state = 2;
+					break;
+				}
+				if($type != '}')
+				{
+					$list[$key] = $value;
+					$state = 2;
+					break;
+				}
+
+				throw new Exception('safe_unserialize: missing array value');
+
+			case 2: // in array, expecting end of array or a key
+				if($type == '}')
+				{
+					if(count($list) < end($expected))
+					{
+						throw new Exception('safe_unserialize: array size less than expected ' . $expected[0]);
+					}
+
+					unset($list);
+					$list = &$stack[count($stack)-1];
+					array_pop($stack);
+
+					// go to terminal state if we're at the end of the root array
+					array_pop($expected);
+					if(count($expected) == 0) {
+						$state = 1;
+					}
+					break;
+				}
+				if($type == 'i' || $type == 's')
+				{
+					if(count($list) >= MAX_SERIALIZED_ARRAY_LENGTH)
+					{
+						throw new Exception('safe_unserialize: array size exceeds ' . MAX_SERIALIZED_ARRAY_LENGTH);
+					}
+					if(count($list) >= end($expected))
+					{
+						throw new Exception('safe_unserialize: array size exceeds expected length');
+					}
+
+					$key = $value;
+					$state = 3;
+					break;
+				}
+
+				throw new Exception('safe_unserialize: illegal array index type');
+
+			case 0: // expecting array or value
+				if($type == 'a')
+				{
+					if(count($stack) >= MAX_SERIALIZED_ARRAY_DEPTH)
+					{
+						throw new Exception('safe_unserialize: array nesting exceeds ' . MAX_SERIALIZED_ARRAY_DEPTH);
+					}
+
+					$data = array();
+					$list = &$data;
+					$expected[] = $expectedLength;
+					$state = 2;
+					break;
+				}
+				if($type != '}')
+				{
+					$data = $value;
+					$state = 1;
+					break;
+				}
+
+				throw new Exception('safe_unserialize: not in array');
+		}
+	}
+
+	if(!empty($str))
+	{
+		throw new Exception('safe_unserialize: trailing data in input');
+	}
+	return $data;
+}
+
+/**
+ * Wrapper for _safe_unserialize() that handles exceptions and multibyte encoding issue
+ *
+ * @param string $str
+ * @return mixed
+ */
+function safe_unserialize( $str )
+{
+	// ensure we use the byte count for strings even when strlen() is overloaded by mb_strlen()
+	if (function_exists('mb_internal_encoding') &&
+		(((int) ini_get('mbstring.func_overload')) & 2))
+	{
+		$mbIntEnc = mb_internal_encoding();
+		mb_internal_encoding('ASCII');
+	}
+
+	try {
+		$out = _safe_unserialize($str);
+	} catch(Exception $e) {
+		$out = false;
+	}
+
+	if (isset($mbIntEnc))
+	{
+		mb_internal_encoding($mbIntEnc);
+	}
+	return $out;
 }

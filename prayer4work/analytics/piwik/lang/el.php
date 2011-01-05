@@ -3,7 +3,7 @@ $translations = array(
 	'General_Locale' => 'el_GR.UTF-8',
 	'General_TranslatorName' => 'Jim Black www.jblack.info, Γεώργιος Τέλλος OnSite.Net VoIP & IT Solutions, Παναγιώτης Παπάζογλου Δρ. Δασολόγος-Περιβαλλοντολόγος',
 	'General_TranslatorEmail' => 'jimaek@hotmail.com, info@onsite.net.gr, papaz_p@yahoo.com',
-	'General_EnglishLanguageName' => 'Hellenic',
+	'General_EnglishLanguageName' => 'Greek',
 	'General_OriginalLanguageName' => 'Ελληνικά',
 	'General_HelloUser' => 'Γεια σου, %s!',
 	'General_OpenSourceWebAnalytics' => 'Λογισμικό Ανάλυσης Ιστοσελίδων',
@@ -1225,4 +1225,7 @@ $translations = array(
 	'Live_GoalTime' => '1ος χρόνος Μετατροπής',
 	'Live_GoalRevenue' => 'Πρόσοδος',
 	'Live_GoalDetails' => 'Λεπτομέρειες',
+	'General_Id' => 'Α/Α',
+	'PDFReports_EmailReports' => 'Αναφορές Ηλεκτρονικής Αλληλογραφίας',
+	'PDFReports_SendReportNow' => 'Αποστολή Αναφοράς τώρα',
 );

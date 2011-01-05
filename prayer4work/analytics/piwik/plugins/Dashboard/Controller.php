@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3009 2010-08-28 20:42:35Z matt $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Dashboard
@@ -91,15 +91,15 @@ class Piwik_Dashboard_Controller extends Piwik_Controller
 		$this->checkTokenInUrl();
 		$layout = Piwik_Common::getRequestVar('layout');
 		$idDashboard = Piwik_Common::getRequestVar('idDashboard', 1, 'int' );
-		$currentUser = Piwik::getCurrentUserLogin();
-		if($currentUser == 'anonymous')
+		if(Piwik::isUserIsAnonymous())
 		{
-			$session = new Zend_Session_Namespace("Piwik_Dashboard");
+			$session = new Piwik_Session_Namespace("Piwik_Dashboard");
 			$session->dashboardLayout = $layout;
+			$session->setExpirationSeconds(7*86400);
 		}
 		else
 		{
-			$this->saveLayoutForUser($currentUser,$idDashboard, $layout);
+			$this->saveLayoutForUser(Piwik::getCurrentUserLogin(),$idDashboard, $layout);
 		}
 	}
 	
@@ -111,12 +111,10 @@ class Piwik_Dashboard_Controller extends Piwik_Controller
 	protected function getLayout()
 	{
 		$idDashboard = Piwik_Common::getRequestVar('idDashboard', 1, 'int' );
-		$currentUser = Piwik::getCurrentUserLogin();
 
-		if($currentUser == 'anonymous')
+		if(Piwik::isUserIsAnonymous())
 		{
-			$session = new Zend_Session_Namespace("Piwik_Dashboard");
-
+			$session = new Piwik_Session_Namespace("Piwik_Dashboard");
 			if(!isset($session->dashboardLayout))
 			{
 				return false;
@@ -125,7 +123,7 @@ class Piwik_Dashboard_Controller extends Piwik_Controller
 		}
 		else
 		{
-			$layout = $this->getLayoutForUser($currentUser,$idDashboard);
+			$layout = $this->getLayoutForUser(Piwik::getCurrentUserLogin(),$idDashboard);
 		}
 	
 		// layout was JSON.stringified

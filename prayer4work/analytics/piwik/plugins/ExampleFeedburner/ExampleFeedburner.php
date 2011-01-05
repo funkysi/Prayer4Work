@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExampleFeedburner.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ExampleFeedburner.php 3341 2010-11-25 03:52:59Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExampleFeedburner
@@ -107,8 +107,7 @@ class Piwik_ExampleFeedburner_Controller extends Piwik_Controller
 			// Feedburner errors are malformed
 			if(strpos($data, 'The server encountered a temporary error') !== false)
 			{
-				$data = 'The server encountered a temporary error';
-				throw new Exception('Feedburner stats temporarily unavailable');
+				throw new Exception('Unexpected Feedburner response');
 			}
 			$xml = new SimpleXMLElement($data);
 		} catch(Exception $e) {

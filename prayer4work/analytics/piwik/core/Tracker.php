@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Tracker.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Tracker.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -23,7 +23,6 @@
 class Piwik_Tracker
 {	
 	protected $stateValid = self::STATE_NOTHING_TO_NOTICE;
-	protected $urlToRedirect;
 	
 	/**
 	 * @var Piwik_Tracker_Db
@@ -31,10 +30,8 @@ class Piwik_Tracker
 	protected static $db = null;
 	
 	const STATE_NOTHING_TO_NOTICE = 1;
-	const STATE_TO_REDIRECT_URL = 2;
 	const STATE_LOGGING_DISABLE = 10;
 	const STATE_EMPTY_REQUEST = 11;
-	const STATE_TRACK_ONLY = 12;
 	const STATE_NOSCRIPT_REQUEST = 13;
 		
 	const COOKIE_INDEX_IDVISITOR 				= 1;
@@ -64,7 +61,7 @@ class Piwik_Tracker
 	{
 		self::$forcedDateTime = $dateTime;
 	}
-	protected function getCurrentTimestamp()
+	public function getCurrentTimestamp()
 	{
 		if(!is_null(self::$forcedDateTime))
 		{
@@ -76,22 +73,24 @@ class Piwik_Tracker
 	{
 		$this->init();
 		
-		if( $this->isVisitValid() )
-		{
-			try {
+		try {
+			if( $this->isVisitValid() )
+			{
 				self::connectDatabase();
 				
 				$visit = $this->getNewVisitObject();
 				$visit->setRequest($this->request);
 				$visit->handle();
 				unset($visit);
-			} catch (PDOException $e) {
-				printDebug($e->getMessage());
-			} catch(Piwik_Tracker_Visit_Excluded $e) {
 			}
+
+			Piwik_Common::runScheduledTasks($now = $this->getCurrentTimestamp());
+		} catch (Piwik_Tracker_Db_Exception $e) {
+			printDebug($e->getMessage());
+		} catch(Piwik_Tracker_Visit_Excluded $e) {
+		} catch(Exception $e) {
+			Piwik_Tracker_ExitWithException($e);
 		}
-		
-		Piwik_Common::runScheduledTasks($now = $this->getCurrentTimestamp());
 
 		$this->end();
 	}
@@ -111,15 +110,8 @@ class Piwik_Tracker
 		$this->loadTrackerPlugins();
 		$this->handleDisabledTracker();
 		$this->handleEmptyRequest();
-		$this->handleDownloadRedirect();
-		$this->handleOutlinkRedirect();
-		$this->handleDataPush();
 	}
 
-	// display the logo or pixel 1*1 GIF
-	// or a marketing page if no parameters in the url
-	// or redirect to a url
-	// or load a URL (rss feed) (forward the cookie as well)
 	protected function end()
 	{
 		switch($this->getState())
@@ -134,14 +126,6 @@ class Piwik_Tracker
 				echo "<a href='/'>Piwik</a> is a free open source <a href='http://piwik.org'>web analytics</a> alternative to Google analytics.";
 			break;
 			
-			case self::STATE_TO_REDIRECT_URL:
-				$this->sendHeader('Location: ' . $this->getUrlToRedirect());
-			break;
-			
-			case self::STATE_TRACK_ONLY:
-				printDebug("Data push, tracking only");
-			break;
-
 			case self::STATE_NOSCRIPT_REQUEST:
 			case self::STATE_NOTHING_TO_NOTICE:
 			default:
@@ -282,16 +266,6 @@ class Piwik_Tracker
 		return $this->stateValid;
 	}
 	
-	protected function setUrlToRedirect( $url )
-	{
-		$this->urlToRedirect = $url;
-	}
-	
-	protected function getUrlToRedirect()
-	{
-		return $this->urlToRedirect;
-	}
-	
 	protected function setState( $value )
 	{
 		$this->stateValid = $value;
@@ -314,42 +288,6 @@ class Piwik_Tracker
 		}
 	}
 	
-	protected function handleDataPush()
-	{
-		if( Piwik_Common::getRequestVar( 'data_push', 0, 'int', $this->request) == 1)
-		{
-			$this->setState( self::STATE_TRACK_ONLY );
-		}
-	}
-
-	protected function handleDownloadRedirect()
-	{
-		$urlDownload = Piwik_Common::getRequestVar( 'download', '', 'string', $this->request);
-
-		if( !empty($urlDownload) )
-		{
-			if( Piwik_Common::getRequestVar( 'redirect', 1, 'int', $this->request) == 1)
-			{
-				$this->setState( self::STATE_TO_REDIRECT_URL );
-				$this->setUrlToRedirect ( $urlDownload );
-			}
-		}
-	}
-	
-	protected function handleOutlinkRedirect()
-	{
-		$urlOutlink = Piwik_Common::getRequestVar( 'link', '', 'string', $this->request);
-		
-		if( !empty($urlOutlink) )
-		{
-			if( Piwik_Common::getRequestVar( 'redirect', 1, 'int', $this->request) == 1)
-			{
-				$this->setState( self::STATE_TO_REDIRECT_URL );
-				$this->setUrlToRedirect ( $urlOutlink);
-			}
-		}
-	}
-
 	protected function handleEmptyRequest()
 	{
 		$countParameters = count($this->request);
@@ -391,4 +329,31 @@ if(!function_exists('printDebug'))
     		}
     	}
     }
+}
+
+/**
+ * Displays exception in a friendly UI and exits.
+ *
+ * @param Exception $e
+ */
+function Piwik_Tracker_ExitWithException($e)
+{
+	header('Content-Type: text/html; charset=utf-8');
+	if(isset($GLOBALS['PIWIK_TRACKER_DEBUG']) && $GLOBALS['PIWIK_TRACKER_DEBUG'])
+	{
+		$trailer = '<font color="#888888">Backtrace:<br /><pre>'.$e->getTraceAsString().'</pre></font>';
+	}
+	else
+	{
+		$trailer = '<p>Edit the following line in piwik.php to enable tracker debugging and display a backtrace:</p>
+					<blockquote><pre>$GLOBALS[\'PIWIK_TRACKER_DEBUG\'] = true;</pre></blockquote>';
+	}
+
+	$headerPage = file_get_contents(PIWIK_INCLUDE_PATH . '/themes/default/simple_structure_header.tpl');
+	$footerPage = file_get_contents(PIWIK_INCLUDE_PATH . '/themes/default/simple_structure_footer.tpl');
+	$headerPage = str_replace('{$HTML_TITLE}', 'Piwik &rsaquo; Error', $headerPage);
+	
+	echo $headerPage . '<p>' . $e->getMessage() . '</p>' . $trailer . $footerPage;
+
+	exit;
 }

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -91,7 +91,6 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 		$site = new Piwik_Site($idSite);
 		$view->displaySiteName = $site->getName();
 		$view->jsTag = $jsTag;
-		$view->currentUrlWithoutFilename = Piwik_Url::getCurrentUrlWithoutFileName();
 		echo $view->render();
 	}
 
@@ -116,16 +115,13 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 		$view->idSite = Piwik_Common::getRequestVar('idSite');
 		$view->piwikUrl = Piwik_Common::getRequestVar('piwikUrl');
 		$view->calledExternally = true;
-
-		// Links are prefixed, need to be absolute for this page as it is externally loaded
-		$view->currentUrlWithoutFilename = Piwik_Url::getCurrentUrlWithoutFileName();
 		echo $view->render();
 	}
 
 	function getSitesForAutocompleter()
 	{
 		$pattern = Piwik_Common::getRequestVar('term');
-		$sites = Piwik_SitesManager_API::getPatternMatchSites($pattern);
+		$sites = Piwik_SitesManager_API::getInstance()->getPatternMatchSites($pattern);
 		$pattern = str_replace('%', '', $pattern);
 		if(!count($sites))
 		{
@@ -133,12 +129,13 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 		}
 		else
 		{
+			$pattern = str_replace('/', '\\/', $pattern);
 			foreach($sites as $s)
 			{
 				$hl_name = $s['name'];
 				if(strlen($pattern) > 0)
 				{
-					preg_match_all("/$pattern+/i", $hl_name, $matches);
+					@preg_match_all("/$pattern+/i", $hl_name, $matches);
 					if (is_array($matches[0]) && count($matches[0]) >= 1)
 					{
 						foreach ($matches[0] as $match)

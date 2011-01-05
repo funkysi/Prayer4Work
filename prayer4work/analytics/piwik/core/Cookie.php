@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Cookie.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Cookie.php 3610 2011-01-04 11:18:56Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -34,7 +34,28 @@ class Piwik_Cookie
 	 * The expire time for the cookie (expressed in UNIX Timestamp)
 	 */
 	protected $expire = null;
-	
+
+	/**
+	 * Restrict cookie path
+	 */
+	protected $path = '';
+
+	/**
+	 * Restrict cookie to a domain (or subdomains)
+	 */
+	protected $domain = '';
+
+	/**
+	 * If true, cookie should only be transmitted over secure HTTPS
+	 */
+	protected $secure = false;
+
+	/**
+	 * If true, cookie will only be made available via the HTTP protocol.
+	 * Note: not well supported by browsers.
+	 */
+	protected $httponly = false;
+
 	/**
 	 * The content of the cookie
 	 */
@@ -46,12 +67,12 @@ class Piwik_Cookie
 	const VALUE_SEPARATOR = ':';
 	
 	/**
-	 * Instanciate a new Cookie object and tries to load the cookie content if the cookie
+	 * Instantiate a new Cookie object and tries to load the cookie content if the cookie
 	 * exists already.
 	 * 
-	 * @param string cookie Name
-	 * @param int The timestamp after which the cookie will expire, eg time() + 86400
-	 * @param string The path on the server in which the cookie will be available on. 
+	 * @param string $cookieName cookie Name
+	 * @param int $expire The timestamp after which the cookie will expire, eg time() + 86400; use 0 (int zero) to expire cookie at end of browser session
+	 * @param string $path The path on the server in which the cookie will be available on. 
 	 * @param string $keyStore Will be used to store several bits of data (eg. one array per website)
 	 */
 	public function __construct( $cookieName, $expire = null, $path = null, $keyStore = false)
@@ -61,7 +82,7 @@ class Piwik_Cookie
 		$this->expire = $expire;
 		if(is_null($expire)
 			|| !is_numeric($expire)
-			|| $expire <= 0)
+			|| $expire < 0)
 		{
 			$this->expire = $this->getDefaultExpire();
 		}
@@ -103,8 +124,10 @@ class Piwik_Cookie
 		if (!empty($Domain))
 		{	
 			// Fix the domain to accept domains with and without 'www.'.
-			if (strtolower(substr($Domain, 0, 4)) == 'www.')  $Domain = substr($Domain, 4);
-			
+			if (!strncasecmp($Domain, 'www.', 4))
+			{
+				$Domain = substr($Domain, 4);
+			}			
 			$Domain = '.' . $Domain;
 			
 			// Remove port information.
@@ -158,7 +181,7 @@ class Piwik_Cookie
 		}
 		
 		$this->setP3PHeader();
-		$this->setCookie( $this->name, $cookieString, $this->expire, $this->path);
+		$this->setCookie($this->name, $cookieString, $this->expire, $this->path, $this->domain, $this->secure, $this->httponly);
 	}
 
 	/**
@@ -203,10 +226,15 @@ class Piwik_Cookie
 			// no numeric value are base64 encoded so we need to decode them
 			if(!is_numeric($varValue))
 			{
-				$varValue = base64_decode($varValue);
-
-				// some of the values may be serialized array so we try to unserialize it
-				$varValue = Piwik_Common::unserialize_array($varValue);
+				// @see http://bugs.php.net/38680
+				if(PHP_VERSION == '5.2.0')
+				{
+					$varValue = safe_unserialize(base64_decode($varValue));
+				}
+				else
+				{
+					$varValue = @json_decode(base64_decode($varValue), $assoc = true);
+				}
 			}
 			
 			$this->value[$varName] = $varValue;
@@ -226,11 +254,15 @@ class Piwik_Cookie
 		{
 			if(!is_numeric($value))
 			{
-				if(is_array($value))
+				// @see http://bugs.php.net/38680
+				if(PHP_VERSION == '5.2.0')
 				{
-					$value = serialize($value);
+					$value = base64_encode(safe_serialize($value));
 				}
-				$value = base64_encode($value);
+				else
+				{
+					$value = base64_encode(json_encode($value));
+				}
 			}
 		
 			$cookieStr .= "$name=$value" . self::VALUE_SEPARATOR;
@@ -246,6 +278,36 @@ class Piwik_Cookie
 		}
 
 		return '';
+	}
+
+	/**
+	 * Set cookie domain
+	 *
+	 * @param string $domain
+	 */
+	public function setDomain($domain)
+	{
+		$this->domain = $domain;
+	}
+	
+	/**
+	 * Set secure flag
+	 *
+	 * @param bool $secure
+	 */
+	public function setSecure($secure)
+	{
+		$this->secure = $secure;
+	}
+	
+	/**
+	 * Set HTTP only
+	 *
+	 * @param bool $httponly
+	 */
+	public function setHttpOnly($httponly)
+	{
+		$this->httponly = $httponly;
 	}
 	
 	/**

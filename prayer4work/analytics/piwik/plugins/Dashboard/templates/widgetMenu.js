@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: widgetMenu.js 2967 2010-08-20 15:12:43Z vipsoft $
  */
 
 function widgetsHelper()
@@ -69,6 +68,9 @@ widgetsHelper.getEmptyWidgetHtml = function (uniqueId, widgetName)
 				'<div class="widgetTop">'+
 					'<div class="button" id="close">'+
 						'<img src="themes/default/images/close.png" title="'+_pk_translate('Dashboard_Close_js')+'" />'+
+					'</div>'+
+					'<div class="button" id="maximise">'+
+						'<img src="themes/default/images/maximise.png" title="'+_pk_translate('Dashboard_Maximise_js')+'" />'+
 					'</div>'+
 					'<div class="widgetName">'+widgetName+'</div>'+
 				'</div>'+

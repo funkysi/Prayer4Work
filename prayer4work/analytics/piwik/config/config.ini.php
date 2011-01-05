@@ -51,6 +51,7 @@ PluginsInstalled[] = UserCountryMap
 PluginsInstalled[] = Live
 PluginsInstalled[] = DBStats
 PluginsInstalled[] = SecurityInfo
+PluginsInstalled[] = Proxy
 
 [Plugins]
 Plugins[] = CorePluginsAdmin
@@ -87,4 +88,47 @@ Plugins[] = UserCountryMap
 Plugins[] = Live
 Plugins[] = DBStats
 Plugins[] = SecurityInfo
+
+[General]
+action_url_category_delimiter = "/"
+action_title_category_delimiter = "/"
+autocomplete_min_sites = 5
+site_selector_max_sites = 10
+show_multisites_sparklines = 1
+action_default_name = "index"
+action_default_name_when_not_defined = "page title not defined"
+action_default_url_when_not_defined = "page url not defined"
+default_language = "en"
+datatable_default_limit = 10
+API_datatable_default_limit = 50
+default_day = "yesterday"
+default_period = "day"
+time_before_today_archive_considered_outdated = 10
+enable_browser_archiving_triggering = 1
+minimum_php_version = "5.1.3"
+minimum_mysql_version = 4.1
+minimum_pgsql_version = 8.3
+minimum_memory_limit = 128
+force_ssl_login = 0
+login_cookie_name = "piwik_auth"
+login_cookie_expire = 1209600
+login_cookie_path = ""
+login_password_recovery_email_address = "password-recovery@{DOMAIN}"
+login_password_recovery_email_name = "Piwik"
+enable_framed_logins = 0
+language_cookie_name = "piwik_lang"
+noreply_email_address = "noreply@{DOMAIN}"
+feedback_email_address = "hello@piwik.org"
+datatable_archiving_maximum_rows_referers = 1000
+datatable_archiving_maximum_rows_subtable_referers = 50
+datatable_archiving_maximum_rows_actions = 500
+datatable_archiving_maximum_rows_subtable_actions = 100
+datatable_archiving_maximum_rows_standard = 500
+use_ajax_cdn = 0
+jquery_version = "1.4.2"
+jqueryui_version = "1.8.4"
+swfobject_version = 2.2
+reverse_proxy = 0
+latest_version_url = "http://piwik.org/latest.zip"
+api_service_url = "http://api.piwik.org"
 

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Feedback
@@ -34,6 +34,7 @@ class Piwik_Feedback_Controller extends Piwik_Controller
 		$nonce = Piwik_Common::getRequestVar('nonce', '', 'string');
 
 		$view = Piwik_View::factory('sent');
+		$view->feedbackEmailAddress = Zend_Registry::get('config')->General->feedback_email_address;
 		try
 		{
 			$minimumBodyLength = 35;
@@ -45,7 +46,7 @@ class Piwik_Feedback_Controller extends Piwik_Controller
 			{
 				throw new Exception(Piwik_TranslateException('UsersManager_ExceptionInvalidEmail'));
 			}
-			if(strpos($body, 'http://') !== false)
+			if(preg_match('/https?:/i', $body))
 			{
 				throw new Exception(Piwik_TranslateException('Feedback_ExceptionNoUrls'));
 			}
@@ -56,7 +57,7 @@ class Piwik_Feedback_Controller extends Piwik_Controller
 
 			$mail = new Piwik_Mail();
 			$mail->setFrom(Piwik_Common::unsanitizeInputValue($email));
-			$mail->addTo('hello@piwik.org', 'Piwik Team');
+			$mail->addTo($view->feedbackEmailAddress, 'Piwik Team');
 			$mail->setSubject('[ Feedback form - Piwik ] ' . $category);
 			$mail->setBodyText(Piwik_Common::unsanitizeInputValue($body) . "\n"
 				. 'Piwik ' . Piwik_Version::VERSION . "\n"

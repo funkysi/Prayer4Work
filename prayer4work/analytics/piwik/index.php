@@ -1,11 +1,11 @@
 <?php
 /**
  * Piwik - Open source web analytics
- * 
+ *
  * @link http://piwik.org
- * @license http://www.gnu.org/licenses/gpl-3.0.html Gpl v3 or later
- * @version $Id: index.php 2763 2010-07-28 20:15:31Z vipsoft $
- * 
+ * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
+ * @version $Id: index.php 3485 2010-12-21 06:09:39Z matt $
+ *
  * @package Piwik
  */
 

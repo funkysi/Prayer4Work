@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2983 2010-08-26 13:19:58Z matt $
+ * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -408,7 +408,7 @@ abstract class Piwik_Controller
 		}
 
 		if($websiteId) {
-			header("Location:index.php?module=".$moduleToRedirect
+			header("Location: index.php?module=".$moduleToRedirect
 									."&action=".$actionToRedirect
 									."&idSite=".$websiteId
 									."&period=".$defaultPeriod
@@ -418,7 +418,7 @@ abstract class Piwik_Controller
 		
 		if(Piwik::isUserIsSuperUser())
 		{
-			Piwik_ExitWithMessage("Error: no website were found in this Piwik installation. 
+			Piwik_ExitWithMessage("Error: no website was found in this Piwik installation. 
 			<br />Check the table '". Piwik_Common::prefixTable('site') ."' that should contain your Piwik websites.", false, true);
 		}
 		

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Http.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Http.php 3418 2010-12-05 23:28:36Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -28,7 +28,7 @@ class Piwik_Http
 		$method = 'curl';
 		if(!extension_loaded('curl'))
 		{
-			$method = 'stream';
+			$method = 'fopen';
 			if(@ini_get('allow_url_fopen') != '1')
 			{
 				$method = 'socket';
@@ -195,7 +195,7 @@ class Piwik_Http
 					{
 						throw new Exception('Unexpected redirect to Location: '.rtrim($line).' for status code '.$status);
 					}
-					return self::sendHttpRequestBy($method, trim($m[1]), $timeout, $userAgent, $pathDestination, $file, $followDepth+1);
+					return self::sendHttpRequestBy($method, trim($m[1]), $timeout, $userAgent, $destinationPath, $file, $followDepth+1);
 				}
 
 				// save expected content length for later verification
@@ -242,7 +242,7 @@ class Piwik_Http
 			// determine success or failure
 			@fclose(@$fsock);
 		}
-		else if($method == 'stream')
+		else if($method == 'fopen')
 		{
 			$response = false;
 
@@ -372,16 +372,17 @@ class Piwik_Http
 	}
 
 	/**
-	 * Fetch the file at $url in the destination $pathDestination
+	 * Fetch the file at $url in the destination $destinationPath
+	 *
 	 * @param string $url
-	 * @param string $pathDestination
+	 * @param string $destinationPath
 	 * @param int $tries
 	 * @return true on success, throws Exception on failure
 	 */
-	static public function fetchRemoteFile($url, $pathDestination = null, $tries = 0)
+	static public function fetchRemoteFile($url, $destinationPath = null, $tries = 0)
 	{
 		@ignore_user_abort(true);
 		Piwik::setMaxExecutionTime(0);
-		return self::sendHttpRequest($url, 10, 'Update', $pathDestination, $tries);
+		return self::sendHttpRequest($url, 10, 'Update', $destinationPath, $tries);
 	}
 }

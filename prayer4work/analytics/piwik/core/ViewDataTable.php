@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ViewDataTable.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: ViewDataTable.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -184,7 +184,6 @@ abstract class Piwik_ViewDataTable
 		{
 			$type = Piwik_Common::getRequestVar('viewDataTable', $defaultType, 'string');
 		}
-		
 		switch($type)
 		{
 			case 'cloud':
@@ -269,6 +268,7 @@ abstract class Piwik_ViewDataTable
 		$this->viewProperties['show_table_all_columns'] = Piwik_Common::getRequestVar('show_table_all_columns', true);
 		$this->viewProperties['show_all_views_icons'] = Piwik_Common::getRequestVar('show_all_views_icons', true);
 		$this->viewProperties['show_export_as_image_icon'] = Piwik_Common::getRequestVar('show_export_as_image_icon', false);
+		$this->viewProperties['show_export_as_rss_feed'] = Piwik_Common::getRequestVar('show_export_as_rss_feed', true);
 		$this->viewProperties['show_exclude_low_population'] = Piwik_Common::getRequestVar('show_exclude_low_population', true);
 		$this->viewProperties['show_offset_information'] = Piwik_Common::getRequestVar('show_offset_information', true);
 		$this->viewProperties['show_pagination_control'] = Piwik_Common::getRequestVar('show_pagination_control', true);
@@ -344,7 +344,7 @@ abstract class Piwik_ViewDataTable
 	{
 		if(is_null($this->dataTable))
 		{
-			throw new Exception("The DataTable requested has not been loaded yet.");
+			throw new Exception("The DataTable object has not yet been created");
 		}
 		return $this->dataTable;
 	}
@@ -367,6 +367,19 @@ abstract class Piwik_ViewDataTable
 		$dataTable = $request->process();
 
 		$this->dataTable = $dataTable;
+	}
+	
+	/**
+	 * Checks that the API returned a normal DataTable (as opposed to DataTable_Array)
+	 * @throws Exception
+	 * @return void
+	 */
+	protected function checkStandardDataTable()
+	{
+		if(!($this->dataTable instanceof Piwik_DataTable))
+		{
+			throw new Exception("Unexpected data type to render.");
+		}
 	}
 	
 	/**
@@ -551,7 +564,7 @@ abstract class Piwik_ViewDataTable
 		
 		foreach($_GET as $name => $value)
 		{
-			try{
+			try {
 				$requestValue = Piwik_Common::getRequestVar($name);
 			}
 			catch(Exception $e) {
@@ -634,7 +647,7 @@ abstract class Piwik_ViewDataTable
 	{
 		if(isset($_GET[$nameVar]))
 		{
-			return htmlspecialchars($_GET[$nameVar]);
+			return Piwik_Common::sanitizeInputValue($_GET[$nameVar]);
 		}
 		$default = $this->getDefault($nameVar);
 		return $default;
@@ -755,6 +768,14 @@ abstract class Piwik_ViewDataTable
 	}
 	
 	/**
+	 * Whether or not to show the export to RSS feed icon
+	 */
+	public function disableShowExportAsRssFeed()
+	{
+		$this->viewProperties['show_export_as_rss_feed'] = false;
+	}
+
+	/**
 	 * Whether or not to show the "goal" icon
 	 */
 	public function enableShowGoals()
@@ -846,6 +867,11 @@ abstract class Piwik_ViewDataTable
 	 */
 	public function setColumnTranslation( $columnName, $columnTranslation, $columnDescription = false )
 	{
+		if(empty($columnTranslation))
+		{
+			throw new Exception('Unknown column: '.$columnName);
+		}
+
 		$this->columnsTranslations[$columnName] = $columnTranslation;
 		$this->columnsDescriptions[$columnName] = $columnDescription;
 	}

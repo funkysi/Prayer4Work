@@ -5,7 +5,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3578 2011-01-03 12:59:24Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_API
@@ -20,7 +20,6 @@ class Piwik_API extends Piwik_Plugin {
 	public function getInformation() {
 		return array(
 			'description' => Piwik_Translate('API_PluginDescription'),
-			'homepage' => 'misc/redirectToUrl.php?url=http://dev.piwik.org/trac/wiki/API/Reference',
 			'author' => 'Piwik',
 			'author_homepage' => 'http://piwik.org/',
 			'version' => Piwik_Version::VERSION,
@@ -41,9 +40,8 @@ class Piwik_API extends Piwik_Plugin {
 	public function getCssFiles($notification) {
 		$cssFiles = &$notification->getNotificationObject();
 		
-		$cssFiles[] = "plugins/API/templates/styles.css";
+		$cssFiles[] = "plugins/API/css/styles.css";
 	}
-
 }
 
 
@@ -62,8 +60,7 @@ class Piwik_API_API
 	{
 		if (self::$instance == null)
 		{
-			$c = __CLASS__;
-			self::$instance = new $c();
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -99,17 +96,20 @@ class Piwik_API_API
 	}
 	
     /*
-     * Loads reports metadata, then return the requested one (possibly matching parameters, if passed)
+     * Loads reports metadata, then return the requested one, 
+     * matching optional API parameters.
      */
-	public function getMetadata($idSite, $apiModule, $apiAction, $apiParameters = array())
+	public function getMetadata($idSite, $apiModule, $apiAction, $apiParameters = array(), $language = false)
     {
+    	Piwik_Translate::getInstance()->reloadLanguage($language);
     	static $reportsMetadata = array();
-    	if(!isset($reportsMetadata[$idSite]))
+    	$cacheKey = $idSite.$language;
+    	if(!isset($reportsMetadata[$cacheKey]))
     	{
-    		$reportsMetadata[$idSite] = Piwik_API_API::getInstance()->getReportMetadata($idSite);
+    		$reportsMetadata[$cacheKey] = $this->getReportMetadata($idSite);
     	}
     	
-    	foreach($reportsMetadata[$idSite] as $report)
+    	foreach($reportsMetadata[$cacheKey] as $report)
     	{
     		if($report['module'] == $apiModule
     			&& $report['action'] == $apiAction)
@@ -139,10 +139,15 @@ class Piwik_API_API
 	 * @param string $idSites Comma separated list of website Ids
 	 * @return array
 	 */
-	public function getReportMetadata($idSites = false) 
+	public function getReportMetadata($idSites = array()) 
 	{
+		if (!is_array($idSites)) 
+		{ 
+            $idSites = array($idSites); 
+		}
+		 
 		$idSites = Piwik_Site::getIdSitesFromIdSitesString($idSites);
-
+		
 		$availableReports = array();
 		Piwik_PostEvent('API.getReportMetadata', $availableReports, $idSites);
 		foreach ($availableReports as &$availableReport) {
@@ -203,17 +208,17 @@ class Piwik_API_API
 		return $availableReports;
 	}
 
-	public function getProcessedReport($idSite, $date, $period, $apiModule, $apiAction, $apiParameters = false)
+	public function getProcessedReport($idSite, $date, $period, $apiModule, $apiAction, $apiParameters = false, $language = false)
     {
     	if($apiParameters === false)
     	{
     		$apiParameters = array();
     	}
         // Is this report found in the Metadata available reports?
-        $reportMetadata = $this->getMetadata($idSite, $apiModule, $apiAction, $apiParameters);
+        $reportMetadata = $this->getMetadata($idSite, $apiModule, $apiAction, $apiParameters, $language);
         if(empty($reportMetadata))
         {
-        	throw new Exception("Requested report not found in the list of available reports. \n");
+        	throw new Exception("Requested report $apiModule.$apiAction for Website id=$idSite not found in the list of available reports. \n");
         }
         $reportMetadata = reset($reportMetadata);
         
@@ -224,6 +229,8 @@ class Piwik_API_API
 			'period' => $period,
 			'date' => $date,
 			'format' => 'original',
+			'serialize' => '0',
+			'language' => $language,
 		));
 		$url = Piwik_Url::getQueryStringFromParameters($parameters);
         $request = new Piwik_API_Request($url);
@@ -233,7 +240,6 @@ class Piwik_API_API
         } catch(Exception $e) {
         	throw new Exception("API returned an error: ".$e->getMessage()."\n");
         }
-        
         // Table with a Dimension (Keywords, Pages, Browsers, etc.)
         if(isset($reportMetadata['dimension']))
         {
@@ -303,15 +309,16 @@ class Piwik_API_API
     		$reportMetadata['metrics']
     	);
     	
-    	if($period != 'day')
+		// See ArchiveProcessing/Period.php - unique visitors are not processed for year period
+    	if($period == 'year')
     	{
     		unset($columns['nb_uniq_visitors']);
     		unset($reportMetadata['metrics']['nb_uniq_visitors']);
     	}
-    
+    	
         if(isset($reportMetadata['processedMetrics']))
         {
-        	$processedMetricsAdded = Piwik_API_API::getInstance()->getDefaultProcessedMetrics();
+        	$processedMetricsAdded = $this->getDefaultProcessedMetrics();
         	foreach($processedMetricsAdded as $processedMetricId => $processedMetricTranslation)
         	{
         		// this processed metric can be displayed for this report
@@ -347,8 +354,6 @@ class Piwik_API_API
         	// Add processed metrics
         	$dataTable->filter('AddColumnsProcessedMetrics');
         }
-        
-        $dataTable->filter('SafeDecodeLabel', array($outputHTML = false));
         $renderer = new Piwik_DataTable_Renderer_Php();
         $renderer->setTable($dataTable);
         $renderer->setSerialize(false);

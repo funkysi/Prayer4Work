@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: API.php 3565 2011-01-03 05:49:45Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Actions
@@ -23,8 +23,7 @@ class Piwik_Actions_API
 	{
 		if (self::$instance == null)
 		{
-			$c = __CLASS__;
-			self::$instance = new $c();
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
@@ -72,7 +71,6 @@ class Piwik_Actions_API
 		
 		// % Exit = Number of visits that finished on this page / visits on this page
 		$dataTable->filter('ColumnCallbackAddColumnPercentage', array('exit_rate', 'exit_nb_visits', 'nb_hits', 0));
-		
 		return $dataTable;
 	}
 

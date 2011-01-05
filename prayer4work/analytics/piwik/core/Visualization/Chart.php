@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Chart.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Chart.php 3279 2010-11-01 19:44:23Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -91,7 +91,7 @@ abstract class Piwik_Visualization_Chart implements Piwik_iView
 		}
 		return array_keys($this->yValues);
 	}
-	
+
 	public function getMaxValue()
 	{
 		$datasetsIds = $this->getDataSetsToDisplay();
@@ -125,12 +125,7 @@ abstract class Piwik_Visualization_Chart implements Piwik_iView
 	
 	public function render()
 	{
-		if(Piwik_Url::getCurrentScheme() == 'https' ||
-			Zend_Registry::get('config')->General->reverse_proxy)
-		{
-			@header("Pragma: ");
-			@header("Cache-Control: must-revalidate");
-		}
+		Piwik::overrideCacheControlHeaders();
 		return $this->chart->toPrettyString();
 	}
 	
@@ -178,7 +173,7 @@ abstract class Piwik_Visualization_Chart implements Piwik_iView
 		{
 			$this->maxValue = 1;
 		}
-                $this->y->set_range( $this->minValue, (int) ceil($this->maxValue), (int) $stepsEveryNLabel);
+		$this->y->set_range( $this->minValue, (int) ceil($this->maxValue), (int) $stepsEveryNLabel);
 		$dataSetsToDisplay = $this->getDataSetsToDisplay();
 		if($dataSetsToDisplay != false)
 		{

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AddColumnsProcessedMetrics.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: AddColumnsProcessedMetrics.php 3105 2010-09-08 23:15:20Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -58,7 +58,7 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetrics extends Piwik_DataTable_
 		
 			// nb_actions / nb_visits => Actions/visit
 			// sum_visit_length / nb_visits => Avg. Time on Site 
-			// bounce_count=> Bounce Rate
+			// bounce_count / nb_visits => Bounce Rate
 			$actionsPerVisit = round($this->getColumn($row, Piwik_Archive::INDEX_NB_ACTIONS) / $nbVisits, $this->roundPrecision);
 			$averageTimeOnSite = round($this->getColumn($row, Piwik_Archive::INDEX_SUM_VISIT_LENGTH) / $nbVisits, $rounding = 0);
 			$bounceRate = round(100 * $this->getColumn($row, Piwik_Archive::INDEX_BOUNCE_COUNT) / $nbVisits, $this->roundPrecision);

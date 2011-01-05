@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Referers.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Referers.php 3517 2010-12-22 20:51:20Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -107,7 +107,7 @@ class Piwik_Referers extends Piwik_Plugin
 	function addMenus()
 	{
 		Piwik_AddMenu('Referers_Referers', '', array('module' => 'Referers', 'action' => 'index'), true, 20);
-		Piwik_AddMenu('Referers_Referers', 'Referers_SubmenuEvolution', array('module' => 'Referers', 'action' => 'index'), true, 1);
+		Piwik_AddMenu('Referers_Referers', 'Referers_SubmenuOverview', array('module' => 'Referers', 'action' => 'index'), true, 1);
 		Piwik_AddMenu('Referers_Referers', 'Referers_SubmenuSearchEngines', array('module' => 'Referers', 'action' => 'getSearchEnginesAndKeywords'), true, 2);
 		Piwik_AddMenu('Referers_Referers', 'Referers_SubmenuWebsites', array('module' => 'Referers', 'action' => 'getWebsites'), true, 3);
 		Piwik_AddMenu('Referers_Referers', 'Referers_SubmenuCampaigns', array('module' => 'Referers', 'action' => 'getCampaigns'), true, 4);
@@ -403,7 +403,8 @@ class Piwik_Referers extends Piwik_Plugin
 					break;
 
 					default:
-						throw new Exception("Non expected referer_type = " . $row['referer_type']);
+						// The referer type is user submitted for goal conversions, we ignore any malformed value
+						continue;
 					break;
 				}
 			}

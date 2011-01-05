@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: functions.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: functions.php 3168 2010-09-21 19:02:43Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -74,7 +74,12 @@ function Piwik_getSearchEngineLogoFromUrl($url)
  */
 function Piwik_getSearchEngineHostFromUrl($url)
 {
-	return substr($url, strpos($url,'//') + 2);
+	$url = substr($url, strpos($url,'//') + 2);
+	if(($p = strpos($url, '/')) !== false)
+	{
+		$url = substr($url, 0, $p);
+	}
+	return $url;
 }
 
 /**

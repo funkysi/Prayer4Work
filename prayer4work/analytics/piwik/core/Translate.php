@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Translate.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Translate.php 3481 2010-12-21 05:05:03Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -16,7 +16,7 @@
 class Piwik_Translate
 {
 	static private $instance = null;
-	private $englishLanguageLoaded = false;
+	private $loadedLanguage = false;
 	
 	/**
 	 * @return Piwik_Translate
@@ -24,43 +24,64 @@ class Piwik_Translate
 	static public function getInstance()
 	{
 		if (self::$instance == null)
-		{			
-			$c = __CLASS__;
-			self::$instance = new $c();
+		{
+			self::$instance = new self;
 		}
 		return self::$instance;
 	}
 
 	public function loadEnglishTranslation()
 	{
-		require PIWIK_INCLUDE_PATH . '/lang/en.php';
-		$this->mergeTranslationArray($translations);
-		$this->setLocale();
-		$this->englishLanguageLoaded = true;
+		$this->loadTranslation('en');
 	}
 	
 	public function unloadEnglishTranslation()
 	{
 		$GLOBALS['Piwik_translations'] = array();
-		$this->englishLanguageLoaded = false;
 	}
 
-	public function loadUserTranslation()
+	public function reloadLanguage($language = false)
 	{
-		$language = $this->getLanguageToLoad();
-		if($language === 'en' 
-			&& $this->englishLanguageLoaded)
+		if(empty($language))
+		{
+			$language = $this->getLanguageToLoad();
+		}
+		$this->unloadEnglishTranslation();
+		$this->loadEnglishTranslation();
+		$this->loadCoreTranslation($language);
+		Piwik_PluginsManager::getInstance()->loadPluginTranslations($language);
+	}
+	
+	/**
+	 * Reads the specified code translation file in memory.
+	 * 
+	 * @param $language 2 letter language code. If not specified, will detect current user translation, or load default translation.
+	 * @return void
+	 */
+	public function loadCoreTranslation($language = false)
+	{
+		if(empty($language))
+		{
+			$language = $this->getLanguageToLoad();
+		}
+		if($this->loadedLanguage == $language)
 		{
 			return;
 		}
+		$this->loadTranslation($language);
+	}
+	
+	private function loadTranslation($language)
+	{
 		$path = PIWIK_INCLUDE_PATH . '/lang/' . $language . '.php';
-		if(!is_readable($path))
+		if(!Piwik_Common::isValidFilename($language) || !is_readable($path))
 		{
 			throw new Exception(Piwik_TranslateException('General_ExceptionLanguageFileNotFound', array($language)));
 		}
 		require $path;
 		$this->mergeTranslationArray($translations);
 		$this->setLocale();
+		$this->loadedLanguage = $language;
 	}
 	
 	public function mergeTranslationArray($translation)
@@ -90,7 +111,7 @@ class Piwik_Translate
 		$language = Piwik_Common::getRequestVar('language', is_null($language) ? '' : $language, 'string');
 		if(empty($language))
 		{
-			$language = Zend_Registry::get('config')->General->default_language;
+			$language = $this->getLanguageDefault();
 		}
 		if( Piwik_Common::isValidFilename($language))
 		{
@@ -102,6 +123,10 @@ class Piwik_Translate
 		}
 	}
 	
+	public function getLanguageDefault()
+	{
+		return Zend_Registry::get('config')->General->default_language;
+	}
 	/**
 	 * Generate javascript translations array
 	 * 

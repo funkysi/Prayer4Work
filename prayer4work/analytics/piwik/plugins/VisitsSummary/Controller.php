@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Controller.php 3330 2010-11-24 08:28:18Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitsSummary
@@ -28,6 +28,7 @@ class Piwik_VisitsSummary_Controller extends Piwik_Controller
 	public function getSparklines()
 	{
 		$view = Piwik_View::factory('sparklines');
+		$this->setPeriodVariablesView($view);
 		$this->setSparklinesAndNumbers($view);		
 		echo $view->render();
 	}

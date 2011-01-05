@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Log.php 2967 2010-08-20 15:12:43Z vipsoft $
+ * @version $Id: Log.php 3607 2011-01-04 09:21:46Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -173,7 +173,7 @@ class Piwik_Log_Formatter_ScreenFormatter implements Zend_Log_Formatter_Interfac
 	function formatEvent($event)
 	{
 		// no injection in error messages, backtrace when displayed on screen
-		return array_map('htmlspecialchars', $event);
+		return array_map(array('Piwik_Common','sanitizeInputValue'), $event);
 	}
 
 	function format($string)
@@ -188,7 +188,7 @@ class Piwik_Log_Formatter_ScreenFormatter implements Zend_Log_Formatter_Interfac
 			$string = str_replace(array('<br>','<br />','<br/>'), "\n", $string);
 			if(is_array($string))
 			{
-				for($i=0; $i< count($string); $i++)
+				for($i=0, $count = count($string); $i < $count; $i++)
 				{
 					$string[$i] = strip_tags($string[$i]);
 				}
@@ -197,6 +197,10 @@ class Piwik_Log_Formatter_ScreenFormatter implements Zend_Log_Formatter_Interfac
 			{
 				$string = strip_tags($string);
 			}
+		}
+		else
+		{
+			@header('Content-Type: text/html; charset=utf-8');
 		}
 		return $string;
 	}

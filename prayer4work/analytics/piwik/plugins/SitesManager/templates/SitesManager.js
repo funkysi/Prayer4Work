@@ -1,9 +1,8 @@
-/**
+/*!
  * Piwik - Web Analytics
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: SitesManager.js 2967 2010-08-20 15:12:43Z vipsoft $
  */
 
 function SitesManager ( _timezones, _currencies, _defaultTimezone, _defaultCurrency ) {
@@ -32,6 +31,7 @@ function SitesManager ( _timezones, _currencies, _defaultTimezone, _defaultCurre
 	function getAddSiteAJAX( row )
 	{
 		var ajaxRequest = piwikHelper.getStandardAjaxConf();
+		ajaxRequest.type = 'POST';
 		
 		var parameters = {};
 	 	var siteName = $(row).find('input#name').val();
@@ -74,6 +74,7 @@ function SitesManager ( _timezones, _currencies, _defaultTimezone, _defaultCurre
 	function getUpdateSiteAJAX( row )
 	{
 		var ajaxRequest = piwikHelper.getStandardAjaxConf();
+		ajaxRequest.type = 'POST';
 		
 		var siteName = $(row).find('input#siteName').val();
 		var idSite = $(row).children('#idSite').html();
