@@ -55,6 +55,11 @@ track_visits_inside_piwik_ui = 0
 ; this option must be set to 1 when adding, removing or modifying javascript and css files
 disable_merged_assets = 0
 
+; If set to 1, Flash widgets require separate HTTP requests
+; (i.e., one request to load the JavaScript which instantiates Open Flash Chart; the other request is made by OFC to download the JSON data for the chart)
+; If set to 0, Piwik uses a single HTTP request per Flash widget to serve both the widget and data
+disable_merged_requests = 0
+
 [General]
 ; character used to automatically create categories in the Actions > Pages, Outlinks and Downloads reports
 ; for example a URL like "example.com/blog/development/first-post" will create 
@@ -69,6 +74,9 @@ autocomplete_min_sites = 5
 
 ; maximum number of websites showed in search results in autocompleter
 site_selector_max_sites = 10
+
+; if set to 1, shows sparklines (evolution graph) in 'All Websites' report (MultiSites plugin)
+show_multisites_sparklines = 1
 
 ; this action name is used when the URL ends with a slash / 
 ; it is useful to have an actual string to write in the UI
@@ -116,16 +124,20 @@ minimum_pgsql_version = 8.3
 ; Minimum adviced memory limit in php.ini file (see memory_limit value)
 minimum_memory_limit = 128
 
+; by default, Piwik uses relative URLs, so you can login using http:// or https://
+; (the latter assumes you have a valid SSL certificate).
+; If set to 1, Piwik redirects the login form to use a secure connection (i.e., https).
+force_ssl_login = 0
+
 ; login cookie name
 login_cookie_name = piwik_auth
 
-; login cookie expiration (30 days)
-login_cookie_expire = 2592000
+; login cookie expiration (14 days)
+login_cookie_expire = 1209600
 
 ; The path on the server in which the cookie will be available on. 
 ; Defaults to empty. See spec in http://curl.haxx.se/rfc/cookie_spec.html
 login_cookie_path = 
-
 
 ; email address that appears as a Sender in the password recovery email
 ; if specified, {DOMAIN} will be replaced by the current Piwik domain
@@ -133,8 +145,19 @@ login_password_recovery_email_address = "password-recovery@{DOMAIN}"
 ; name that appears as a Sender in the password recovery email
 login_password_recovery_email_name = Piwik
 
+; Set to 1 to disable the framebuster (a click-jacking countermeasure).
+; Default is 0 (i.e., bust frames on the Login forms).
+enable_framed_logins = 0
+
+; language cookie name for session
+language_cookie_name = piwik_lang
+
 ; standard email address displayed when sending emails
 noreply_email_address = "noreply@{DOMAIN}"
+
+; feedback email address;
+; when testing, use your own email address or "nobody"
+feedback_email_address = "hello@piwik.org"
 
 ; during archiving, Piwik will limit the number of results recorded, for performance reasons
 ; maximum number of rows for any of the Referers tables (keywords, search engines, campaigns, etc.)
@@ -158,16 +181,27 @@ use_ajax_cdn = 0
 
 ; required AJAX library versions
 jquery_version = 1.4.2
-jqueryui_version = 1.8.2
+jqueryui_version = 1.8.4
 swfobject_version = 2.2
-
-; If set to 0, Flash widgets require separate HTTP requests
-; (i.e., one request to load the JavaScript which instantiates Open Flash Chart; the other request is made by OFC to download the JSON data for the chart)
-; If set to 1, Piwik uses a single HTTP request per Flash widget to serve both the widget and data
-serve_widget_and_data = 1
 
 ; If set to 1, Piwik adds a response header to workaround the IE+Flash+HTTPS bug.
 reverse_proxy = 0
+
+; List of proxy headers for client IP addresses
+;
+; CloudFlare (CF-Connecting-IP)
+;proxy_client_headers[] = HTTP_CF_CONNECTING_IP
+;
+; ISP proxy (Client-IP)
+;proxy_client_headers[] = HTTP_CLIENT_IP
+;
+; de facto standard (X-Forwarded-For)
+;proxy_client_headers[] = HTTP_X_FORWARDED_FOR
+
+; List of proxy headers for host IP addresses
+;
+; de facto standard (X-Forwarded-Host)
+;proxy_host_headers[] = HTTP_X_FORWARDED_HOST
 
 ; The release server is an essential part of the Piwik infrastructure/ecosystem
 ; to provide the latest software version.
@@ -177,7 +211,6 @@ latest_version_url = http://piwik.org/latest.zip
 ; provide services to Piwik installations, e.g., getLatestVersion and
 ; subscribeNewsletter.
 api_service_url = http://api.piwik.org
-
 
 [Tracker]
 ; set to 0 if you want to stop tracking the visitors. Useful if you need to stop all the connections on the DB.
@@ -241,12 +274,13 @@ page_maximum_length = 1024;
 ip_address_mask_length = 1
 
 [mail]
-transport = 	 					; smtp or empty 
-port = 25
-host = 								; SMTP server address 
-type =  							; SMTP Auth type. By default: NONE. For example: LOGIN 
-username =  						; SMTP username
-password =  						; SMTP password 
+transport =							; smtp (using the configuration below) or empty (using built-in mail() function)
+port =								; optional; defaults to 25 when security is none or tls; 465 for ssl
+host =								; SMTP server address 
+type =								; SMTP Auth type. By default: NONE. For example: LOGIN 
+username =							; SMTP username
+password =							; SMTP password 
+encryption =						; SMTP transport-layer encryption, either 'ssl', 'tls', or empty (i.e., none).
 
 [log]
 ;possible values for log: screen, database, file
@@ -282,6 +316,7 @@ error_reporting = E_ALL|E_NOTICE
 Plugins[] 		= CorePluginsAdmin
 Plugins[] 		= CoreAdminHome
 Plugins[] 		= CoreHome
+Plugins[] 		= Proxy
 Plugins[] 		= API
 Plugins[] 		= Widgetize
 Plugins[] 		= LanguagesManager
@@ -310,8 +345,7 @@ Plugins[] 		= UsersManager
 Plugins[] 		= SitesManager
 Plugins[] 		= Installation
 Plugins[] 		= CoreUpdater
-; disabled in 0.7-rc1
-Plugins[]       = PDFReports
+Plugins[]		= PDFReports
 Plugins[] 		= UserCountryMap
 Plugins[] 		= Live
 
@@ -325,4 +359,3 @@ PluginsInstalled[] = Installation
 [Plugins_Tracker]
 Plugins_Tracker[] = Provider
 Plugins_Tracker[] = Goals
-

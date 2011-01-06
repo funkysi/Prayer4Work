@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: API.php 3628 2011-01-05 03:34:16Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -148,7 +148,7 @@ class Piwik_Live_API
 
 			$visitorDetailsArray['siteCurrency'] = $site->getCurrency();
 
-			$dateTimeVisit = Piwik_Date::factory($visitorDetailsArray['firstActionTimestamp'], $timezone);
+			$dateTimeVisit = Piwik_Date::factory($visitorDetailsArray['lastActionTimestamp'], $timezone);
 			$visitorDetailsArray['serverDatePretty'] = $dateTimeVisit->getLocalized('%shortDay% %day% %shortMonth%');
 			$visitorDetailsArray['serverTimePretty'] = $dateTimeVisit->getLocalized('%time%');
 			$visitorDetailsArray['goalConversions'] = $visitorDetail['count_goal_conversions'];
@@ -253,7 +253,7 @@ class Piwik_Live_API
 					AND " . Piwik_Common::prefixTable('goal') . ".deleted = 0
 					$sqlWhere
 				GROUP BY idvisit
-				ORDER BY idvisit DESC";
+				ORDER BY visit_last_action_time DESC";
 
 		if(!empty($limit))
 		{

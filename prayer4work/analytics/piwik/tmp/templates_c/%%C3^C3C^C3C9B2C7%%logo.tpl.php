@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:11:54
+<?php /* Smarty version 2.6.26, created on 2011-01-05 23:16:14
          compiled from CoreHome/templates/logo.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/logo.tpl', 2, false),)), $this); ?>

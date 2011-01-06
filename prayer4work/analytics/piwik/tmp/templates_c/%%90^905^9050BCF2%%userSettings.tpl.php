@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:13:53
+<?php /* Smarty version 2.6.26, created on 2011-01-05 23:20:09
          compiled from /var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 4, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 67, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 68, false),array('function', 'url', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 76, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 5, false),)), $this); ?>

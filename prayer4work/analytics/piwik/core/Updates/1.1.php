@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: 1.1.php 3457 2010-12-18 02:10:25Z vipsoft $
+ * @version $Id: 1.1.php 3626 2011-01-05 02:46:47Z matt $
  *
  * @category Piwik
  * @package Updates
@@ -29,6 +29,11 @@ class Piwik_Updates_1_1 extends Piwik_Updates
 						. ' Edit your config/config.ini.php to change it.');
 		}
 
+		// Warning!
+		// This code below will copy in the config.ini.php ALL the values found in the 
+		// General section (including the ones in global.ini.php). This is not desired!
+		// We leave this code as is since this migration does impact a fraction of users
+		// Do not reuse this code for future migration of config file values.
 		$generalInfo = $config->General->toArray();
 		if(!isset($generalInfo['proxy_client_headers']) && count($headers = Piwik_ProxyHeaders::getProxyClientHeaders()) > 0)
 		{

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Controller.php 3614 2011-01-04 15:44:37Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -431,7 +431,7 @@ abstract class Piwik_Controller
 			Piwik_ExitWithMessage($errorMessage, false, true);
 		}
 
-		Piwik_FrontController::dispatch(Piwik::getLoginPluginName(), false);
+		Piwik_FrontController::getInstance()->dispatch(Piwik::getLoginPluginName(), false);
 		exit;
 	}
 	

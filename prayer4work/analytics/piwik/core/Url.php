@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Url.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Url.php 3615 2011-01-04 16:02:45Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -170,12 +170,12 @@ class Piwik_Url
 			}
 		}
 
+		$default = Piwik_Common::sanitizeInputValue($default);
 		if(isset($_SERVER['HTTP_HOST']))
 		{
 			$default = Piwik_Common::sanitizeInputValue($_SERVER['HTTP_HOST']);
 		}
 
-		$default = Piwik_Common::sanitizeInputValue($default);
 		// @todo temporary workaround for #1331
 		if(!method_exists('Piwik_Common', 'getProxyFromHeader'))
 		{

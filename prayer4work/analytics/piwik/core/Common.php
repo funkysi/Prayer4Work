@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Common.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Common.php 3623 2011-01-05 00:30:34Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -780,7 +780,12 @@ class Piwik_Common
 		{
 			$ipStringFrom = substr($ipStringFrom, 7);
 		}
-
+		// Ip is A.B.C.D:54287 
+		if(($posColon = strpos($ipStringFrom, ':')) != false
+			&& $posColon > 6)
+		{
+			$ipStringFrom = substr($ipStringFrom, 0, $posColon);
+		}
 		return sprintf("%u", ip2long($ipStringFrom));
 	}
 

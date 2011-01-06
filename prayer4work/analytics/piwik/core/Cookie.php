@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Cookie.php 3610 2011-01-04 11:18:56Z matt $
+ * @version $Id: Cookie.php 3613 2011-01-04 15:43:27Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -227,7 +227,7 @@ class Piwik_Cookie
 			if(!is_numeric($varValue))
 			{
 				// @see http://bugs.php.net/38680
-				if(PHP_VERSION == '5.2.0')
+				if(PHP_VERSION < '5.2.1')
 				{
 					$varValue = safe_unserialize(base64_decode($varValue));
 				}
@@ -255,7 +255,7 @@ class Piwik_Cookie
 			if(!is_numeric($value))
 			{
 				// @see http://bugs.php.net/38680
-				if(PHP_VERSION == '5.2.0')
+				if(PHP_VERSION < '5.2.1')
 				{
 					$value = base64_encode(safe_serialize($value));
 				}

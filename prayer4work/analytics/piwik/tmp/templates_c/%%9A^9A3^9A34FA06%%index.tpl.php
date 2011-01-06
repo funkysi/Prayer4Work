@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-08 17:04:33
+<?php /* Smarty version 2.6.26, created on 2011-01-05 23:18:48
          compiled from MultiSites/templates/index.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'escape', 'MultiSites/templates/index.tpl', 11, false),array('modifier', 'replace', 'MultiSites/templates/index.tpl', 11, false),array('modifier', 'translate', 'MultiSites/templates/index.tpl', 22, false),array('function', 'postEvent', 'MultiSites/templates/index.tpl', 27, false),)), $this); ?>
@@ -29,8 +29,8 @@ $this->assign('row', ob_get_contents()); ob_end_clean();
 , <?php echo $this->_tpl_vars['site']['visits']; ?>
 , <?php echo $this->_tpl_vars['site']['actions']; ?>
 , <?php echo $this->_tpl_vars['site']['unique']; ?>
-, '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['name'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'quotes') : smarty_modifier_escape($_tmp, 'quotes')); ?>
-', '<?php echo $this->_tpl_vars['site']['main_url']; ?>
+, '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['name'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
+', '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['main_url'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
 ', '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['visitsSummaryValue'])) ? $this->_run_mod_handler('replace', true, $_tmp, ",", ".") : smarty_modifier_replace($_tmp, ",", ".")); ?>
 ', '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['actionsSummaryValue'])) ? $this->_run_mod_handler('replace', true, $_tmp, ",", ".") : smarty_modifier_replace($_tmp, ",", ".")); ?>
 ', '<?php echo ((is_array($_tmp=$this->_tpl_vars['site']['uniqueSummaryValue'])) ? $this->_run_mod_handler('replace', true, $_tmp, ",", ".") : smarty_modifier_replace($_tmp, ",", ".")); ?>
@@ -53,9 +53,9 @@ $this->assign('row', ob_get_contents()); ob_end_clean();
 	params['limit'] = '<?php echo $this->_tpl_vars['limit']; ?>
 ';
 	params['page'] = 1;
-	params['prev'] = "<?php echo ((is_array($_tmp='General_Previous')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	params['prev'] = "<?php echo ((is_array($_tmp=((is_array($_tmp='General_Previous')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)))) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
 ";
-	params['next'] = "<?php echo ((is_array($_tmp='General_Next')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	params['next'] = "<?php echo ((is_array($_tmp=((is_array($_tmp='General_Next')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)))) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
 ";
 	params['row'] = '<?php echo ((is_array($_tmp=$this->_tpl_vars['row'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
 ';
@@ -104,7 +104,7 @@ unset($_smarty_tpl_vars);
 </span>
 			<span class="arrow"></span>
 		</th>
-		<th id="evolution" style=" width:350px" colspan="2">
+		<th id="evolution" style=" width:350px" colspan="<?php if ($this->_tpl_vars['show_sparklines']): ?>2<?php else: ?>1<?php endif; ?>">
 		<span class="arrow "></span>
 			<span class="evolution" style="cursor:pointer;" onClick="params = setOrderBy(this,allSites, params, $('#evolution_selector').val() + 'Summary');"> <?php echo ((is_array($_tmp='MultiSites_Evolution')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </span>

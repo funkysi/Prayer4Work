@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Date.php 3025 2010-08-30 04:24:12Z vipsoft $
+ * @version $Id: Date.php 3616 2011-01-04 18:25:08Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -44,6 +44,10 @@ class Piwik_Date
 	 */
 	static public function factory($dateString, $timezone = null)
 	{
+		if($dateString instanceof self)
+		{
+			$dateString = $dateString->toString();
+		}
 		if($dateString == 'now')
 		{
 			$date = self::now();

@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-08 17:04:34
+<?php /* Smarty version 2.6.26, created on 2011-01-05 23:18:48
          compiled from MultiSites/templates/row.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'MultiSites/templates/row.tpl', 5, false),)), $this); ?>
@@ -24,8 +24,10 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
     <div class="actions"style="display:none">%actionsSummary%</div>
     <div class="unique" >%uniqueSummary%</div>
 </td>
+<?php if ($this->_tpl_vars['show_sparklines']): ?>
 <td style="width:180px">
     <div id="sparkline_%idsite%" style="width: 100px; margin: auto">
 	%sparkline%
     </div>
 </td>
+<?php endif; ?>
