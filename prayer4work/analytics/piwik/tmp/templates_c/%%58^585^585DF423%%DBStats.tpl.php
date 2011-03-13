@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:18:06
+<?php /* Smarty version 2.6.26, created on 2011-03-12 09:00:02
          compiled from /var/www/prayer4work/analytics/piwik/plugins/DBStats/templates/DBStats.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/DBStats/templates/DBStats.tpl', 6, false),)), $this); ?>
@@ -19,7 +19,7 @@ unset($_smarty_tpl_vars);
 <br />
 <?php echo ((is_array($_tmp='DBStats_LearnMore')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>Piwik Auto Archiving</a>") : smarty_modifier_translate($_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>Piwik Auto Archiving</a>")); ?>
 </p>
-<table class="adminTable">
+<table class="dataTable entityTable">
 	<thead>
 		<th><?php echo ((is_array($_tmp='DBStats_Table')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </th>
@@ -36,7 +36,7 @@ unset($_smarty_tpl_vars);
 		<?php $_from = $this->_tpl_vars['tablesStatus']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
     foreach ($_from as $this->_tpl_vars['index'] => $this->_tpl_vars['table']):
 ?>
-		<tr <?php if ($this->_tpl_vars['table']['Name'] == 'Total'): ?>class="active" style="font-weight:bold;"<?php endif; ?>>
+		<tr <?php if ($this->_tpl_vars['table']['Name'] == 'Total'): ?>class="highlight" style="font-weight:bold;"<?php endif; ?>>
 			<td>
 				<?php echo $this->_tpl_vars['table']['Name']; ?>
 

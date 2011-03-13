@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: API.php 3966 2011-02-23 20:50:16Z JulienM $
  * 
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -56,6 +56,40 @@ class Piwik_SitesManager_API
 		$htmlEncoded = Piwik::getJavascriptCode($idSite, $piwikUrl);
 		$htmlEncoded = str_replace(array('<br>','<br />','<br/>'), '', $htmlEncoded);
 		return $htmlEncoded;
+	}
+	
+	/**
+	 * Returns all websites belonging to the specified group 
+	 * @param $group string Group name
+	 */
+	public function getSitesFromGroup($group)
+	{
+		Piwik::checkUserIsSuperUser();
+	    $group = trim($group);
+	    
+		$sites = Zend_Registry::get('db')->fetchAll("SELECT * 
+													FROM ".Piwik_Common::prefixTable("site")." 
+													WHERE `group` = ?", $group);
+		return $sites;
+	}
+	
+	/**
+	 * Returns the list of website groups, including the empty group 
+	 * if no group were specified for some websites
+	 * 
+	 * @return array of group names strings
+	 */
+	public function getSitesGroups()
+	{
+		Piwik::checkUserIsSuperUser();
+		$groups = Zend_Registry::get('db')->fetchAll("SELECT DISTINCT `group` FROM ".Piwik_Common::prefixTable("site"));
+		$cleanedGroups = array();
+		foreach($groups as $group)
+		{
+			$cleanedGroups[] = $group['group'];
+		}
+	    $cleanedGroups = array_map('trim', $cleanedGroups);
+		return $cleanedGroups;
 	}
 	
 	/**
@@ -287,7 +321,7 @@ class Piwik_SitesManager_API
 	 * 
 	 * @return int the website ID created
 	 */
-	public function addSite( $siteName, $urls, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null )
+	public function addSite( $siteName, $urls, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null )
 	{
 		Piwik::checkUserIsSuperUser();
 		
@@ -323,6 +357,17 @@ class Piwik_SitesManager_API
 		$bind['excluded_parameters'] = $this->checkAndReturnExcludedQueryParameters($excludedQueryParameters);
 		$bind['timezone'] = $timezone;
 		$bind['currency'] = $currency;
+		
+		if(!empty($group)
+		    && Piwik::isUserIsSuperUser())
+		{
+		    $bind['group'] = trim($group);
+		}
+		else
+		{
+			$bind['group'] = "";
+		}
+		
 		$db->insert(Piwik_Common::prefixTable("site"), $bind);
 									
 		$idSite = $db->lastInsertId();
@@ -425,6 +470,10 @@ class Piwik_SitesManager_API
 	 */
 	private function checkAndReturnExcludedIps($excludedIps)
 	{
+		if(empty($excludedIps))
+		{ 
+			return '';
+		}
 		$ips = explode(',', $excludedIps);
 		$ips = array_map('trim', $ips);
 		$ips = array_filter($ips, 'strlen');
@@ -473,7 +522,7 @@ class Piwik_SitesManager_API
 		Piwik::checkUserIsSuperUser();
 		$excludedIps = $this->checkAndReturnExcludedIps($excludedIps);
 		Piwik_SetOption(self::OPTION_EXCLUDED_IPS_GLOBAL, $excludedIps);
-		Piwik_Common::deleteAllCache();
+		Piwik_Common::deleteTrackerCache();
 		return true;
 	}
 	
@@ -500,7 +549,7 @@ class Piwik_SitesManager_API
 		Piwik::checkUserIsSuperUser();
 		$excludedQueryParameters = $this->checkAndReturnExcludedQueryParameters($excludedQueryParameters);
 		Piwik_SetOption(self::OPTION_EXCLUDED_QUERY_PARAMETERS_GLOBAL, $excludedQueryParameters);
-		Piwik_Common::deleteAllCache();
+		Piwik_Common::deleteTrackerCache();
 		return true;
 	}
 	
@@ -585,12 +634,14 @@ class Piwik_SitesManager_API
 	 * @param string|array the website URLs
 	 * @param string Comma separated list of IPs to exclude from being tracked (allows wildcards)
 	 * @param string Timezone
+	 * @param string Currency code
+	 * @param string Group name where this website belongs
 	 * 
 	 * @exception if any of the parameter is not correct
 	 * 
 	 * @return bool true on success
 	 */
-	public function updateSite( $idSite, $siteName, $urls = null, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null)
+	public function updateSite( $idSite, $siteName, $urls = null, $excludedIps = null, $excludedQueryParameters = null, $timezone = null, $currency = null, $group = null)
 	{
 		Piwik::checkUserHasAdminAccess($idSite);
 
@@ -626,6 +677,11 @@ class Piwik_SitesManager_API
 			$timezone = trim($timezone);
 			$this->checkValidTimezone($timezone);
 			$bind['timezone'] = $timezone;
+		}
+		if(!is_null($group)
+		    && Piwik::isUserIsSuperUser())
+		{
+		    $bind['group'] = trim($group);
 		}
 		
 		$bind['excluded_ips'] = $this->checkAndReturnExcludedIps($excludedIps);
@@ -760,6 +816,23 @@ class Piwik_SitesManager_API
 			$return[$offset] = $offsetName;
 		}
 		return $return;
+	}
+
+	/**
+	 * Returns the list of unique timezones from all configured sites.
+	 *
+	 * @return array ( string )
+	 */
+	public function getUniqueSiteTimezones()
+	{
+		Piwik::checkUserIsSuperUser();
+		$results = Piwik_FetchAll("SELECT distinct timezone FROM ".Piwik_Common::prefixTable('site'));
+		$timezones = array();
+		foreach($results as $result)
+		{
+			$timezones[] = $result['timezone'];
+		}
+		return $timezones;
 	}
 	
 	/**

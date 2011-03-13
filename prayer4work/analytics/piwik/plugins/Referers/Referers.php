@@ -4,11 +4,16 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Referers.php 3517 2010-12-22 20:51:20Z matt $
+ * @version $Id: Referers.php 3878 2011-02-13 03:04:55Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
  */
+
+/**
+ * @see plugins/Referers/functions.php
+ */
+require_once PIWIK_INCLUDE_PATH . '/plugins/Referers/functions.php';
 
 /**
  * @package Piwik_Referers
@@ -35,13 +40,13 @@ class Piwik_Referers extends Piwik_Plugin
 	function getListHooksRegistered()
 	{
 		$hooks = array(
-			'AssetManager.getJsFiles' => 'getJsFiles',
 			'ArchiveProcessing_Day.compute' => 'archiveDay',
 			'ArchiveProcessing_Period.compute' => 'archivePeriod',
 			'WidgetsList.add' => 'addWidgets',
 			'Menu.add' => 'addMenus',
 			'Goals.getReportsWithGoalMetrics' => 'getReportsWithGoalMetrics',
 			'API.getReportMetadata' => 'getReportMetadata',
+		    'API.getSegmentsMetadata' => 'getSegmentsMetadata',
 		);
 		return $hooks;
 	}	
@@ -88,6 +93,43 @@ class Piwik_Referers extends Piwik_Plugin
     	));
 	}
 	
+	public function getSegmentsMetadata($notification)
+	{
+		$segments =& $notification->getNotificationObject();
+	    $segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Referers_Referers',
+		        'name' => 'Referers_ColumnRefererType',
+		        'segment' => 'referrerType',
+		        'acceptedValues' => 'direct, search, website, campaign',
+		        'sqlSegment' => 'referer_type',
+	            'sqlFilter' => 'Piwik_getRefererTypeFromShortName',
+	    );
+		$segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Referers_Referers',
+		        'name' => 'Referers_ColumnKeyword',
+		        'segment' => 'referrerKeyword',
+		        'acceptedValues' => 'Encoded%20Keyword, keyword',
+		        'sqlSegment' => 'referer_keyword',
+	    );
+		$segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Referers_Referers',
+		        'name' => 'Referers_RefererName',
+		        'segment' => 'referrerName',
+		        'acceptedValues' => 'twitter.com, www.facebook.com, Bing, Google, Yahoo, CampaignName',
+		        'sqlSegment' => 'referer_name',
+	    );
+	    $segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Referers_Referers',
+		        'name' => 'Live_Referrer_URL',
+	    		'acceptedValues' => 'http%3A%2F%2Fwww.example.org%2Freferer-page.htm',
+		        'segment' => 'referrerUrl',
+		        'sqlSegment' => 'referer_url',
+	    );
+	}
 	
 	/**
 	 * Adds Referer widgets
@@ -99,6 +141,10 @@ class Piwik_Referers extends Piwik_Plugin
 		Piwik_AddWidget( 'Referers_Referers', 'Referers_WidgetExternalWebsites', 'Referers', 'getWebsites');
 		Piwik_AddWidget( 'Referers_Referers', 'Referers_WidgetSearchEngines', 'Referers', 'getSearchEngines');
 		Piwik_AddWidget( 'Referers_Referers', 'Referers_WidgetOverview', 'Referers', 'getRefererType');
+		if(Piwik_Archive::isSegmentationEnabled())
+		{
+    		Piwik_AddWidget( 'Referers_Referers', 'Top Keywords for Page URL', 'Referers', 'getKeywordsForPage');
+		}
 	}
 	
 	/**
@@ -114,15 +160,15 @@ class Piwik_Referers extends Piwik_Plugin
 	}
 	
 	/**
-	 * Adds Goal segments, so that the segments are displayed in the UI Goal Overview page
+	 * Adds Goal dimensions, so that the dimensions are displayed in the UI Goal Overview page
 	 * 
 	 * @param $notification
 	 * @return void
 	 */
 	function getReportsWithGoalMetrics( $notification )
 	{
-		$segments =& $notification->getNotificationObject();
-		$segments = array_merge($segments, array(
+		$dimensions =& $notification->getNotificationObject();
+		$dimensions = array_merge($dimensions, array(
         		array(	'category'  => Piwik_Translate('Referers_Referers'),
             			'name'   => Piwik_Translate('Referers_Keywords'),
             			'module' => 'Referers',
@@ -151,12 +197,6 @@ class Piwik_Referers extends Piwik_Plugin
     	));
 	}
 	
-	function getJsFiles( $notification )
-	{
-		$jsFiles = &$notification->getNotificationObject();
-		$jsFiles[] = "plugins/CoreHome/templates/sparkline.js";
-	}
-
 	function __construct()
 	{
 		$this->columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
@@ -174,6 +214,8 @@ class Piwik_Referers extends Piwik_Plugin
 	function archivePeriod( $notification )
 	{
 		$archiveProcessing = $notification->getNotificationObject();
+		
+		if(!$archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
 		
 		$dataTableToSum = array( 
 			'Referers_type',
@@ -238,6 +280,8 @@ class Piwik_Referers extends Piwik_Plugin
 		 * @var Piwik_ArchiveProcessing_Day 
 		 */
 		$this->archiveProcessing = $notification->getNotificationObject();
+		if(!$this->archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
+		
 		$this->archiveDayAggregateVisits($this->archiveProcessing);
 		$this->archiveDayAggregateGoals($this->archiveProcessing);
 		Piwik_PostEvent('Referers.archiveDay', $this);
@@ -268,24 +312,8 @@ class Piwik_Referers extends Piwik_Plugin
 	 */
 	protected function archiveDayAggregateVisits(Piwik_ArchiveProcessing $archiveProcessing)
 	{
-		$query = "SELECT 	referer_type, 
-							referer_name, 
-							referer_keyword,
-							referer_url,
-							count(distinct visitor_idcookie) as nb_uniq_visitors,
-							count(*) as nb_visits,
-							sum(visit_total_actions) as nb_actions,
-							max(visit_total_actions) as max_actions, 
-							sum(visit_total_time) as sum_visit_length,							
-							sum(case visit_total_actions when 1 then 1 else 0 end) as bounce_count,
-							sum(case visit_goal_converted when 1 then 1 else 0 end) as nb_visits_converted
-				 	FROM ".$archiveProcessing->logTable."
-				 	WHERE visit_last_action_time >= ?
-						AND visit_last_action_time <= ?
-				 		AND idsite = ?
-				 	GROUP BY referer_type, referer_name, referer_url, referer_keyword
-				 	ORDER BY nb_visits DESC";
-		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
+	    $dimension = array("referer_type", "referer_name", "referer_keyword", "referer_url");
+	    $query = $archiveProcessing->queryVisitsByDimension($dimension);
 
 		$this->interestBySearchEngine =
 			$this->interestByKeyword =
@@ -368,7 +396,10 @@ class Piwik_Referers extends Piwik_Plugin
 	 */
 	protected function archiveDayAggregateGoals($archiveProcessing)
 	{
-		$query = $archiveProcessing->queryConversionsBySegment("referer_type,referer_name,referer_keyword");
+		$query = $archiveProcessing->queryConversionsByDimension(array("referer_type","referer_name","referer_keyword"));
+		
+		if($query === false) return;
+		
 		while($row = $query->fetch() )
 		{
 			if(empty($row['referer_type']))

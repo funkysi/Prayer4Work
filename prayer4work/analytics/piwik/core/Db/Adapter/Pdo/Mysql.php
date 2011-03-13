@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mysql.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Mysql.php 3725 2011-01-13 17:34:49Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -158,5 +158,33 @@ class Piwik_Db_Adapter_Pdo_Mysql extends Zend_Db_Adapter_Pdo_Mysql implements Pi
 			// In case of the driver doesn't support getting attributes
 		}
 		return null;
+	}
+	
+	private $cachePreparedStatement = array();
+
+	/**
+	 * Prepares and executes an SQL statement with bound data.
+	 * Caches prepared statements to avoid preparing the same query more than once
+	 *
+	 * @param mixed $sql
+	 * @param mixed $bind
+	 * @return Zend_Db_Statement_Interface
+	 */
+	public function query($sql, $bind = array())
+	{
+		if(isset($this->cachePreparedStatement[$sql]))
+		{
+			if (!is_array($bind)) {
+				$bind = array($bind);
+			}
+
+			$stmt = $this->cachePreparedStatement[$sql];
+			$stmt->execute($bind);
+			return $stmt;
+		}
+
+		$stmt = parent::query($sql, $bind);
+		$this->cachePreparedStatement[$sql] = $stmt;
+		return $stmt;
 	}
 }

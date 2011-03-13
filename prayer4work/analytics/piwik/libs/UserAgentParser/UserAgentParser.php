@@ -5,7 +5,7 @@
  *
  * @link http://dev.piwik.org/trac/browser/trunk/libs/UserAgentParser
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
- * @version $Id: UserAgentParser.php 3113 2010-09-10 16:00:01Z vipsoft $
+ * @version $Id: UserAgentParser.php 3950 2011-02-20 04:58:59Z vipsoft $
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -149,6 +149,7 @@ class UserAgentParser
 
 			// Safari
 			'safari'						=> 'SF',
+			'applewebkit'					=> 'SF',
 
 			'webos'							=> 'WO',
 			'webpro'						=> 'WP',
@@ -173,7 +174,8 @@ class UserAgentParser
 			'522.11'	=> array('3', '0'),
 			'412'		=> array('2', '0'),
 			'312'		=> array('1', '3'),
-			'125'		=> array('1', '1'),
+			'125'		=> array('1', '2'),
+			'100'		=> array('1', '1'),
 			'85'		=> array('1', '0'),
 			'73'		=> array('0', '9'),
 			'48'		=> array('0', '8'),
@@ -181,6 +183,7 @@ class UserAgentParser
 
 	// OmniWeb build numbers to OmniWeb version numbers (if Version/X.Y.Z not present)
 	static protected $omniWebVersions = array(
+			'622.15'	=> array('5', '11'),
 			'622.10'	=> array('5', '10'),
 			'622.8'		=> array('5', '9'),
 			'622.3'		=> array('5', '8'),
@@ -351,6 +354,7 @@ class UserAgentParser
 		unset($browsers['firefox']);
 		unset($browsers['mozilla']);
 		unset($browsers['safari']);
+		unset($browsers['applewebkit']);
 
 		$browsersPattern = str_replace(')', '\)', implode('|', array_keys($browsers)));
 
@@ -360,7 +364,8 @@ class UserAgentParser
 		$userAgent = preg_replace('/[; ]Mozilla\/[0-9.]+ \([^)]+\)/', '', $userAgent);
 
 		if (preg_match_all("/($browsersPattern)[\/\sa-z(]*([0-9]+)([\.0-9a-z]+)?/i", $userAgent, $results)
-			|| preg_match_all("/(firefox|safari)[\/\sa-z(]*([0-9]+)([\.0-9a-z]+)?/i", $userAgent, $results)
+			|| (strpos($userAgent, 'Shiira') === false && preg_match_all("/(firefox|safari)[\/\sa-z(]*([0-9]+)([\.0-9a-z]+)?/i", $userAgent, $results))
+			|| preg_match_all("/(applewebkit)[\/\sa-z(]*([0-9]+)([\.0-9a-z]+)?/i", $userAgent, $results)
 			|| preg_match_all("/^(mozilla)\/([0-9]+)([\.0-9a-z-]+)?(?: \[[a-z]{2}\])? (?:\([^)]*\))$/i", $userAgent, $results)
 			|| preg_match_all("/^(mozilla)\/[0-9]+(?:[\.0-9a-z-]+)?\s\(.* rv:([0-9]+)([.0-9a-z]+)\) gecko(\/[0-9]{8}|$)(?:.*)/i", $userAgent, $results)
 			)

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3283 2010-11-02 00:51:29Z vipsoft $
+ * @version $Id: API.php 3845 2011-02-04 06:29:32Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
@@ -67,16 +67,34 @@ class Piwik_UsersManager_API
 	/**
 	 * Returns the list of all the users
 	 * 
+	 * @param string Comma separated list of users to select. If not specified, will return all users
 	 * @return array the list of all the users
 	 */
-	public function getUsers()
+	public function getUsers( $userLogins = '' )
 	{
-		Piwik::checkUserIsSuperUser();
+		Piwik::checkUserHasSomeAdminAccess();
 		
+		$where = '';
+		$bind = array();
+		if(!empty($userLogins))
+		{
+			$userLogins = explode(',', $userLogins);
+			$where = 'WHERE login IN (? '.str_repeat(',?', count($userLogins)-1).')';
+			$bind = $userLogins;
+		}
 		$db = Zend_Registry::get('db');
 		$users = $db->fetchAll("SELECT * 
-								FROM ".Piwik_Common::prefixTable("user")." 
-								ORDER BY login ASC");
+								FROM ".Piwik_Common::prefixTable("user")."
+								$where 
+								ORDER BY login ASC", $bind);
+		// Non Super user can only access login & alias 
+		if(!Piwik::isUserIsSuperUser())
+		{
+		    foreach($users as &$user)
+		    {
+		        $user = array('login' => $user['login'], 'alias' => $user['alias'] );
+		    }
+		}
 		return $users;
 	}
 	
@@ -164,9 +182,30 @@ class Piwik_UsersManager_API
 			$return[$user['login']] = $user['access'];
 		}
 		return $return;
-		
 	}
-
+	
+	public function getUsersWithSiteAccess( $idSite, $access )
+	{
+		Piwik::checkUserHasAdminAccess( $idSite );
+		$this->checkAccessType( $access );
+		
+		$db = Zend_Registry::get('db');
+		$users = $db->fetchAll("SELECT login
+								FROM ".Piwik_Common::prefixTable("access")
+								." WHERE idsite = ? AND access = ?", array($idSite, $access));
+		$logins = array();
+		foreach($users as $user)
+		{
+			$logins[] = $user['login'];
+		}
+		if(empty($logins))
+		{
+			return array();
+		}
+		$logins = implode(',', $logins);
+		return $this->getUsers($logins);
+	}
+	
 	/**
 	 * For each website ID, returns the access level of the given $userLogin.
 	 * If the user doesn't have any access to a website ('noaccess'), 

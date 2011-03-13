@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: DocumentationGenerator.php 3470 2010-12-20 19:03:26Z matt $
+ * @version $Id: DocumentationGenerator.php 3869 2011-02-12 08:28:33Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -204,6 +204,12 @@ class Piwik_API_DocumentationGenerator
 		$asParameters = array();
 		foreach($aParameters as $nameVariable=> $defaultValue)
 		{
+			// Do not show API parameters starting with _ 
+			// They are supposed to be used only in internal API calls
+			if(strpos($nameVariable, '_') === 0)
+			{
+				continue;
+			}
 			$str = $nameVariable;
 			if(!($defaultValue instanceof Piwik_API_Proxy_NoDefaultValue))
 			{

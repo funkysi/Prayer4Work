@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AddColumnsProcessedMetricsGoal.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: AddColumnsProcessedMetricsGoal.php 3908 2011-02-15 07:38:16Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -30,8 +30,6 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 	 */
 	const GOALS_FULL_TABLE = 0;
 	
-	protected $mappingIdToNameGoal;
-	
 	/**
 	 * Adds processed goal metrics to a table: 
 	 * - global conversion rate, 
@@ -51,19 +49,17 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 	 */
 	public function __construct( $table, $enable = true, $processOnlyIdGoal )
 	{
-		$this->mappingIdToNameGoal = Piwik_Archive::$mappingFromIdToNameGoal;
 		$this->processOnlyIdGoal = $processOnlyIdGoal;
 		parent::__construct($table);
 	}
 	
-	protected function filter()
+	protected function filter($table)
 	{
 		// Add standard processed metrics
-		parent::filter();
-		
+		parent::filter($table);
 		$roundingPrecision = 2;
 		$expectedColumns = array();
-		foreach($this->table->getRows() as $key => $row)
+		foreach($table->getRows() as $key => $row)
 		{
 			$currentColumns = $row->getColumns();
 			$newColumns = array();
@@ -97,12 +93,13 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 				
 				foreach($goals as $goalId => $columnValue)
 				{
+					$goalId = str_replace("idgoal=", "", $goalId);
 					if($this->processOnlyIdGoal > self::GOALS_FULL_TABLE
 						&& $this->processOnlyIdGoal != $goalId)
 					{
 						continue;
 					}
-    				$conversions = (int)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS);
+    				$conversions = (int)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_NB_CONVERSIONS, Piwik_Archive::$mappingFromIdToNameGoal);
 					
 					// Goal Conversion rate
 					$name = 'goal_' . $goalId . '_conversion_rate';
@@ -137,7 +134,7 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 					}
 					else
 					{
-						$revenuePerVisit = round( (float)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_REVENUE) / $nbVisits, $roundingPrecision );
+						$revenuePerVisit = round( (float)$this->getColumn($columnValue, Piwik_Archive::INDEX_GOAL_REVENUE, Piwik_Archive::$mappingFromIdToNameGoal) / $nbVisits, $roundingPrecision );
 					}
 					$newColumns[$name] = $revenuePerVisit;
 					$expectedColumns[$name] = true;
@@ -152,7 +149,7 @@ class Piwik_DataTable_Filter_AddColumnsProcessedMetricsGoal extends Piwik_DataTa
 		// make sure all goals values are set, 0 by default
 		// if no value then sorting would put at the end
 		$expectedColumns = array_keys($expectedColumns);
-		$rows = $this->table->getRows();
+		$rows = $table->getRows();
 		foreach($rows as &$row)
 		{
 			foreach($expectedColumns as $name)

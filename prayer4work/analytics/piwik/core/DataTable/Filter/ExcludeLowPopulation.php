@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExcludeLowPopulation.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: ExcludeLowPopulation.php 3764 2011-01-17 02:19:39Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -35,17 +35,17 @@ class Piwik_DataTable_Filter_ExcludeLowPopulation extends Piwik_DataTable_Filter
 			{
 				$minimumPercentageThreshold = self::MINIMUM_SIGNIFICANT_PERCENTAGE_THRESHOLD;
 			}
-			$allValues = $this->table->getColumn($this->columnToFilter);
+			$allValues = $table->getColumn($this->columnToFilter);
 			$sumValues = array_sum($allValues);
 			$minimumValue = $sumValues * $minimumPercentageThreshold;
 		}
 		self::$minimumValue = $minimumValue;
-		$this->filter();
+		$this->filter($table);
 	}
 	
-	function filter()
+	function filter($table)
 	{
-		$this->table->filter('ColumnCallbackDeleteRow',
+		$table->filter('ColumnCallbackDeleteRow',
 							array($this->columnToFilter, 
 								array("Piwik_DataTable_Filter_ExcludeLowPopulation", "excludeLowPopulation")
 							)

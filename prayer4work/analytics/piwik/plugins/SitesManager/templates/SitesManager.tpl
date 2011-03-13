@@ -44,7 +44,12 @@ $(document).ready( function() {
 });
 </script>
 
-<style>
+<style type="text/css">
+.entityTable tr td {
+    vertical-align: top;
+    padding-top:7px;
+}
+
 .addRowSite:hover, .editableSite:hover, .addsite:hover, .cancel:hover, .deleteSite:hover, .editSite:hover, .updateSite:hover{
 	cursor: pointer;
 }
@@ -74,6 +79,7 @@ vertical-align:middle;
 
 <h2>{'SitesManager_WebsitesManagement'|translate}</h2>
 <p>{'SitesManager_MainDescription'|translate}
+{'SitesManager_YouCurrentlyHaveAccessToNWebsites'|translate:"<b>$adminSitesCount</b>"}
 {if $isSuperUser}
 <br />{'SitesManager_SuperUserCan'|translate:"<a href='#globalSettings'>":"</a>"}
 {/if}
@@ -85,7 +91,8 @@ vertical-align:middle;
 {if $adminSites|@count == 0}
 	{'SitesManager_NoWebsites'|translate}
 {else}
-	<table class="admin" id="editSites" border=1 cellpadding="10">
+	<div class="entityContainer">
+	<table class="entityTable dataTable" id="editSites">
 		<thead>
 			<tr>
 			<th>{'General_Id'|translate}</th>
@@ -110,16 +117,17 @@ vertical-align:middle;
 				<td id="excludedQueryParameters" class="editableSite">{foreach from=$site.excluded_parameters item=parameter}{$parameter}<br />{/foreach}</td>       
 				<td id="timezone" class="editableSite">{$site.timezone}</td>
 				<td id="currency" class="editableSite">{$site.currency}</td>
-				<td><img src='plugins/UsersManager/images/edit.png' class="editSite" id="row{$i}" href='#' title="{'General_Edit'|translate}" /></td>
-				<td><img src='plugins/UsersManager/images/remove.png' class="deleteSite" id="row{$i}" title="{'General_Delete'|translate}" value="{'General_Delete'|translate}" /></td>
+				<td><span id="row{$i}" class='editSite link_but'><img src='themes/default/images/ico_edit.png' title="{'General_Edit'|translate}" border="0"/> {'General_Edit'|translate}</span></td>
+				<td><span id="row{$i}" class="deleteSite link_but"><img src='themes/default/images/ico_delete.png' title="{'General_Delete'|translate}" border="0" /> {'General_Delete'|translate}</span></td>
 				<td><a href='{url action=displayJavascriptCode idSite=$site.idsite updated=false}'>{'SitesManager_ShowTrackingTag'|translate}</a></td>
 			</tr>
 			{/foreach}
 		</tbody>
 	</table>
 	{if $isSuperUser}	
-	<div class="addRowSite"><a href=""><img src='plugins/UsersManager/images/add.png' alt="" /> {'SitesManager_AddSite'|translate}</a></div>
+	<div class="addRowSite"><img src='plugins/UsersManager/images/add.png' alt="" /> {'SitesManager_AddSite'|translate}</div>
 	{/if}
+	</div>
 {/if}
 
 {if $isSuperUser}	
@@ -127,7 +135,7 @@ vertical-align:middle;
 	<a name='globalSettings'></a>
 	<h2>{'SitesManager_GlobalWebsitesSettings'|translate}</h2>
 	<br />
-	<table style='width:600px' class="adminTable adminTableNoBorder" >
+	<table style='width:600px' class="adminTable" >
 		
 		<tr><td colspan="2">
 				<b>{'SitesManager_GlobalListExcludedIps'|translate}</b>

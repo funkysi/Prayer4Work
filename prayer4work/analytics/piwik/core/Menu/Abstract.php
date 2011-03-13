@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Abstract.php 3302 2010-11-08 02:15:11Z vipsoft $
+ * @version $Id: Abstract.php 3638 2011-01-05 10:50:22Z matt $
  *
  * @category Piwik
  * @package Piwik_Menu
@@ -42,7 +42,7 @@ abstract class Piwik_Menu_Abstract {
 	/**
 	 * Adds a new entry to the menu.
 	 */
-	public function add($menuName, $subMenuName, $url, $displayedForCurrentUser, $order) {
+	public function add($menuName, $subMenuName, $url, $displayedForCurrentUser, $order = 50) {
 		$this->menuEntries[] = array(
 			$menuName,
 			$subMenuName,

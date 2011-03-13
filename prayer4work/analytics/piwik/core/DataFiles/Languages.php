@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Languages.php 3139 2010-09-12 19:58:18Z vipsoft $
+ * @version $Id: Languages.php 4001 2011-03-03 11:48:20Z matt $
  *
  * @category Piwik
  * @package DataFiles
@@ -53,7 +53,7 @@ if(!isset($GLOBALS['Piwik_LanguageList']))
 		'dv' => array('Divehi', 'Dhivehi', 'Maldivian'),
 		'dz' => 'Dzongkha',
 		'ee' => 'Ewe',
-		'el' => array('Greek', 'Modern Greek'), // Greek, Modern (1453-)
+		'el' => array('Greek', 'Modern Greek', 'Hellenic'), // Greek, Modern (1453-)
 		'en' => 'English',
 		'eo' => 'Esperanto',
 		'es' => array('Spanish', 'Castilian'),

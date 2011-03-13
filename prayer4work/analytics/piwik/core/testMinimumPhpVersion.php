@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: testMinimumPhpVersion.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: testMinimumPhpVersion.php 3707 2011-01-11 19:26:18Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -18,7 +18,8 @@
 
 $piwik_errorMessage = '';
 
-$piwik_minimumPHPVersion = '5.1.3';
+// Minimum requirement: ->newInstanceArgs in 5.1.3
+$piwik_minimumPHPVersion = '5.1.3RC';
 $piwik_currentPHPVersion = PHP_VERSION;
 if( version_compare($piwik_minimumPHPVersion , $piwik_currentPHPVersion ) > 0 )
 {
@@ -67,7 +68,7 @@ function Piwik_ExitWithMessage($message, $optionalTrace = false, $optionalLinks 
 	if($optionalLinks)
 	{
 		$optionalLinks = '<ul>
-						<li><a target="_blank" href="?module=Proxy&action=redirect&url=http://piwik.org">Piwik homepage</a></li>
+						<li><a target="_blank" href="?module=Proxy&action=redirect&url=http://piwik.org">Piwik.org homepage</a></li>
 						<li><a target="_blank" href="?module=Proxy&action=redirect&url=http://piwik.org/faq/">Piwik Frequently Asked Questions</a></li>
 						<li><a target="_blank" href="?module=Proxy&action=redirect&url=http://piwik.org/docs/">Piwik Documentation</a></li>
 						<li><a target="_blank" href="?module=Proxy&action=redirect&url=http://forum.piwik.org/">Piwik Forums</a></li>
@@ -77,7 +78,7 @@ function Piwik_ExitWithMessage($message, $optionalTrace = false, $optionalLinks 
 	$headerPage = file_get_contents(PIWIK_INCLUDE_PATH . '/themes/default/simple_structure_header.tpl');
 	$footerPage = file_get_contents(PIWIK_INCLUDE_PATH . '/themes/default/simple_structure_footer.tpl');
 	$headerPage = str_replace('{$HTML_TITLE}', 'Piwik &rsaquo; Error', $headerPage);
-	$content = '<p>'.$message.'</p>'. $optionalTrace .' '. $optionalLinks;
+	$content = '<p>'.$message.'</p><p><a href="index.php">Go to Piwik</a></p>'.  $optionalTrace .' '. $optionalLinks;
 	
 	echo $headerPage . $content . $footerPage;
 	exit;

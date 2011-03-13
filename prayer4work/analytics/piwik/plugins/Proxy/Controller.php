@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3360 2010-11-25 21:14:22Z matt $
+ * @version $Id: Controller.php 3870 2011-02-12 13:34:53Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Proxy
@@ -53,7 +53,7 @@ class Piwik_Proxy_Controller extends Piwik_Controller
 		if(function_exists('imagecreatefromstring'))
 		{
 			// validate image data
-			$imgResource = imagecreatefromstring($data);
+			$imgResource = @imagecreatefromstring($data);
 			if($imgResource !== false)
 			{
 				// output image and clean-up
@@ -109,15 +109,15 @@ class Piwik_Proxy_Controller extends Piwik_Controller
 
 	/**
 	 * Output redirection page instead of linking directly to avoid
-	 * exposing the referer on the Piwik demo.
+	 * exposing the referrer on the Piwik demo.
 	 *
 	 * @param string $url (via $_GET)
 	 */
 	public function redirect()
 	{
-		// validate referer
-		$referer = Piwik_Url::getReferer();
-		if(!empty($referer) && (Piwik_Url::getLocalReferer() === false))
+		// validate referrer
+		$referrer = Piwik_Url::getReferer();
+		if(!empty($referrer) && (Piwik_Url::getLocalReferer() === false))
 		{
 			exit;
 		}

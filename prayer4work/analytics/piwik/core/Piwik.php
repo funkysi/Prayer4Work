@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Piwik.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Piwik.php 3976 2011-02-26 04:57:30Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -77,7 +77,7 @@ class Piwik
 	 */
 	static public function install()
 	{
-		Piwik_Common::mkdir(Zend_Registry::get('config')->smarty->compile_dir);
+		Piwik_Common::mkdir(PIWIK_USER_PATH . '/' . Zend_Registry::get('config')->smarty->compile_dir);
 	}
 
 	/**
@@ -110,7 +110,7 @@ class Piwik
 	 */
 	static public function isHttps()
 	{
-		return Piwik_Url::getCurrentScheme() === 'https' || Zend_Registry::get('config')->General->reverse_proxy;
+		return Piwik_Url::getCurrentScheme() === 'https' || Zend_Registry::get('config')->General->assume_secure_protocol;
 	}
 
 	/**
@@ -176,7 +176,7 @@ class Piwik
 	{
 		if ( is_dir( $source ) )
 		{
-			@mkdir( $target );
+			Piwik_Common::mkdir( $target, false );
 			$d = dir( $source );
 			while ( false !== ( $entry = $d->read() ) )
 			{
@@ -374,8 +374,7 @@ class Piwik
 
 			if(!file_exists($directoryToCheck))
 			{
-				// the mode in mkdir is modified by the current umask
-				Piwik_Common::mkdir($directoryToCheck, 0755, false);
+				Piwik_Common::mkdir($directoryToCheck);
 			}
 
 			$directory = Piwik_Common::realpath($directoryToCheck);
@@ -596,6 +595,33 @@ class Piwik
 	}
 
 	/**
+	 * Test if php output is compressed
+	 *
+	 * @return bool True if php output is (or suspected/likely) to be compressed
+	 */
+	static public function isPhpOutputCompressed()
+	{
+		// Off = ''; On = '1'; otherwise, it's a buffer size
+		$zlibOutputCompression = ini_get('zlib.output_compression');
+
+		// could be ob_gzhandler, ob_deflatehandler, etc
+		$outputHandler = ini_get('output_handler');
+
+		// output handlers can be stacked
+		$obHandlers = array_filter( ob_list_handlers(), create_function('$var', 'return $var !== "default output handler";') );
+
+		// user defined handler via wrapper
+		$autoPrependFile = ini_get('auto_prepend_file');
+		$autoAppendFile = ini_get('auto_append_file');
+
+		return !empty($zlibOutputCompression) ||
+			!empty($outputHandler) ||
+			!empty($obHandlers) ||
+			!empty($autoPrependFile) ||
+			!empty($autoAppendFile);
+	}
+
+	/**
 	 * Serve static files through php proxy.
 	 *
 	 * It performs the following actions:
@@ -630,12 +656,12 @@ class Piwik
 			if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
 			{
 				$modifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
-			}
 
-			// strip any trailing data appended to header
-			if (false !== ($semicolon = strpos($modifiedSince, ';')))
-			{
-				$modifiedSince = substr($modifiedSince, 0, $semicolon);
+				// strip any trailing data appended to header
+				if (false !== ($semicolon = strpos($modifiedSince, ';')))
+				{
+					$modifiedSince = substr($modifiedSince, 0, $semicolon);
+				}
 			}
 
 			$fileModifiedTime = @filemtime($file);
@@ -647,7 +673,7 @@ class Piwik
 			@header('Content-Disposition: inline; filename='.basename($file));
 
 			// Returns 304 if not modified since
-			if ($modifiedSince == $lastModified)
+			if ($modifiedSince === $lastModified)
 			{
 				self::setHttpStatus('304 Not Modified');
 			}
@@ -658,9 +684,7 @@ class Piwik
 				$encoding = '';
 				$compressedFileLocation = PIWIK_USER_PATH . self::COMPRESSED_FILE_LOCATION . basename($file);
 
-				// Off = ''; On = '1'; otherwise, it's a buffer size
-				$zlibOutputCompression = ini_get('zlib.output_compression');
-				$phpOutputCompressionEnabled = !empty($zlibOutputCompression);
+				$phpOutputCompressionEnabled = self::isPhpOutputCompressed();
 				if (isset($_SERVER['HTTP_ACCEPT_ENCODING']) && !$phpOutputCompressionEnabled)
 				{
 					$acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'];
@@ -717,7 +741,7 @@ class Piwik
 
 				@header('Last-Modified: ' . $lastModified);
 
-				if (!$phpOutputCompressionEnabled)
+				if(!$phpOutputCompressionEnabled)
 				{
 					@header('Content-Length: ' . filesize($file));
 				}
@@ -727,12 +751,12 @@ class Piwik
 					@header('Content-Type: '.$contentType);
 				}
 
-				if ($compressed)
+				if($compressed)
 				{
 					@header('Content-Encoding: ' . $encoding);
 				}
 
-				if (!@readfile($file))
+				if(!@readfile($file))
 				{
 					self::setHttpStatus('505 Internal server error');
 				}
@@ -1309,14 +1333,14 @@ class Piwik
 	 */
 	static public function getJavascriptCode($idSite, $piwikUrl)
 	{
-		$jsTag = file_get_contents( PIWIK_INCLUDE_PATH . "/core/Tracker/javascriptTag.tpl");
-		$jsTag = nl2br(htmlentities($jsTag));
+		$jsCode = file_get_contents( PIWIK_INCLUDE_PATH . "/core/Tracker/javascriptCode.tpl");
+		$jsCode = nl2br(htmlentities($jsCode));
 		$piwikUrl = preg_match('~^(http|https)://(.*)$~', $piwikUrl, $matches);
 		$piwikUrl = @$matches[2];
-		$jsTag = str_replace('{$idSite}', $idSite, $jsTag);
-		$jsTag = str_replace('{$piwikUrl}', Piwik_Common::sanitizeInputValue($piwikUrl), $jsTag);
-		$jsTag = str_replace('{$hrefTitle}', Piwik::getRandomTitle(), $jsTag);
-		return $jsTag;
+		$jsCode = str_replace('{$idSite}', $idSite, $jsCode);
+		$jsCode = str_replace('{$piwikUrl}', Piwik_Common::sanitizeInputValue($piwikUrl), $jsCode);
+		$jsCode = str_replace('{$hrefTitle}', Piwik::getRandomTitle(), $jsCode);
+		return $jsCode;
 	}
 
 	/**
@@ -1328,17 +1352,13 @@ class Piwik
 	{
 		static $titles = array(
 			'Web analytics',
+			'Real Time Web Analytics',
 			'Analytics',
-			'Real time web analytics',
-			'Real time analytics',
-			'Open source analytics',
-			'Open source web analytics',
-			'Google Analytics alternative',
-			'Open source Google Analytics',
-			'Free analytics',
-			'Analytics software',
-			'Free web analytics',
-			'Free web statistics',
+			'Real Time Analytics',
+			'Open Source Analytics',
+			'Open Source Web Analytics',
+			'Free Website Analytics',
+			'Free Web Analytics',
 		);
 		$id = abs(intval(md5(Piwik_Url::getCurrentHost())));
 		$title = $titles[ $id % count($titles)];
@@ -1833,7 +1853,7 @@ class Piwik
 		$l = strlen($userLogin);
 		if(!($l >= $loginMinimumLength
 				&& $l <= $loginMaximumLength
-				&& (preg_match('/^[A-Za-z0-9_.-@]*$/', $userLogin) > 0))
+				&& (preg_match('/^[A-Za-z0-9_.@-]*$/', $userLogin) > 0))
 		)
 		{
 			throw new Exception(Piwik_TranslateException('UsersManager_ExceptionInvalidLoginFormat', array($loginMinimumLength, $loginMaximumLength)));
@@ -1962,11 +1982,10 @@ class Piwik
 	 * Get list of tables installed
 	 *
 	 * @param bool $forceReload Invalidate cache
-	 * @param string $idSite
 	 * @return array Tables installed
 	 */
-	static public function getTablesInstalled($forceReload = true,  $idSite = null)
+	static public function getTablesInstalled($forceReload = true)
 	{
-		return Piwik_Db_Schema::getInstance()->getTablesInstalled($forceReload, $idSite);
+		return Piwik_Db_Schema::getInstance()->getTablesInstalled($forceReload);
 	}
 }

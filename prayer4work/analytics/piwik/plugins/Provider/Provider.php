@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Provider.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Provider.php 3911 2011-02-15 08:23:40Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Provider
@@ -38,6 +38,7 @@ class Piwik_Provider extends Piwik_Plugin
 			'WidgetsList.add' => 'addWidget',
 			'Menu.add' => 'addMenu',
 			'API.getReportMetadata' => 'getReportMetadata',
+		    'API.getSegmentsMetadata' => 'getSegmentsMetadata',
 		);
 		return $hooks;
 	}
@@ -46,12 +47,25 @@ class Piwik_Provider extends Piwik_Plugin
 	{
 		$reports = &$notification->getNotificationObject();
 		$reports[] = array(
-			'category' => Piwik_Translate('Provider_WidgetProviders'),
+			'category' => Piwik_Translate('General_Visitors'),
 			'name' => Piwik_Translate('Provider_ColumnProvider'),
 			'module' => 'Provider',
 			'action' => 'getProvider',
 			'dimension' => Piwik_Translate('Provider_ColumnProvider'),
 		);
+	}
+
+	public function getSegmentsMetadata($notification)
+	{
+		$segments =& $notification->getNotificationObject();
+		$segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Visit',
+		        'name' => Piwik_Translate('Provider_ColumnProvider'),
+		        'segment' => 'provider',
+				'acceptedValues' => 'comcast.net, proxad.net, etc.',
+		        'sqlSegment' => 'location_provider'
+       );
 	}
 	
 	function install()
@@ -100,6 +114,9 @@ class Piwik_Provider extends Piwik_Plugin
 	{
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing = $notification->getNotificationObject();
+		
+		if(!$archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
+		
 		$dataTableToSum = array( 'Provider_hostnameExt' );
 		$archiveProcessing->archiveDataTable($dataTableToSum, null, $maximumRowsInDataTable);
 	}
@@ -110,6 +127,8 @@ class Piwik_Provider extends Piwik_Plugin
 	function archiveDay($notification)
 	{
 		$archiveProcessing = $notification->getNotificationObject();
+		
+		if(!$archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
 		
 		$recordName = 'Provider_hostnameExt';
 		$labelSQL = "location_provider";
@@ -198,7 +217,7 @@ class Piwik_Provider extends Piwik_Plugin
 	 */
 	private function getHost($ip)
 	{
-		return trim(strtolower(@gethostbyaddr(long2ip($ip))));
+		return trim(strtolower(@gethostbyaddr(Piwik_Common::long2ip($ip))));
 	}
 
 	static public function headerUserCountry($notification)

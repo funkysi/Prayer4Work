@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ExamplePlugin.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: ExamplePlugin.php 3865 2011-02-11 20:17:47Z JulienM $
  * 
  * @category Piwik_Plugins
  * @package Piwik_ExamplePlugin
@@ -124,7 +124,7 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 	
 	/**
 	 * This method displays a text containing an help about "How to build plugins for Piwik".
-	 * This help is then used on http://dev.piwik.org/trac/wiki/Plugins/GlobalFunctions
+	 * This help is then used on http://piwik.org/docs/plugins/functions
 	 *
 	 */
 	function index()
@@ -174,7 +174,7 @@ class Piwik_ExamplePlugin_Controller extends Piwik_Controller
 		$out .= '<code>Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess()</code> = <b><pre>' .var_export(Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess(),true) . '</pre></b><br />';
 
 		$out .= '<h2>Example API  Users information</h2>';
-		$out .= 'View the list of API methods you can call on <a href="http://dev.piwik.org/trac/wiki/API/Reference#Methods">API reference</a><br />';
+		$out .= 'View the list of API methods you can call on <a href="http://piwik.org/docs/analytics-api/reference">API reference</a><br />';
 		$out .= 'For example you can try <code>Piwik_UsersManager_API::getInstance()->getUsersSitesFromAccess("view");</code> or <code>Piwik_UsersManager_API::getInstance()->deleteUser("userToDelete");</code><br />';
 		
 		$out .= '<h2>Javascript in Piwik</h2>';

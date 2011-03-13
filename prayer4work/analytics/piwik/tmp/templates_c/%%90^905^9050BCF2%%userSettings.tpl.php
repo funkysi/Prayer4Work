@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:20:09
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:57:41
          compiled from /var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 4, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 67, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 68, false),array('function', 'url', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 76, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/UsersManager/templates/userSettings.tpl', 5, false),)), $this); ?>
@@ -15,7 +15,7 @@ unset($_smarty_tpl_vars);
 </h2>
 
 <br />
-<table id='userSettingsTable' class="adminTable adminTableNoBorder" style='width:1000px'>
+<table id='userSettingsTable' class="adminTable" style='width:1000px'>
 <tr>
 	<td><label for="username"><?php echo ((is_array($_tmp='General_Username')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
  </label></td>
@@ -135,7 +135,7 @@ unset($_smarty_tpl_vars);
 	<?php echo smarty_function_ajaxLoadingDiv(array('id' => 'ajaxLoadingAnonymousUserSettings'), $this);?>
 
 
-	<table id='anonymousUserSettingsTable' class="adminTable adminTableNoBorder" style='width:850px'>
+	<table id='anonymousUserSettingsTable' class="adminTable" style='width:850px'>
 	<tr>
 		<td style='width:400px'><?php echo ((is_array($_tmp='UsersManager_WhenUsersAreNotLoggedInAndVisitPiwikTheyShouldAccess')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </td>

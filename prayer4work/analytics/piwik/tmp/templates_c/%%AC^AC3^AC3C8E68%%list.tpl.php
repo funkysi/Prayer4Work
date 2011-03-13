@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:20:14
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:56:02
          compiled from PDFReports/templates/list.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'PDFReports/templates/list.tpl', 5, false),array('modifier', 'replace', 'PDFReports/templates/list.tpl', 39, false),array('function', 'url', 'PDFReports/templates/list.tpl', 42, false),)), $this); ?>
@@ -56,7 +56,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
  -->
 		        </td>
 				<td><?php if ($this->_tpl_vars['report']['email_me'] == 1): ?><?php echo $this->_tpl_vars['currentUserEmail']; ?>
-<?php endif; ?> 
+<?php if (! empty ( $this->_tpl_vars['report']['additional_emails'] )): ?><br/><?php endif; ?><?php endif; ?> 
 					<?php echo ((is_array($_tmp=$this->_tpl_vars['report']['additional_emails'])) ? $this->_run_mod_handler('replace', true, $_tmp, ",", ' ') : smarty_modifier_replace($_tmp, ",", ' ')); ?>
 
 					<br/><a href='#' idreport='<?php echo $this->_tpl_vars['report']['idreport']; ?>

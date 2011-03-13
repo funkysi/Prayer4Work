@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Countries.php 3322 2010-11-17 18:37:52Z vipsoft $
+ * @version $Id: Countries.php 3715 2011-01-12 03:09:54Z vipsoft $
  *
  * @category Piwik
  * @package DataFiles
@@ -78,7 +78,7 @@ if(!isset($GLOBALS['Piwik_CountryList']))
 			'cu' => 'amc',
 			'cv' => 'afr',
 			'cx' => 'asi',
-			'cy' => 'asi',
+			'cy' => 'eur',
 			'cz' => 'eur',
 			'de' => 'eur',
 			'dj' => 'afr',

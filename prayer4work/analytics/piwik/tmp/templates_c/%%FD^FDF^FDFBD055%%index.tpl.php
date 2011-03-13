@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:20:14
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:56:02
          compiled from /var/www/prayer4work/analytics/piwik/plugins/PDFReports/templates/index.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/PDFReports/templates/index.tpl', 10, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/PDFReports/templates/index.tpl', 13, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/PDFReports/templates/index.tpl', 14, false),)), $this); ?>
@@ -19,7 +19,7 @@ unset($_smarty_tpl_vars);
 </div>
 
 <div class="centerLargeDiv">
-	<h2><?php echo ((is_array($_tmp='PDFReports_ManagePdfReports')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	<h2><?php echo ((is_array($_tmp='PDFReports_ManageEmailReports')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </h2>
 	
 	<div class="entityContainer">
@@ -60,7 +60,7 @@ $(document).ready( function() {
 	initManagePdf();
 });
 </script>
-<style>
+<style type="text/css">
 .reportCategory {
 	font-weight:bold;
 	margin-bottom:5px;

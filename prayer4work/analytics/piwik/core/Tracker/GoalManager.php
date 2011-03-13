@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: GoalManager.php 3517 2010-12-22 20:51:20Z matt $
+ * @version $Id: GoalManager.php 3946 2011-02-19 18:13:23Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -17,19 +17,10 @@
 class Piwik_Tracker_GoalManager 
 {
 	/**
-	 * @var Piwik_Cookie
-	 */
-	protected $cookie = null;
-	/**
 	 * @var Piwik_Tracker_Action
 	 */
 	protected $action = null;
 	protected $convertedGoals = array();
-
-	function setCookie($cookie)
-	{
-		$this->cookie = $cookie;
-	}
 
 	static public function getGoalDefinitions( $idSite )
 	{
@@ -98,7 +89,13 @@ class Piwik_Tracker_GoalManager
 			switch($pattern_type)
 			{
 				case 'regex':
-					$pattern = '/' . str_replace('/', '\\/', $goal['pattern']) . '/';
+					$pattern = $goal['pattern'];
+					if(strpos($pattern, '/') !== false 
+						&& strpos($pattern, '\\/') === false)
+					{
+						$pattern = str_replace('/', '\\/', $pattern);
+					}
+					$pattern = '/' . $pattern . '/'; 
 					if(!$goal['case_sensitive'])
 					{
 						$pattern .= 'i';
@@ -161,7 +158,7 @@ class Piwik_Tracker_GoalManager
 		return true;
 	}
 
-	function recordGoals($idSite, $visitorInformation, $action)
+	function recordGoals($idSite, $visitorInformation, $visitCustomVariables, $action, $refererTimestamp, $refererUrl)
 	{
 		$location_country = isset($visitorInformation['location_country']) 
 							? $visitorInformation['location_country'] 
@@ -174,38 +171,39 @@ class Piwik_Tracker_GoalManager
 								? $visitorInformation['location_continent'] 
 								: Piwik_Common::getContinent($location_country);
 
+		$referrer = new Piwik_Tracker_Visit_Referer(); 
+		$referrer = $referrer->getRefererInformation($refererUrl, $currentUrl = '', $idSite);
+		
 		$goal = array(
 			'idvisit' 			=> $visitorInformation['idvisit'],
 			'idsite' 			=> $idSite,
-			'visitor_idcookie' 	=> $visitorInformation['visitor_idcookie'],
+			'idvisitor' 		=> $visitorInformation['idvisitor'],
 			'server_time' 		=> Piwik_Tracker::getDatetimeFromTimestamp($visitorInformation['visit_last_action_time']),
 			'location_country'  => $location_country,
 			'location_continent'=> $location_continent,
-			'visitor_returning' => $this->cookie->get( Piwik_Tracker::COOKIE_INDEX_VISITOR_RETURNING ),
+			'visitor_returning' => $visitorInformation['visitor_returning'],
+			'visitor_days_since_first' => $visitorInformation['visitor_days_since_first'],
+			'visitor_count_visits' => $visitorInformation['visitor_count_visits'],
+		
+			'referer_visit_server_date' => date("Y-m-d", $refererTimestamp),
+			'referer_type' 				=> $referrer['referer_type'],
 		);
 
-		$referer_idvisit = $this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_ID_VISIT );
-		if($referer_idvisit !== false)
+		$goalData = array(
+			'referer_name' 				=> $referrer['referer_name'],
+			'referer_keyword' 			=> $referrer['referer_keyword'],
+		);
+		
+		// Ref Cookie only lasts 6 months by default, 
+		// so we shouldn't see anything older than 1 year
+		if($refererTimestamp > Piwik_Tracker::getCurrentTimestamp() - 365 * 86400 * 2
+			&& $refererTimestamp <=  Piwik_Tracker::getCurrentTimestamp())
 		{
-			$refererTimestamp = (int)$this->cookie->get( Piwik_Tracker::COOKIE_INDEX_REFERER_TIMESTAMP );
-			$goalData = array(
-				'referer_idvisit' 			=> (int)$referer_idvisit,
-				'referer_visit_server_date' => date("Y-m-d", $refererTimestamp),
-				'referer_type' 				=> htmlspecialchars_decode($this->cookie->get( Piwik_Tracker::COOKIE_INDEX_REFERER_TYPE )),
-				'referer_name' 				=> htmlspecialchars_decode($this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_NAME )),
-				'referer_keyword' 			=> htmlspecialchars_decode($this->cookie->get(  Piwik_Tracker::COOKIE_INDEX_REFERER_KEYWORD )),
-			);
-			
-			// Basic health check on the referer data
-			if($goalData['referer_idvisit'] > 0
-				&& $goalData['referer_type'] > 0
-				&& strlen($goalData['referer_name']) > 1
-				&& $refererTimestamp > Piwik_Tracker::getCurrentTimestamp() - 365.25 * 86400 * 2)
-			{
-				$goal += $goalData;
-			}
+			$goal += $goalData;
 		}
 
+		$goal += $visitCustomVariables;
+		
 		foreach($this->convertedGoals as $convertedGoal)
 		{
 			printDebug("- Goal ".$convertedGoal['idgoal'] ." matched. Recording...");
@@ -218,16 +216,19 @@ class Piwik_Tracker_GoalManager
 				$newGoal['idaction_url'] = $action->getIdActionUrl();
 				$newGoal['idlink_va'] = $action->getIdLinkVisitAction();
 			}
-			printDebug($newGoal);
+
+			$newGoalDebug = $newGoal;
+			$newGoalDebug['idvisitor'] = bin2hex($newGoalDebug['idvisitor']);
+			printDebug($newGoalDebug);
 
 			$fields = implode(", ", array_keys($newGoal));
 			$bindFields = substr(str_repeat( "?,",count($newGoal)),0,-1);
-
+			
 			try {
-				Piwik_Tracker::getDatabase()->query(
-					"INSERT IGNORE INTO " . Piwik_Common::prefixTable('log_conversion') . "	($fields)
-					VALUES ($bindFields) ", array_values($newGoal)
-				);
+				$sql = "INSERT IGNORE INTO " . Piwik_Common::prefixTable('log_conversion') . "	
+						($fields) VALUES ($bindFields) ";
+				$bind = array_values($newGoal);
+				Piwik_Tracker::getDatabase()->query($sql, $bind);
 			} catch( Exception $e) {
 				if(Piwik_Tracker::getDatabase()->isErrNo($e, '1062'))
 				{

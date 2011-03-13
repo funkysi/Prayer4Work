@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:11:13
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:07:42
          compiled from /var/www/prayer4work/analytics/piwik/plugins/CoreUpdater/templates/update_database_done.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/CoreUpdater/templates/update_database_done.tpl', 2, false),array('modifier', 'implode', '/var/www/prayer4work/analytics/piwik/plugins/CoreUpdater/templates/update_database_done.tpl', 41, false),)), $this); ?>

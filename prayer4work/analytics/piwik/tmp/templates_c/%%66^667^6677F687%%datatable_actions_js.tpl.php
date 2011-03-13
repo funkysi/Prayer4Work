@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:20:52
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:18:09
          compiled from CoreHome/templates/datatable_actions_js.tpl */ ?>
 <?php $this->assign('dataTableClassName', 'actionDataTable'); ?>
 <?php $_smarty_tpl_vars = $this->_tpl_vars;

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Tracker.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Tracker.php 3945 2011-02-19 17:45:55Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -23,7 +23,6 @@
 class Piwik_Tracker
 {	
 	protected $stateValid = self::STATE_NOTHING_TO_NOTICE;
-	
 	/**
 	 * @var Piwik_Tracker_Db
 	 */
@@ -34,20 +33,18 @@ class Piwik_Tracker
 	const STATE_EMPTY_REQUEST = 11;
 	const STATE_NOSCRIPT_REQUEST = 13;
 		
-	const COOKIE_INDEX_IDVISITOR 				= 1;
-	const COOKIE_INDEX_TIMESTAMP_LAST_ACTION 	= 2;
-	const COOKIE_INDEX_TIMESTAMP_FIRST_ACTION 	= 3;
-	const COOKIE_INDEX_ID_VISIT 				= 4;
-	const COOKIE_INDEX_ID_LAST_ACTION 			= 5;
-	const COOKIE_INDEX_REFERER_ID_VISIT			= 6;
-	const COOKIE_INDEX_REFERER_TIMESTAMP		= 7;
-	const COOKIE_INDEX_REFERER_TYPE				= 8;
-	const COOKIE_INDEX_REFERER_NAME				= 9;
-	const COOKIE_INDEX_REFERER_KEYWORD			= 10;
-	const COOKIE_INDEX_VISITOR_RETURNING		= 11;
+	// We use hex ID that are 16 chars in length, ie. 64 bits IDs 
+	const LENGTH_HEX_ID_STRING = 16;
+	const LENGTH_BINARY_ID = 8;
+	
+	// These are also hardcoded in the Javascript
+	const MAX_CUSTOM_VARIABLES = 5;
+	const MAX_LENGTH_CUSTOM_VARIABLE = 50;
 	
 	static protected $forcedDateTime = null;
 	static protected $forcedIpString = null;
+	
+	static protected $pluginsNotToLoad = array();
 	
 	public function __construct($args = null)
 	{
@@ -61,6 +58,7 @@ class Piwik_Tracker
 	{
 		self::$forcedDateTime = $dateTime;
 	}
+	
 	public function getCurrentTimestamp()
 	{
 		if(!is_null(self::$forcedDateTime))
@@ -69,6 +67,20 @@ class Piwik_Tracker
 		}
 		return time();
 	}
+
+	/**
+	 * Do not load the specified plugins (used during testing, to disable Provider plugin)
+	 * @param $plugins
+	 */
+	static public function setPluginsNotToLoad($plugins)
+	{
+		self::$pluginsNotToLoad = $plugins;
+	}
+	static public function getPluginsNotToLoad()
+	{
+		return self::$pluginsNotToLoad;
+	}
+	
 	public function main()
 	{
 		$this->init();
@@ -86,7 +98,7 @@ class Piwik_Tracker
 
 			Piwik_Common::runScheduledTasks($now = $this->getCurrentTimestamp());
 		} catch (Piwik_Tracker_Db_Exception $e) {
-			printDebug($e->getMessage());
+			printDebug("<b>".$e->getMessage()."</b>");
 		} catch(Piwik_Tracker_Visit_Excluded $e) {
 		} catch(Exception $e) {
 			Piwik_Tracker_ExitWithException($e);
@@ -110,6 +122,9 @@ class Piwik_Tracker
 		$this->loadTrackerPlugins();
 		$this->handleDisabledTracker();
 		$this->handleEmptyRequest();
+		$this->handleTrackingApi();
+		
+		printDebug("Current datetime: ".date("Y-m-d H:i:s", $this->getCurrentTimestamp()));
 	}
 
 	protected function end()
@@ -278,10 +293,11 @@ class Piwik_Tracker
 			if(is_array($pluginsTracker)
 				&& count($pluginsTracker) != 0)
 			{
+				$pluginsTracker['Plugins_Tracker'] = array_diff($pluginsTracker['Plugins_Tracker'], self::getPluginsNotToLoad());
 				Piwik_PluginsManager::getInstance()->doNotLoadAlwaysActivatedPlugins();
 				Piwik_PluginsManager::getInstance()->loadPlugins( $pluginsTracker['Plugins_Tracker'] );
 				
-				printDebug("Loading plugins: { ". implode(",", $pluginsTracker['Plugins_Tracker']) . "}");
+				printDebug("Loading plugins: { ". implode(",", $pluginsTracker['Plugins_Tracker']) . " }");
 			}
 		} catch(Exception $e) {
 			printDebug("ERROR: ".$e->getMessage());
@@ -309,6 +325,52 @@ class Piwik_Tracker
 			$this->setState(self::STATE_LOGGING_DISABLE);
 		}
 	}
+
+	protected function authenticateSuperUser()
+	{
+		$tokenAuth = Piwik_Common::getRequestVar('token_auth', false);
+
+		if( $tokenAuth )
+		{
+			$superUserLogin =  Piwik_Tracker_Config::getInstance()->superuser['login'];
+			$superUserPassword = Piwik_Tracker_Config::getInstance()->superuser['password'];
+
+			if( md5($superUserLogin . $superUserPassword ) == $tokenAuth )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * This method allows to set custom IP + server time when using Tracking API.
+	 * These two attributes can be only set by the Super User (passing token_auth).
+	 */
+	protected function handleTrackingApi()
+	{
+		if(!$this->authenticateSuperUser())
+		{
+			return;
+		}
+
+		// Custom IP to use for this visitor
+		$customIp = Piwik_Common::getRequestVar('cip', false);
+
+		if(!empty($customIp))
+		{
+			$this->setForceIp($customIp);
+		}
+
+		// Custom server date time to use
+		$customDatetime = Piwik_Common::getRequestVar('cdt', false);
+
+		if(!empty($customDatetime))
+		{
+			$this->setForceDateTime($customDatetime);
+		}
+	}
 }
 
 if(!function_exists('printDebug')) 
@@ -320,12 +382,12 @@ if(!function_exists('printDebug'))
     		if(is_array($info))
     		{
     			print("<pre>");
-    			print(var_export($info,true));
+    			print(htmlspecialchars(var_export($info,true), ENT_QUOTES));
     			print("</pre>");
     		}
     		else
     		{
-    			print($info . "<br />\n");
+    			print(htmlspecialchars($info, ENT_QUOTES) . "<br />\n");
     		}
     	}
     }

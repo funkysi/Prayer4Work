@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Cookie.php 3613 2011-01-04 15:43:27Z vipsoft $
+ * @version $Id: Cookie.php 3853 2011-02-05 04:44:11Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -159,7 +159,7 @@ class Piwik_Cookie
 	public function delete()
 	{
 		$this->setP3PHeader();
-		setcookie($this->name, false, time() - 86400);
+		$this->setCookie($this->name, 'deleted', time() - 31536001, $this->path, $this->domain);
 	}
 	
 	/**
@@ -226,14 +226,16 @@ class Piwik_Cookie
 			// no numeric value are base64 encoded so we need to decode them
 			if(!is_numeric($varValue))
 			{
-				// @see http://bugs.php.net/38680
-				if(PHP_VERSION < '5.2.1')
+				$tmpValue = base64_decode($varValue);
+				$varValue = safe_unserialize($tmpValue);
+
+				// discard entire cookie
+				// note: this assumes we never serialize a boolean
+				if($varValue === false && $tmpValue !== 'b:0;')
 				{
-					$varValue = safe_unserialize(base64_decode($varValue));
-				}
-				else
-				{
-					$varValue = @json_decode(base64_decode($varValue), $assoc = true);
+					$this->value = array();
+					unset($_COOKIE[$this->name]);
+					break;
 				}
 			}
 			
@@ -254,15 +256,7 @@ class Piwik_Cookie
 		{
 			if(!is_numeric($value))
 			{
-				// @see http://bugs.php.net/38680
-				if(PHP_VERSION < '5.2.1')
-				{
-					$value = base64_encode(safe_serialize($value));
-				}
-				else
-				{
-					$value = base64_encode(json_encode($value));
-				}
+				$value = base64_encode(safe_serialize($value));
 			}
 		
 			$cookieStr .= "$name=$value" . self::VALUE_SEPARATOR;
@@ -374,7 +368,7 @@ class Piwik_Cookie
 	 */
 	public function __toString()
 	{
-		$str = 'COOKIE '.$this->name.', rows count: '.count($this->value). ', cookie size = '.strlen($this->generateContentString()).' bytes<br/>';
+		$str = 'COOKIE '.$this->name.', rows count: '.count($this->value). ', cookie size = '.strlen($this->generateContentString())." bytes\n";
 		$str .= var_export($this->value, $return = true);
 		return $str;
 	}

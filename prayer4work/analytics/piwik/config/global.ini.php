@@ -47,7 +47,7 @@ always_archive_data_day = 0;
 ; and a profiling summary will be printed at the end of the request
 enable_sql_profiler = 0
 
-; if set to 1, a Piwik tag will be included in the Piwik UI footer and will track visits, pages, etc. to idsite = 1
+; if set to 1, a Piwik tracking code will be included in the Piwik UI footer and will track visits, pages, etc. to idsite = 1
 ; this is useful for Piwik developers as an easy way to create data in their local Piwik
 track_visits_inside_piwik_ui = 0
 
@@ -59,6 +59,9 @@ disable_merged_assets = 0
 ; (i.e., one request to load the JavaScript which instantiates Open Flash Chart; the other request is made by OFC to download the JSON data for the chart)
 ; If set to 0, Piwik uses a single HTTP request per Flash widget to serve both the widget and data
 disable_merged_requests = 0
+
+; If set to 1, all requests to piwik.php will be forced to be 'new visitors'
+tracker_always_new_visitor = 0
 
 [General]
 ; character used to automatically create categories in the Actions > Pages, Outlinks and Downloads reports
@@ -77,6 +80,13 @@ site_selector_max_sites = 10
 
 ; if set to 1, shows sparklines (evolution graph) in 'All Websites' report (MultiSites plugin)
 show_multisites_sparklines = 1
+
+; number of websites to display per page in the All Websites dashboard
+all_websites_website_per_page = 50
+
+; if set to 0, the anonymous user will not be able to use the 'segments' parameter in the API request
+; this is useful to prevent full DB access to the anonymous user, or to limit performance usage
+anonymous_user_enable_use_segments_API = 1
 
 ; this action name is used when the URL ends with a slash / 
 ; it is useful to have an actual string to write in the UI
@@ -110,9 +120,6 @@ time_before_today_archive_considered_outdated = 10
 ; This setting is overriden in the UI, under "General Settings". The default value is to allow browsers
 ; to trigger the Piwik archiving process.
 enable_browser_archiving_triggering = 1
-
-; PHP minimum required version (minimum requirement known to date = ->newInstanceArgs)
-minimum_php_version = 5.1.3
 
 ; MySQL minimum required version
 ; note: timezone support added in 4.1.3
@@ -161,6 +168,7 @@ feedback_email_address = "hello@piwik.org"
 
 ; during archiving, Piwik will limit the number of results recorded, for performance reasons
 ; maximum number of rows for any of the Referers tables (keywords, search engines, campaigns, etc.)
+; this limit will also be applied to the Custom Variables names and values reports
 datatable_archiving_maximum_rows_referers = 1000
 ; maximum number of rows for any of the Referers subtable (search engines by keyword, keyword by campaign, etc.)
 datatable_archiving_maximum_rows_subtable_referers = 50
@@ -180,12 +188,14 @@ datatable_archiving_maximum_rows_standard = 500
 use_ajax_cdn = 0
 
 ; required AJAX library versions
-jquery_version = 1.4.2
-jqueryui_version = 1.8.4
+jquery_version = 1.5.1
+jqueryui_version = 1.8.9
 swfobject_version = 2.2
 
-; If set to 1, Piwik adds a response header to workaround the IE+Flash+HTTPS bug.
-reverse_proxy = 0
+; Set to 1 if you're using https on your Piwik server and Piwik can't detect it,
+; e.g., a reverse proxy using https-to-http, or a web server that doesn't
+; set the HTTPS environment variable.
+assume_secure_protocol = 0
 
 ; List of proxy headers for client IP addresses
 ;
@@ -213,24 +223,25 @@ latest_version_url = http://piwik.org/latest.zip
 api_service_url = http://api.piwik.org
 
 [Tracker]
+; Piwik uses first party cookies by default. If set to 1, 
+; the visit ID cookie will be set on the Piwik server domain as well
+; this is useful when you want to do cross websites analysis 
+use_third_party_id_cookie = 0
+
 ; set to 0 if you want to stop tracking the visitors. Useful if you need to stop all the connections on the DB.
 record_statistics			= 1
 
 ; length of a visit in seconds. If a visitor comes back on the website visit_standard_length seconds after his last page view, it will be recorded as a new visit  
 visit_standard_length       = 1800
 
-; visitors that stay on the website and view only one page will be considered staying 0 second
+; visitors that stay on the website and view only one page will be considered as time on site of 0 second
 default_time_one_page_visit = 0
 
-; if set to 0, any goal conversion will be credited to the last more recent non empty referer. 
-; when set to 1, the first ever referer used to reach the website will be used
-use_first_referer_to_determine_goal_referer = 0
-
-; if set to 1, Piwik will try to match visitors without cookie to a previous visitor that has the same
-; configuration: OS, browser, resolution, IP, etc. This heuristic adds an extra SQL query for each page view without cookie. 
-; it is advised to set it to 1 for more accurate detection of unique visitors.
-; However when most users have the same IP, and the same configuration, it is advised to set it to 0
-enable_detect_unique_visitor_using_settings = 1
+; By default, Piwik does not trust the idcookie as accurate and will always check that if the visitor visited
+; the website earlier by looking for a visitor with the same IP and user configuration (to avoid abuse or misbehaviour)
+; This setting should only be set to 1 in an intranet setting, where most users have the same configuration (browsers, OS)
+; and the same IP. If left to 0 in this setting, all visitors will be counted as one single visitor. 
+trust_visitors_cookies = 0
 
 ; if set to 1, Piwik attempts a "best guess" at the visitor's country of
 ; origin when the preferred language tag omits region information.
@@ -273,7 +284,21 @@ page_maximum_length = 1024;
 ; for IPv4 addresses, valid values are 0..4
 ip_address_mask_length = 1
 
+[Segments]
+; Reports with segmentation in API requests are processed in real time. 
+; On high traffic websites it is recommended to pre-process the data 
+; so that the analytics reports are always fast to load.
+; You can define below the list of Segments strings 
+; for which all reports should be Archived during the cron execution
+; All segment values MUST be URL encoded.
+;Segments[]="visitorType==new"
+;Segments[]="visitorType==returning"
+
+; If you define Custom Variables for your visitor, for example set the visit type
+;Segments[]="customVariableName1==VisitType;customVariableValue1==Customer"
+
 [mail]
+defaultHostnameIfEmpty = defaultHostnameIfEmpty.example.org  ; default Email @hostname, if current host can't be read from system variables 
 transport =							; smtp (using the configuration below) or empty (using built-in mail() function)
 port =								; optional; defaults to 25 when security is none or tls; 465 for ssl
 host =								; SMTP server address 
@@ -348,7 +373,7 @@ Plugins[] 		= CoreUpdater
 Plugins[]		= PDFReports
 Plugins[] 		= UserCountryMap
 Plugins[] 		= Live
-
+Plugins[]		= CustomVariables
 [PluginsInstalled]
 PluginsInstalled[] = Login
 PluginsInstalled[] = CoreAdminHome

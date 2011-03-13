@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Single.php 3577 2011-01-03 12:38:53Z matt $
+ * @version $Id: Single.php 3879 2011-02-13 08:13:10Z matt $
  * 
  * 
  * @category Piwik
@@ -76,13 +76,18 @@ class Piwik_Archive_Single extends Piwik_Archive
 	 */
 	protected $alreadyChecked = false;
 
-	public function __destruct()
+	protected function clearCache()
 	{
 		foreach($this->blobCached as $name => $blob)
 		{
 			$this->freeBlob($name);
 		}
 		$this->blobCached = array();
+	}
+	
+	public function __destruct()
+	{
+		$this->clearCache();
 	}
 	
 	/**
@@ -172,37 +177,55 @@ class Piwik_Archive_Single extends Piwik_Archive
 				return;
 			}
 			
-			// we make sure the archive is available for the given date
-			$periodLabel = $this->period->getLabel();
-			$archiveProcessing = Piwik_ArchiveProcessing::factory($periodLabel);
-			$archiveProcessing->setSite($this->site);
-			$archiveProcessing->setPeriod($this->period);
-			$idArchive = $archiveProcessing->loadArchive();
+    		// we make sure the archive is available for the given date
+    		$periodLabel = $this->period->getLabel();
+    		$this->archiveProcessing = Piwik_ArchiveProcessing::factory($periodLabel);
+    		$this->archiveProcessing->setSite($this->site);
+    		$this->archiveProcessing->setPeriod($this->period);
+    		$this->archiveProcessing->setSegment($this->segment);
+    		
+    		$this->archiveProcessing->init();
+    		
+			$this->archiveProcessing->setRequestedReport( $this->getRequestedReport() );
+		
+			$idArchive = $this->archiveProcessing->loadArchive();
 			if(empty($idArchive))
 			{
-				if($archiveProcessing->isArchivingDisabled())
+				if($this->archiveProcessing->isArchivingDisabled())
 				{
-					$archiveProcessing->isThereSomeVisits = false;
+					$this->archiveProcessing->isThereSomeVisits = false;
 				}
 				else
 				{
     				Piwik::log("$logMessage not archived yet, starting processing...");
     				$archiveJustProcessed = true;
-    				$archiveProcessing->launchArchiving();
-    				$idArchive = $archiveProcessing->getIdArchive();
+    				
+    				// Process the reports
+    				$this->archiveProcessing->launchArchiving();
+    				
+    				$idArchive = $this->archiveProcessing->getIdArchive();
 				}
 			}
 			else
 			{
 				Piwik::log("$logMessage archive already processed [id = $idArchive]...");
 			}
-			$this->isThereSomeVisits = $archiveProcessing->isThereSomeVisits;
+			$this->isThereSomeVisits = $this->archiveProcessing->isThereSomeVisits;
 			$this->idArchive = $idArchive;
-			$this->archiveProcessing = $archiveProcessing;
 		}
 		return $archiveJustProcessed;
 	}
 	
+	protected $isArchivePrepared = false;
+	
+	protected function triggerProcessing()
+	{
+	    if(!$this->isArchivePrepared)
+	    {
+	        $archiveJustProcessed = $this->prepareArchive();
+    		$this->isArchivePrepared = true;
+	    }
+	}
 	/**
 	 * Returns a value from the current archive with the name = $name 
 	 * Method used by getNumeric or getBlob
@@ -213,6 +236,9 @@ class Piwik_Archive_Single extends Piwik_Archive
 	 */
 	protected function get( $name, $typeValue = 'numeric' )
 	{
+    	$this->setRequestedReport($name);
+    	$this->triggerProcessing();
+	    
 		// values previously "get" and now cached
 		if($typeValue == 'numeric'
 			&& $this->cacheEnabledForNumeric
@@ -254,7 +280,7 @@ class Piwik_Archive_Single extends Piwik_Archive
 		}
 
 		$db = Zend_Registry::get('db');
-		$value = $db->fetchOne("/* SHARDING_ID_SITE = ".$this->site->getId()." */  SELECT value 
+		$value = $db->fetchOne("SELECT value 
 								FROM $table
 								WHERE idarchive = ?
 									AND name = ?",	
@@ -340,11 +366,10 @@ class Piwik_Archive_Single extends Piwik_Archive
 	 */
 	public function preFetchBlob( $name )
 	{
-		if(!$this->isThereSomeVisits)
-		{
-			return false;
-		}
-
+    	$this->setRequestedReport($name);
+    	$this->triggerProcessing();
+    	if(!$this->isThereSomeVisits) { return; } 
+    	
 		$tableBlob = $this->archiveProcessing->getTableArchiveBlobName();
 
 		$db = Zend_Registry::get('db');
@@ -447,22 +472,37 @@ class Piwik_Archive_Single extends Piwik_Archive
 			$name .= "_$idSubTable";
 		}
 		
+		$this->setRequestedReport($name);
+		
 		$data = $this->get($name, 'blob');
 		
 		$table = new Piwik_DataTable();
-		
+	
 		if($data !== false)
 		{
 			$table->addRowsFromSerializedArray($data);
 		}
-		
 		if($data === false 
 			&& $idSubTable !== null)
 		{
-			throw new Exception(Piwik_TranslateException('General_ExceptionSubtableNotFoundInArchive'));
+			// This is not expected, but somehow happens in some unknown cases and very rarely.
+			// Do not throw error in this case
+			// throw new Exception("not expected");
+			return new Piwik_DataTable();
 		}
 	
 		return $table;
+	}
+	
+	public function setRequestedReport($requestedReport )
+	{
+		$this->requestedReport = $requestedReport;
+	}
+	
+	protected function getRequestedReport()
+	{
+		if(!isset($this->requestedReport)) { debug_print_backtrace();exit; }
+   		return $this->requestedReport;
 	}
 	
 	/**

@@ -6,10 +6,15 @@
  * For more information, see http://piwik.org/docs/tracking-api/
  * 
  * @license released under BSD License http://www.opensource.org/licenses/bsd-license.php
- * @version $Id: PiwikTracker.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: PiwikTracker.php 3986 2011-02-28 06:04:30Z vipsoft $
  * @link http://piwik.org/docs/tracking-api/
  *
  * @category Piwik
+ * @package PiwikTracker
+ */
+
+/**
+ *
  * @package PiwikTracker
  */
 class PiwikTracker
@@ -29,6 +34,9 @@ class PiwikTracker
 	 */
 	const VERSION = 1;
 	
+	/* Debug only */
+	public $DEBUG_APPEND_URL = '';
+	
 	/**
 	 * Builds a PiwikTracker object, used to track visits, pages and Goal conversions 
 	 * for a specific website, by using the Piwik Tracking API.
@@ -47,8 +55,10 @@ class PiwikTracker
     	$this->localSecond = false;
     	$this->hasCookies = false;
     	$this->plugins = false;
+    	$this->visitorCustomVar = false;
     	$this->customData = false;
     	$this->forcedDatetime = false;
+    	$this->token_auth = false;
 
     	$this->requestCookie = '';
     	$this->idSite = $idSite;
@@ -60,6 +70,7 @@ class PiwikTracker
     	if(!empty($apiUrl)) {
     		self::$URL = $apiUrl;
     	}
+    	$this->visitorId = substr(md5(uniqid(rand(), true)), 0, 16);
     }
     
     /**
@@ -81,14 +92,15 @@ class PiwikTracker
     }
     
     /**
-     * Sets custom data to be passed to the piwik.php script, 
-     * with the variable name 'data'. Data will be JSON encoded.
+     * Sets Visitor Custom Variable
      * 
-     * @param mixed $data An array, strings, ints, etc.
+     * @param int Custom variable slot ID from 1-5
+     * @param string Custom variable name
+     * @param string Custom variable value
      */
-    public function setCustomData( $data )
+    public function setCustomVariable($id, $name, $value)
     {
-    	$this->customData = json_encode($data);
+        $this->visitorCustomVar[$id] = array($name, $value);
     }
     
     /**
@@ -269,8 +281,7 @@ class PiwikTracker
     }
 
     /**
-     * Do not use - this will only work when used in Piwik unit tests
-     * @ignore
+     * Overrides server date, allowed only for Super User (must be used along with setTokenAuth)
      */
     public function setForceVisitDateTime($dateTime)
     {
@@ -278,13 +289,22 @@ class PiwikTracker
     }
     
     /**
-     * Do not use - this will only work when used in Piwik unit tests
-     * @ignore
+     * Overrides IP address, allowed only for Super User (must be used along with setTokenAuth)
      */
     public function setIp($ip)
     {
     	$this->ip = $ip;
     }
+
+	/**
+	 *  Sets token_auth used for authorization.
+	 *
+	 *  @param string token_auth
+	 */
+	public function setTokenAuth($token_auth)
+	{
+		$this->token_auth = $token_auth;
+	}
     
     /**
      * @ignore
@@ -315,7 +335,6 @@ class PiwikTracker
 			ob_start();
 			$response = @curl_exec($ch);
 			ob_end_clean();
-			
     		list($header,$content) = explode("\r\n\r\n", $response, $limitCount = 2);
 		}
 		else if(function_exists('stream_context_create'))
@@ -334,10 +353,22 @@ class PiwikTracker
 			$content = $response;
 		}
 		// The cookie in the response will be set in the next request
-		preg_match('/^Set-Cookie: (.*?);/m', $header, $cookie);
+		preg_match_all('/^Set-Cookie: (.*?);/m', $header, $cookie);
 		if(!empty($cookie[1]))
 		{
-			$this->requestCookie = $cookie[1];
+			// in case several cookies returned, we keep only the latest one (ie. XDEBUG puts its cookie first in the list)
+			if(is_array($cookie[1]))
+			{
+				$cookie = end($cookie[1]);
+			}
+			else
+			{
+				$cookie = $cookie[1];
+			}
+			if(strpos($cookie, 'XDEBUG') === false)
+			{
+				$this->requestCookie = $cookie;
+			}
 		}
 
 		return $content;
@@ -352,7 +383,8 @@ class PiwikTracker
     	{
     		throw new Exception('You must first set the Piwik Tracker URL by calling PiwikTracker::$URL = \'http://your-website.org/piwik/\';');
     	}
-    	if(strpos(self::$URL, '/piwik.php') === false)
+    	if(strpos(self::$URL, '/piwik.php') === false
+    		&& strpos(self::$URL, '/proxy-piwik.php') === false)
     	{
     		self::$URL .= '/piwik.php';
     	}
@@ -363,21 +395,31 @@ class PiwikTracker
 	        '&url=' . urlencode($this->pageUrl) .
 			'&urlref=' . urlencode($this->urlReferer) .
 	        '&rand=' . mt_rand() .
+
+			// Temporary, until we implement 1st party cookies in this class
+    		'&_id=' . $this->visitorId . 
+    		'&_ref=' . urlencode($this->urlReferer) .
+    		'&_refts=' . (!empty($this->forcedDatetime) 
+    							? strtotime($this->forcedDatetime) 
+    							: time()) .
     	
     		// Optional since debugger can be triggered remotely
-    		'&XDEBUG_SESSION_START=' . @$_GET['XDEBUG_SESSION_START'] . 
-	        '&KEY=' . @$_GET['KEY'] .
+    		(!empty($_GET['XDEBUG_SESSION_START']) ? '&XDEBUG_SESSION_START=' . @$_GET['XDEBUG_SESSION_START'] : '') . 
+	        (!empty($_GET['KEY']) ? '&KEY=' . @$_GET['KEY'] : '') .
     	 
-    		// only allowed in tests (see tests/integration/piwik.php)
+    		// only allowed for Super User, token_auth required
 			(!empty($this->ip) ? '&cip=' . $this->ip : '') .
 			(!empty($this->forcedDatetime) ? '&cdt=' . urlencode($this->forcedDatetime) : '') .
+			(!empty($this->token_auth) ? '&token_auth=' . urlencode($this->token_auth) : '') .
 	        
 			// These parameters are set by the JS, but optional when using API
 	        (!empty($this->plugins) ? $this->plugins : '') . 
 			(($this->localHour !== false && $this->localMinute !== false && $this->localSecond !== false) ? '&h=' . $this->localHour . '&m=' . $this->localMinute  . '&s=' . $this->localSecond : '' ).
 	        (!empty($this->width) && !empty($this->height) ? '&res=' . $this->width . 'x' . $this->height : '') .
 	        (!empty($this->hasCookies) ? '&cookie=' . $this->hasCookies : '') .
-	        (!empty($this->customData) ? '&data=' . $this->customData : '') 
+	        (!empty($this->customData) ? '&data=' . $this->customData : '') . 
+	        (!empty($this->visitorCustomVar) ? '&_cvar=' . urlencode(json_encode($this->visitorCustomVar)) : '') .
+	        $this->DEBUG_APPEND_URL
         ;
     	return $url;
     }

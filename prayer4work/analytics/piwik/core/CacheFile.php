@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: CacheFile.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: CacheFile.php 3773 2011-01-17 22:12:27Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -78,6 +78,7 @@ class Piwik_CacheFile
 	    // Write cache to a temp file, then rename it, overwritng the old cache
 	    // On *nix systems this should guarantee atomicity
 	    $tmp_filename = tempnam($this->cachePath, 'tmp_');
+	    @chmod($tmp_filename, 0600);
 	    if ($fp = @fopen($tmp_filename, 'wb')) {
 	        @fwrite ($fp, $cache_literal, strlen($cache_literal));
 	        @fclose ($fp);

@@ -1,11 +1,11 @@
-<?php /* Smarty version 2.6.26, created on 2010-11-21 23:13:40
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:22:15
          compiled from Goals/templates/add_edit_goal.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'Goals/templates/add_edit_goal.tpl', 2, false),array('modifier', 'escape', 'Goals/templates/add_edit_goal.tpl', 39, false),array('function', 'ajaxErrorDiv', 'Goals/templates/add_edit_goal.tpl', 19, false),array('function', 'ajaxLoadingDiv', 'Goals/templates/add_edit_goal.tpl', 20, false),array('function', 'loadJavascriptTranslations', 'Goals/templates/add_edit_goal.tpl', 35, false),)), $this); ?>
 <?php if (isset ( $this->_tpl_vars['onlyShowAddNewGoal'] )): ?>
     <h2><?php echo ((is_array($_tmp='Goals_AddNewGoal')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </h2>
-    <p><?php echo ((is_array($_tmp='Goals_LearnMoreAboutGoalTrackingDocumentation')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='misc/redirectToUrl.php?url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='misc/redirectToUrl.php?url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>")); ?>
+    <p><?php echo ((is_array($_tmp='Goals_LearnMoreAboutGoalTrackingDocumentation')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>")); ?>
 
     </p>
 <?php else: ?>
@@ -19,7 +19,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 </u></a></li>
 			<li><a onclick='' name='linkEditGoals'><?php echo ((is_array($_tmp='Goals_ViewAndEditGoals')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </a></li>
-			<li><?php echo ((is_array($_tmp='Goals_LearnMoreAboutGoalTrackingDocumentation')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='misc/redirectToUrl.php?url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='misc/redirectToUrl.php?url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>")); ?>
+			<li><?php echo ((is_array($_tmp='Goals_LearnMoreAboutGoalTrackingDocumentation')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/tracking-goals-web-analytics/' target='_blank'>", "</a>")); ?>
 </li>
 		</ul>
 	</div>

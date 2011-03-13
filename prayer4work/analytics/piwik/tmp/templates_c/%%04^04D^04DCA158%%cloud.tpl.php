@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:23:01
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:10:57
          compiled from CoreHome/templates/cloud.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/cloud.tpl', 4, false),)), $this); ?>

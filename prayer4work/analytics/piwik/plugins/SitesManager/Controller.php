@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Controller.php 3946 2011-02-19 18:13:23Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_SitesManager
@@ -30,6 +30,7 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 			$site['excluded_parameters'] = str_replace(',','<br/>', $site['excluded_parameters']);
 		}
 		$view->adminSites = $sites;
+		$view->adminSitesCount = count($sites);
 
 		$timezones = Piwik_SitesManager_API::getInstance()->getTimezonesList();
 		$view->timezoneSupported = Piwik::isTimezoneSupportEnabled();
@@ -129,7 +130,11 @@ class Piwik_SitesManager_Controller extends Piwik_Controller
 		}
 		else
 		{
-			$pattern = str_replace('/', '\\/', $pattern);
+			if(strpos($pattern, '/') !== false 
+				&& strpos($pattern, '\\/') === false)
+			{
+				$pattern = str_replace('/', '\\/', $pattern);
+			}
 			foreach($sites as $s)
 			{
 				$hl_name = $s['name'];

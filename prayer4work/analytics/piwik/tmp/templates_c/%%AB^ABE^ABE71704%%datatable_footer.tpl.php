@@ -1,14 +1,13 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:20:52
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:09:59
          compiled from CoreHome/templates/datatable_footer.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/datatable_footer.tpl', 16, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'CoreHome/templates/datatable_footer.tpl', 15, false),)), $this); ?>
 <div class="dataTableFeatures">
 
 <?php if (! empty ( $this->_tpl_vars['properties']['show_footer_message'] )): ?>
 	<div class='datatableFooterMessage'><?php echo $this->_tpl_vars['properties']['show_footer_message']; ?>
 </div>
 <?php endif; ?>
-
 
 <?php if ($this->_tpl_vars['properties']['show_offset_information']): ?>
 <span>
@@ -32,6 +31,9 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 " />
 </span>
 <?php endif; ?>
+
+<span class="loadingPiwik" style='display:none'><img src="themes/default/images/loading-blue.gif" /> <?php echo ((is_array($_tmp='General_LoadingData')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+</span>
 
 <?php if ($this->_tpl_vars['properties']['show_footer_icons']): ?>
 	<div class="dataTableFooterIcons">
@@ -113,8 +115,6 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	</div>
 <?php endif; ?>
 
-<span class="loadingPiwik" style='display:none'><img src="themes/default/images/loading-blue.gif" /> <?php echo ((is_array($_tmp='General_LoadingData')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-</span>
 </div>
 
 <div class="dataTableSpacer"></div>

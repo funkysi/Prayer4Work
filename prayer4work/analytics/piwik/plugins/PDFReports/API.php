@@ -4,12 +4,16 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3576 2011-01-03 12:38:40Z matt $
+ * @version $Id: API.php 3986 2011-02-28 06:04:30Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
  */
 
+/**
+ *
+ * @package Piwik_PDFReports
+ */
 class Piwik_PDFReports_API
 {
 	protected $reportsMetadata = array();
@@ -202,7 +206,7 @@ class Piwik_PDFReports_API
 	 * @param bool $outputType 
 	 * @param string $periodUsedFullReport If idReport == 0, will generate the report for the specified period
 	 */
-	public function generateReport($idReport, $date, $idSite = false, $language = false, $outputType = false, $periodUsedFullReport = 'day')
+	public function generateReport($idReport, $date, $idSite = false, $language = false, $outputType = false, $period = false)
 	{
 		// Load specified language
 		if(empty($language))
@@ -218,22 +222,28 @@ class Piwik_PDFReports_API
 			$reportMetadata = Piwik_API_API::getInstance()->getReportMetadata($idSite);
 		}
 		
+		if(empty($period))
+		{
+			$period = 'day';
+		}
 		// Test template: include all reports
 		if($idReport == 0)
 		{
 			$reports = $reportMetadata;
-			$period = $periodUsedFullReport;
 			$description = Piwik_Translate('PDFReports_DefaultPDFContainingAllReports');
 		}
 		// Template is a custom template
 		else
 		{
-			$pdfReports = $this->getReports($idSite, $period = false, $idReport);
+			$pdfReports = $this->getReports($idSite, $_period = false, $idReport);
 			$pdfReport = reset($pdfReports);
 			$reportUniqueIds = explode(',', $pdfReport['reports']);
 			
     		$description = $pdfReport['description'];
-			$period = $pdfReport['period'];
+			if($pdfReport['period'] != 'never')
+			{
+				$period = $pdfReport['period'];
+			}
     		
     		// We need to lookup which reports metadata are registered in this PDF
     		$reports = array();
@@ -263,7 +273,7 @@ class Piwik_PDFReports_API
         	{
         		$apiParameters = $action['parameters'];
         	}
-        	$report = Piwik_API_API::getInstance()->getProcessedReport($idSite, $date, $period, $apiModule, $apiAction, $apiParameters, $language);
+        	$report = Piwik_API_API::getInstance()->getProcessedReport($idSite, $period, $date, $apiModule, $apiAction, $segment = false, $apiParameters, $language);
         	$websiteName = $report['website'];
         	$prettyDate = $report['prettyDate'];
         	$processedReports[] = $report;
@@ -317,18 +327,29 @@ class Piwik_PDFReports_API
 		$reports = $this->getReports($idSite, $period = false, $idReport);
 		$report = reset($reports);
 		
+		if($report['period'] == 'never')
+		{
+			$report['period'] = 'day';
+		}
 		// Get user emails and languages 
 		$emails = self::getEmailsFromString($report['additional_emails']);
 		if($report['email_me'] == 1)
 		{	
-			if(Piwik::getCurrentUserLogin() == $report['login']
-				|| Piwik::isUserIsSuperUser())
+			if(Piwik::getCurrentUserLogin() == $report['login'])
 			{
 				$emails[] = Piwik::getCurrentUserEmail();
 			}
+			elseif($report['login'] == Zend_Registry::get('config')->superuser->login)
+			{
+				$emails[] = Zend_Registry::get('config')->superuser->email;
+			}
 			else
 			{
-				$user = Piwik_UsersManager_API::getInstance()->getUser($report['login']);
+				try {
+					$user = Piwik_UsersManager_API::getInstance()->getUser($report['login']);
+				} catch(Exception $e) {
+					return;
+				}
 				$emails[] = $user['email'];
 			}
 		}
@@ -464,7 +485,7 @@ class Piwik_PDFReports_API
 	
 	private function checkPeriod($period)
 	{
-		$availablePeriods = array('day', 'week', 'month');
+		$availablePeriods = array('day', 'week', 'month', 'never');
 		if(!in_array($period, $availablePeriods))
 		{
 			throw new Exception(Piwik_Translate("Period schedule must be one of the following: " . implode(', ', $availablePeriods)));

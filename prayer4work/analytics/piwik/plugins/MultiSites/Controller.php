@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3516 2010-12-22 20:29:56Z vipsoft $
+ * @version $Id: Controller.php 3955 2011-02-21 08:12:14Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_MultiSites
@@ -21,11 +21,17 @@ class Piwik_MultiSites_Controller extends Piwik_Controller
 	protected $evolutionBy = 'visits';
 	protected $mySites = array();
 	protected $page = 1;
-	protected $limit = 20;
+	protected $limit = 0;
 	protected $period;
 	protected $date;
 	protected $dateToStr;
 
+	function __construct()
+	{
+		parent::__construct();
+		
+		$this->limit = Zend_Registry::get('config')->General->all_websites_website_per_page;
+	}
 
 	function index()
 	{

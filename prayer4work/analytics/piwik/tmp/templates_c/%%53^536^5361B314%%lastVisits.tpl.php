@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:23:09
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:11:08
          compiled from /var/www/prayer4work/analytics/piwik/plugins/Live/templates/lastVisits.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/Live/templates/lastVisits.tpl', 6, false),array('modifier', 'escape', '/var/www/prayer4work/analytics/piwik/plugins/Live/templates/lastVisits.tpl', 15, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/Live/templates/lastVisits.tpl', 7, false),array('modifier', 'escape', '/var/www/prayer4work/analytics/piwik/plugins/Live/templates/lastVisits.tpl', 16, false),)), $this); ?>
 <?php $_from = $this->_tpl_vars['visitors']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
     foreach ($_from as $this->_tpl_vars['visitor']):
 ?>
@@ -10,6 +10,8 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 		<div style="display:none" class="idvisit"><?php echo $this->_tpl_vars['visitor']['idVisit']; ?>
 </div>
 			<div class="datetime">
+				<span style='display:none' class='serverTimestamp'><?php echo $this->_tpl_vars['visitor']['serverTimestamp']; ?>
+</span>
 				<?php echo $this->_tpl_vars['visitor']['serverDatePretty']; ?>
  - <?php echo $this->_tpl_vars['visitor']['serverTimePretty']; ?>
  (<?php echo $this->_tpl_vars['visitor']['visitLengthPretty']; ?>
@@ -38,14 +40,14 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 			</div>
 			<!--<div class="settings"></div>-->
 			<div class="referer">
-				<?php if ($this->_tpl_vars['visitor']['refererType'] != 'directEntry'): ?>from <a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['refererUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+				<?php if ($this->_tpl_vars['visitor']['referrerType'] != 'direct'): ?>from <a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 " target="_blank"><?php if (! empty ( $this->_tpl_vars['visitor']['searchEngineIcon'] )): ?><img src="<?php echo $this->_tpl_vars['visitor']['searchEngineIcon']; ?>
-" /> <?php endif; ?><?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['refererName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+" /> <?php endif; ?><?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['referrerName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 </a>
 					<?php if (! empty ( $this->_tpl_vars['visitor']['keywords'] )): ?>"<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['keywords'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 "<?php endif; ?>
 				<?php endif; ?>
-				<?php if ($this->_tpl_vars['visitor']['refererType'] == 'directEntry'): ?><?php echo ((is_array($_tmp='Referers_DirectEntry')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+				<?php if ($this->_tpl_vars['visitor']['referrerType'] == 'direct'): ?><?php echo ((is_array($_tmp='Referers_DirectEntry')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 <?php endif; ?>
 			</div>
 		<div id="<?php echo $this->_tpl_vars['visitor']['idVisit']; ?>

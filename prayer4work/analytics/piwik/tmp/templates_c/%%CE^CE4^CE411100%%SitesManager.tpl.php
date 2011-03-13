@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:15:31
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:58:23
          compiled from /var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 4, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 81, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 82, false),array('function', 'url', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 115, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 7, false),array('modifier', 'inlineHelp', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 8, false),array('modifier', 'escape', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 9, false),array('modifier', 'count', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 85, false),array('modifier', 'replace', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 95, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 4, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 87, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 88, false),array('function', 'url', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 122, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 7, false),array('modifier', 'inlineHelp', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 8, false),array('modifier', 'escape', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 9, false),array('modifier', 'count', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 91, false),array('modifier', 'replace', '/var/www/prayer4work/analytics/piwik/plugins/SitesManager/templates/SitesManager.tpl', 102, false),)), $this); ?>
 <?php $this->assign('showSitesSelection', false); ?>
 <?php $this->assign('showPeriodSelection', false); ?>
 <?php $_smarty_tpl_vars = $this->_tpl_vars;
@@ -72,7 +72,12 @@ $(document).ready( function() {
 });
 </script>
 
-<style>
+<style type="text/css">
+.entityTable tr td {
+    vertical-align: top;
+    padding-top:7px;
+}
+
 .addRowSite:hover, .editableSite:hover, .addsite:hover, .cancel:hover, .deleteSite:hover, .editSite:hover, .updateSite:hover{
 	cursor: pointer;
 }
@@ -105,6 +110,8 @@ vertical-align:middle;
 </h2>
 <p><?php echo ((is_array($_tmp='SitesManager_MainDescription')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 
+<?php echo ((is_array($_tmp='SitesManager_YouCurrentlyHaveAccessToNWebsites')) ? $this->_run_mod_handler('translate', true, $_tmp, "<b>".($this->_tpl_vars['adminSitesCount'])."</b>") : smarty_modifier_translate($_tmp, "<b>".($this->_tpl_vars['adminSitesCount'])."</b>")); ?>
+
 <?php if ($this->_tpl_vars['isSuperUser']): ?>
 <br /><?php echo ((is_array($_tmp='SitesManager_SuperUserCan')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='#globalSettings'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='#globalSettings'>", "</a>")); ?>
 
@@ -120,7 +127,8 @@ vertical-align:middle;
 	<?php echo ((is_array($_tmp='SitesManager_NoWebsites')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 
 <?php else: ?>
-	<table class="admin" id="editSites" border=1 cellpadding="10">
+	<div class="entityContainer">
+	<table class="entityTable dataTable" id="editSites">
 		<thead>
 			<tr>
 			<th><?php echo ((is_array($_tmp='General_Id')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -169,13 +177,14 @@ vertical-align:middle;
 </td>
 				<td id="currency" class="editableSite"><?php echo $this->_tpl_vars['site']['currency']; ?>
 </td>
-				<td><img src='plugins/UsersManager/images/edit.png' class="editSite" id="row<?php echo $this->_tpl_vars['i']; ?>
-" href='#' title="<?php echo ((is_array($_tmp='General_Edit')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-" /></td>
-				<td><img src='plugins/UsersManager/images/remove.png' class="deleteSite" id="row<?php echo $this->_tpl_vars['i']; ?>
-" title="<?php echo ((is_array($_tmp='General_Delete')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-" value="<?php echo ((is_array($_tmp='General_Delete')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-" /></td>
+				<td><span id="row<?php echo $this->_tpl_vars['i']; ?>
+" class='editSite link_but'><img src='themes/default/images/ico_edit.png' title="<?php echo ((is_array($_tmp='General_Edit')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+" border="0"/> <?php echo ((is_array($_tmp='General_Edit')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+</span></td>
+				<td><span id="row<?php echo $this->_tpl_vars['i']; ?>
+" class="deleteSite link_but"><img src='themes/default/images/ico_delete.png' title="<?php echo ((is_array($_tmp='General_Delete')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+" border="0" /> <?php echo ((is_array($_tmp='General_Delete')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+</span></td>
 				<td><a href='<?php echo smarty_function_url(array('action' => 'displayJavascriptCode','idSite' => $this->_tpl_vars['site']['idsite'],'updated' => false), $this);?>
 '><?php echo ((is_array($_tmp='SitesManager_ShowTrackingTag')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </a></td>
@@ -184,9 +193,10 @@ vertical-align:middle;
 		</tbody>
 	</table>
 	<?php if ($this->_tpl_vars['isSuperUser']): ?>	
-	<div class="addRowSite"><a href=""><img src='plugins/UsersManager/images/add.png' alt="" /> <?php echo ((is_array($_tmp='SitesManager_AddSite')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-</a></div>
+	<div class="addRowSite"><img src='plugins/UsersManager/images/add.png' alt="" /> <?php echo ((is_array($_tmp='SitesManager_AddSite')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+</div>
 	<?php endif; ?>
+	</div>
 <?php endif; ?>
 
 <?php if ($this->_tpl_vars['isSuperUser']): ?>	
@@ -195,7 +205,7 @@ vertical-align:middle;
 	<h2><?php echo ((is_array($_tmp='SitesManager_GlobalWebsitesSettings')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </h2>
 	<br />
-	<table style='width:600px' class="adminTable adminTableNoBorder" >
+	<table style='width:600px' class="adminTable" >
 		
 		<tr><td colspan="2">
 				<b><?php echo ((is_array($_tmp='SitesManager_GlobalListExcludedIps')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>

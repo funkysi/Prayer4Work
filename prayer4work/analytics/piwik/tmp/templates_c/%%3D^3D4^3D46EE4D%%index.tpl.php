@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:19:24
+<?php /* Smarty version 2.6.26, created on 2011-03-12 09:00:32
          compiled from /var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl', 4, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/SecurityInfo/templates/index.tpl', 6, false),)), $this); ?>
@@ -23,7 +23,7 @@ unset($_smarty_tpl_vars);
 ?>
 <h2><?php echo $this->_tpl_vars['i']; ?>
 </h2>
-<table class="adminTable">
+<table class="dataTable entityTable">
 	<thead>
 		<tr>
 		<th><?php echo ((is_array($_tmp='SecurityInfo_Test')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>

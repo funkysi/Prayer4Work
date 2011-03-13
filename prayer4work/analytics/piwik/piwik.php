@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: piwik.php 3545 2010-12-29 21:23:50Z vipsoft $
+ * @version $Id: piwik.php 3690 2011-01-10 03:45:17Z vipsoft $
  *
  * @package Piwik
  */
@@ -41,7 +41,7 @@ require_once PIWIK_INCLUDE_PATH .'/core/Common.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Config.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Db.php';
-require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Cookie.php';
+require_once PIWIK_INCLUDE_PATH .'/core/Tracker/IgnoreCookie.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Visit.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/GoalManager.php';
 require_once PIWIK_INCLUDE_PATH .'/core/Tracker/Action.php';
@@ -59,7 +59,7 @@ if($GLOBALS['PIWIK_TRACKER_DEBUG'] === true)
 	$timer = new Piwik_Timer();
 	set_error_handler('Piwik_ErrorHandler');
 	set_exception_handler('Piwik_ExceptionHandler');
-	printDebug($_GET);
+	printDebug("Input parameters: <br/>" . var_export($_GET, true));
 	Piwik_Tracker_Db::enableProfiling();
 	// Config might have been created by proxy-piwik.php
 	try {

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: index.php 3485 2010-12-21 06:09:39Z matt $
+ * @version $Id: index.php 3828 2011-01-31 18:23:56Z vipsoft $
  *
  * @package Piwik
  */
@@ -15,10 +15,7 @@ if(file_exists('bootstrap.php'))
 }
 
 error_reporting(E_ALL|E_NOTICE);
-if(!defined('PIWIK_DISPLAY_ERRORS') || PIWIK_DISPLAY_ERRORS)
-{
-	@ini_set('display_errors', 1);
-}
+@ini_set('display_errors', (!defined('PIWIK_DISPLAY_ERRORS') || PIWIK_DISPLAY_ERRORS) ? 1 : 0);
 @ini_set('xdebug.show_exception_trace', 0);
 @ini_set('magic_quotes_runtime', 0);
 

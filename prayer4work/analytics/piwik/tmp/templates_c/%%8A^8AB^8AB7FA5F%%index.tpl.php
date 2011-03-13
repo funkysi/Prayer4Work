@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-04 11:06:07
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:17:47
          compiled from /var/www/prayer4work/analytics/piwik/plugins/VisitTime/templates/index.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/VisitTime/templates/index.tpl', 2, false),)), $this); ?>

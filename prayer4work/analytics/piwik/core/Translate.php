@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Translate.php 3481 2010-12-21 05:05:03Z vipsoft $
+ * @version $Id: Translate.php 3663 2011-01-07 11:28:33Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -148,8 +148,15 @@ class Piwik_Translate
 		}
 		$moduleRegex = substr($moduleRegex, 0, -1);
 		$moduleRegex .= ')_.*_js$#i';
-		
-		foreach($GLOBALS['Piwik_translations'] as $key => $value)
+
+		// Hack: common translations used in JS but not only, force as them to be defined in JS
+		$translations = $GLOBALS['Piwik_translations'];
+		$toSetInJs = array('General_Save', 'General_OrCancel');
+		foreach($toSetInJs as $toSetId) 
+		{
+    		$translations[$toSetId.'_js'] = $translations[$toSetId];
+		}
+		foreach($translations as $key => $value)
 		{
 			if( preg_match($moduleRegex,$key) ) {
 				$js .= '"'.$key.'": "'.str_replace('"','\"',$value).'",';

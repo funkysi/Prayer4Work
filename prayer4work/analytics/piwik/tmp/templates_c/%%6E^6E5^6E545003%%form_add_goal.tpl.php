@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2010-11-21 23:13:40
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:22:15
          compiled from Goals/templates/form_add_goal.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'Goals/templates/form_add_goal.tpl', 11, false),array('modifier', 'money', 'Goals/templates/form_add_goal.tpl', 62, false),)), $this); ?>
@@ -70,7 +70,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	</tbody>
 	<tbody id="manual_trigger_section" style="display:none">
 		<tr><td colspan="2" class="first">
-				<?php echo ((is_array($_tmp='Goals_WhereVisitedPageManuallyCallsJavascriptTrackerLearnMore')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a target='_blank' href='misc/redirectToUrl.php?url=http://piwik.org/docs/javascript-tracking/'>", "</a>") : smarty_modifier_translate($_tmp, "<a target='_blank' href='misc/redirectToUrl.php?url=http://piwik.org/docs/javascript-tracking/'>", "</a>")); ?>
+				<?php echo ((is_array($_tmp='Goals_WhereVisitedPageManuallyCallsJavascriptTrackerLearnMore')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a target='_blank' href='?module=Proxy&action=redirect&url=http://piwik.org/docs/javascript-tracking/'>", "</a>") : smarty_modifier_translate($_tmp, "<a target='_blank' href='?module=Proxy&action=redirect&url=http://piwik.org/docs/javascript-tracking/'>", "</a>")); ?>
 
 		</td></tr>
 	</tbody>

@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:20:14
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:56:02
          compiled from PDFReports/templates/add.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'PDFReports/templates/add.tpl', 3, false),)), $this); ?>
@@ -118,5 +118,5 @@ if ($this->_foreach['reports']['total'] > 0):
 <div class='entityCancel'>
 	<?php echo ((is_array($_tmp='General_OrCancel')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a class='entityCancelLink'>", "</a>") : smarty_modifier_translate($_tmp, "<a class='entityCancelLink'>", "</a>")); ?>
 
-</span>
+</div>
 </div>

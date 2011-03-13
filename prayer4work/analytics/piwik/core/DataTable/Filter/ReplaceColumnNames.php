@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ReplaceColumnNames.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: ReplaceColumnNames.php 3764 2011-01-17 02:19:39Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -45,15 +45,10 @@ class Piwik_DataTable_Filter_ReplaceColumnNames extends Piwik_DataTable_Filter
 		{
 			$this->mappingToApply = $mappingToApply;
 		}
-		$this->filter();
+		$this->filter($table);
 	}
 	
-	protected function filter()
-	{
-		$this->filterTable($this->table);
-	}
-	
-	protected function filterTable($table)
+	protected function filter($table)
 	{
 		foreach($table->getRows() as $key => $row)
 		{
@@ -62,12 +57,7 @@ class Piwik_DataTable_Filter_ReplaceColumnNames extends Piwik_DataTable_Filter
 			$row->setColumns( $newColumns );
 			if($this->applyFilterRecursively)
 			{
-				try {
-					$subTable = Piwik_DataTable_Manager::getInstance()->getTable( $row->getIdSubDataTable() );
-					$this->filterTable($subTable);
-				} catch(Exception $e){
-					// case idSubTable == null, or if the table is not loaded in memory
-				}
+				$this->filterSubTable($row);
 			}
 		}
 	}
@@ -93,6 +83,15 @@ class Piwik_DataTable_Filter_ReplaceColumnNames extends Piwik_DataTable_Filter
 						}
 					}
 					$columnValue = $newSubColumns;
+				}
+				// If we happen to rename a column to a name that already exists, 
+				// sum both values in the column. This should really not happen, but 
+				// we introduced in 1.1 a new dataTable indexing scheme for Actions table, and 
+				// could end up with both strings and their int indexes counterpart in a monthly/yearly dataTable 
+				// built from DataTable with both formats
+				if(isset($newColumns[$columnName]))
+				{
+					$columnValue += $newColumns[$columnName];
 				}
 			}
 			$newColumns[$columnName] = $columnValue;

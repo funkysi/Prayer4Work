@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Date.php 3616 2011-01-04 18:25:08Z vipsoft $
+ * @version $Id: Date.php 3920 2011-02-17 02:41:31Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -388,7 +388,7 @@ class Piwik_Date
 						date('i', $ts),
 						date('s', $ts),
 						date('n', $ts),
-						1,
+						$day,
 						date('Y', $ts)
 					);
 		return new Piwik_Date( $result, $this->timezone );

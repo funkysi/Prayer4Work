@@ -3,6 +3,7 @@
 <h2>{'Live_VisitorLog'|translate}</h2>
 <div id="{$properties.uniqueId}" class="visitorLog">
 
+{assign var=minIdVisit value=0}
 {if isset($arrayDataTable.result) and $arrayDataTable.result == 'error'}
 		{$arrayDataTable.message}
 	{else}
@@ -29,18 +30,29 @@
 	<tbody>
 
 {foreach from=$arrayDataTable item=visitor}
+{if $minIdVisit == 0 || $visitor.columns.idVisit < $minIdVisit}
+{assign var=minIdVisit value=$visitor.columns.idVisit}
+{/if}
+
 	<tr class="label{cycle values='odd,even'}">
 	<td style="display:none;"></td>
 	<td class="label" style="width:12%" width="12%">
 
-				<strong>{$visitor.columns.serverDatePretty} - {$visitor.columns.serverTimePretty}</strong>
+				<strong>{$visitor.columns.serverDatePretty} - {$visitor.columns.serverTimePrettyFirstAction}</strong>
 				{if !empty($visitor.columns.ip)} <br/>IP: {$visitor.columns.ip}{/if}
+				
 				{if (isset($visitor.columns.provider)&&$visitor.columns.provider!='IP')} 
 					<br />
 					{'Provider_ColumnProvider'|translate}: 
 					<a href="{$visitor.columns.providerUrl}" target="_blank" title="{$visitor.columns.providerUrl}" style="text-decoration:underline;">
 						{$visitor.columns.provider}
 					</a>
+				{/if}
+				{if !empty($visitor.columns.customVariables)}
+					<br/>
+					{foreach from=$visitor.columns.customVariables item=customVariable key=id}
+						<br/><acronym title="{'CustomVariables_CustomVariables'|translate} (index {$id})">{$customVariable.name}</acronym>: {$customVariable.value}
+					{/foreach}
 				{/if}
 				
 	</td>
@@ -64,33 +76,33 @@
 
 	<td class="column" style="width:20%" width="20%">
 		<div class="referer">
-			{if $visitor.columns.refererType == 'website'}
+			{if $visitor.columns.referrerType == 'website'}
 				{'Referers_ColumnWebsite'|translate}:
-				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" title="{$visitor.columns.refererUrl|escape:'html'}" style="text-decoration:underline;">
-					{$visitor.columns.refererName|escape:'html'}
+				<a href="{$visitor.columns.referrerUrl|escape:'html'}" target="_blank" title="{$visitor.columns.referrerUrl|escape:'html'}" style="text-decoration:underline;">
+					{$visitor.columns.referrerName|escape:'html'}
 				</a>
 			{/if}
-			{if $visitor.columns.refererType == 'campaign'}
+			{if $visitor.columns.referrerType == 'campaign'}
 				{'Referers_Campaigns'|translate}
 				<br />
-				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" title="{$visitor.columns.refererUrl|escape:'html'}" style="text-decoration:underline;">
-					{$visitor.columns.refererName|escape:'html'}
+				<a href="{$visitor.columns.referrerUrl|escape:'html'}" target="_blank" title="{$visitor.columns.referrerUrl|escape:'html'}" style="text-decoration:underline;">
+					{$visitor.columns.referrerName|escape:'html'}
 				</a>
 			{/if}
-			{if $visitor.columns.refererType == 'searchEngine'}
+			{if $visitor.columns.referrerType == 'search'}
 				{if !empty($visitor.columns.searchEngineIcon)}
-					<img src="{$visitor.columns.searchEngineIcon}" alt="{$visitor.columns.refererName|escape:'html'}" /> 
+					<img src="{$visitor.columns.searchEngineIcon}" alt="{$visitor.columns.referrerName|escape:'html'}" /> 
 				{/if}
-				{$visitor.columns.refererName|escape:'html'}
+				{$visitor.columns.referrerName|escape:'html'}
 				<br />
 				{if !empty($visitor.columns.keywords)}{'Referers_Keywords'|translate}:{/if}
-				<a href="{$visitor.columns.refererUrl|escape:'html'}" target="_blank" style="text-decoration:underline;">
+				<a href="{$visitor.columns.referrerUrl|escape:'html'}" target="_blank" style="text-decoration:underline;">
 					{if !empty($visitor.columns.keywords)}
 						"{$visitor.columns.keywords|escape:'html'}"
 					{/if}
 				</a>
 			{/if}
-			{if $visitor.columns.refererType == 'directEntry'}{'Referers_DirectEntry'|translate}{/if}
+			{if $visitor.columns.referrerType == 'direct'}{'Referers_DirectEntry'|translate}{/if}
 		</div>
 	</td>
 	<td class="column {if $visitor.columns.isVisitorGoalConverted}highlightField{/if}" style="width:55%" width="55%">
@@ -126,24 +138,26 @@
 	</tbody>
 	</table>
 
-		{/if}
-		
-		{if count($arrayDataTable) == 20}
-		{* We set a fake large rows count so that 'Next' paginate link is forced to display
-		   This is hard coded because the Visitor Log datatable is not fully loaded in memory, 
-		   but needs to fetch only the N rows in the logs
-		   *}
-		{php}$this->_tpl_vars['javascriptVariablesToSet']['totalRows'] = 100000; {/php}
-		{/if}
-		{if $properties.show_footer}
-			{include file="CoreHome/templates/datatable_footer.tpl"}
-		{/if}
-		{include file="CoreHome/templates/datatable_js.tpl"}
 	{/if}
+	{if count($arrayDataTable) == 20}
+	{* We set a fake large rows count so that 'Next' paginate link is forced to display
+	   This is hard coded because the Visitor Log datatable is not fully loaded in memory, 
+	   but needs to fetch only the N rows in the logs
+	   *}
+	{php}$this->_tpl_vars['javascriptVariablesToSet']['totalRows'] = 100000; {/php}
+	{/if}
+	{if $properties.show_footer}
+		{include file="CoreHome/templates/datatable_footer.tpl"}
+	{/if}
+	{include file="CoreHome/templates/datatable_js.tpl"}
+	<script type="text/javascript" defer="defer">
+		dataTables['{$properties.uniqueId}'].param.minIdVisit = {$minIdVisit};
+	</script>
+{/if}
 </div>
 
 {literal}
-<style>
+<style type="text/css">
  hr {
 	background:none repeat scroll 0 0 transparent;
 	border-color:-moz-use-text-color -moz-use-text-color #EEEEEE;

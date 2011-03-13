@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-06 22:19:41
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:59:44
          compiled from /var/www/prayer4work/analytics/piwik/plugins/CorePluginsAdmin/templates/manage.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/CorePluginsAdmin/templates/manage.tpl', 7, false),array('modifier', 'nl2br', '/var/www/prayer4work/analytics/piwik/plugins/CorePluginsAdmin/templates/manage.tpl', 30, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/CorePluginsAdmin/templates/manage.tpl', 7, false),array('modifier', 'nl2br', '/var/www/prayer4work/analytics/piwik/plugins/CorePluginsAdmin/templates/manage.tpl', 31, false),)), $this); ?>
 <?php $this->assign('showSitesSelection', false); ?>
 <?php $this->assign('showPeriodSelection', false); ?>
 <?php $_smarty_tpl_vars = $this->_tpl_vars;
@@ -16,7 +16,8 @@ unset($_smarty_tpl_vars);
 </h2>
 <p><?php echo ((is_array($_tmp='CorePluginsAdmin_MainDescription')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </p>
-<table class="adminTable">
+<div class='entityContainer'>
+<table class="dataTable entityTable">
 	<thead>
 	<tr>
 		<th><?php echo ((is_array($_tmp='CorePluginsAdmin_Plugin')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -36,7 +37,7 @@ unset($_smarty_tpl_vars);
     foreach ($_from as $this->_tpl_vars['name'] => $this->_tpl_vars['plugin']):
 ?>
 	<?php if (isset ( $this->_tpl_vars['plugin']['alwaysActivated'] ) && ! $this->_tpl_vars['plugin']['alwaysActivated']): ?>
-		<tr class=<?php if ($this->_tpl_vars['plugin']['activated']): ?>"active"<?php else: ?>"deactivate"<?php endif; ?>>
+		<tr <?php if ($this->_tpl_vars['plugin']['activated']): ?>class="highlight"<?php endif; ?>>
 			<td class="name">
 				<?php if (isset ( $this->_tpl_vars['plugin']['info']['homepage'] )): ?><a title="<?php echo ((is_array($_tmp='CorePluginsAdmin_PluginHomepage')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 " href="<?php echo $this->_tpl_vars['plugin']['info']['homepage']; ?>
@@ -65,19 +66,14 @@ unset($_smarty_tpl_vars);
 				<?php endif; ?>
 			</td>
 			<td class="status">
-				<?php if ($this->_tpl_vars['plugin']['alwaysActivated']): ?><span title="<?php echo ((is_array($_tmp='CorePluginsAdmin_ActivatedHelp')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-" class="active"><?php echo ((is_array($_tmp='CorePluginsAdmin_Active')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-</span>
-				<?php elseif ($this->_tpl_vars['plugin']['activated']): ?><?php echo ((is_array($_tmp='CorePluginsAdmin_Active')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+				<?php if ($this->_tpl_vars['plugin']['activated']): ?><?php echo ((is_array($_tmp='CorePluginsAdmin_Active')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 
 				<?php else: ?><?php echo ((is_array($_tmp='CorePluginsAdmin_Inactive')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 <?php endif; ?>
 			</td>
 			
-			<td class="togl action-links" <?php if ($this->_tpl_vars['plugin']['alwaysActivated']): ?>title="<?php echo ((is_array($_tmp='CorePluginsAdmin_ActivatedHelp')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
-"<?php endif; ?>>
-				<?php if ($this->_tpl_vars['plugin']['alwaysActivated']): ?> <center>-</center>  
-				<?php elseif ($this->_tpl_vars['plugin']['activated']): ?><a href='index.php?module=CorePluginsAdmin&action=deactivate&pluginName=<?php echo $this->_tpl_vars['name']; ?>
+			<td class="togl action-links">
+				<?php if ($this->_tpl_vars['plugin']['activated']): ?><a href='index.php?module=CorePluginsAdmin&action=deactivate&pluginName=<?php echo $this->_tpl_vars['name']; ?>
 &token_auth=<?php echo $this->_tpl_vars['token_auth']; ?>
 '><?php echo ((is_array($_tmp='CorePluginsAdmin_Deactivate')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </a>
@@ -91,6 +87,7 @@ unset($_smarty_tpl_vars);
 <?php endforeach; endif; unset($_from); ?>
 </tbody>
 </table>
+</div>
 
 </div>
 <?php $_smarty_tpl_vars = $this->_tpl_vars;

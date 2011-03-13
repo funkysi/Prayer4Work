@@ -4,15 +4,22 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PDFRenderer.php 3576 2011-01-03 12:38:40Z matt $
+ * @version $Id: PDFRenderer.php 3986 2011-02-28 06:04:30Z vipsoft $
  *
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
  */
 
+/**
+ * @see libs/tcpdf
+ */
 require_once PIWIK_INCLUDE_PATH . '/libs/tcpdf/config/lang/eng.php';
 require_once PIWIK_INCLUDE_PATH . '/libs/tcpdf/tcpdf.php';
 
+/**
+ *
+ * @package Piwik_PDFReports
+ */
 class Piwik_PDFReports_PDFRenderer extends TCPDF
 {
 	private $reportFontBold 	   = 'B';
@@ -96,6 +103,7 @@ class Piwik_PDFReports_PDFRenderer extends TCPDF
 		$this->setPrintHeader(false);
 		//    	$this->SetMargins($left = , $top, $right=-1, $keepmargins=true)
 		$this->AddPage('P');
+		$this->AddFont($this->reportFont, '', '', false);
 		$this->SetFont($this->reportFont,$this->reportFontBold,$this->reportSimpleFontSize);
 		//Image($file, $x='', $y='', $w=0, $h=0, $type='', $link='', $align='', $resize=false, $dpi=300, $palign='', $ismask=false, $imgmask=false, $border=0, $fitbox=false, $hidden=false, $fitonpage=false) {
 		$this->Image(Piwik::getLogoPath(), $this->logoImagePosition[0], $this->logoImagePosition[1], 180/$factor=2, 0, $type='', $link='', $align='', $resize=false, $dpi=300);

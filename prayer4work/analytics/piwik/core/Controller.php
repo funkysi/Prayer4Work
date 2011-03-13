@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3614 2011-01-04 15:44:37Z vipsoft $
+ * @version $Id: Controller.php 3869 2011-02-12 08:28:33Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -38,6 +38,10 @@ abstract class Piwik_Controller
 	 */
 	protected $date;
 	protected $idSite;
+	
+	/**
+	 * @var Piwik_Site
+	 */
 	protected $site = null;
 	
 	/**

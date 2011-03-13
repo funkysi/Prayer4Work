@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Controller.php 3765 2011-01-17 03:53:43Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UsersManager
@@ -30,7 +30,7 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 		if(count($IdSitesAdmin) > 0)
 		{
 			$defaultWebsiteId = $IdSitesAdmin[0];
-			$idSiteSelected = Piwik_Common::getRequestVar('idsite', $defaultWebsiteId, 'int');
+			$idSiteSelected = Piwik_Common::getRequestVar('idsite', $defaultWebsiteId);
 		}
 		
 		if($idSiteSelected==='all')
@@ -41,12 +41,10 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 		{
 			$usersAccessByWebsite = Piwik_UsersManager_API::getInstance()->getUsersAccessFromSite( $idSiteSelected );
 		}
-	
-		// requires super user access
-		$usersLogin = Piwik_UsersManager_API::getInstance()->getUsersLogin();
-		
+		 
 		// we dont want to display the user currently logged so that the user can't change his settings from admin to view...
 		$currentlyLogged = Piwik::getCurrentUserLogin();
+		$usersLogin = Piwik_UsersManager_API::getInstance()->getUsersLogin();
 		foreach($usersLogin as $login)
 		{
 			if(!isset($usersAccessByWebsite[$login]))
@@ -56,18 +54,39 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 		}
 		unset($usersAccessByWebsite[$currentlyLogged]);
 
+		
+		// $usersAccessByWebsite is not supposed to contain unexistant logins, but it does when upgrading from some old Piwik version
+		foreach($usersAccessByWebsite as $login => $access)
+		{
+		    if(!in_array($login, $usersLogin))
+		    {
+		        unset($usersAccessByWebsite[$login]);
+		        continue;
+		    }
+		}
+		
 		ksort($usersAccessByWebsite);
 		
 		$users = array();
-		if(Zend_Registry::get('access')->isSuperUser())
+		$usersAliasByLogin = array(); 
+		if(Piwik::isUserHasSomeAdminAccess())
 		{
 			$users = Piwik_UsersManager_API::getInstance()->getUsers();
+			foreach($users as $user)
+			{
+			    $usersAliasByLogin[$user['login']] = $user['alias'];
+			}
 		}
 		
 		$view->idSiteSelected = $idSiteSelected;
 		$view->users = $users;
+		$view->usersAliasByLogin = $usersAliasByLogin;
+		$view->usersCount = count($users) - 1;
 		$view->usersAccessByWebsite = $usersAccessByWebsite;
-		$view->websites = Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess();
+		$websites = Piwik_SitesManager_API::getInstance()->getSitesWithAdminAccess();
+    	function orderByName($a, $b) { return strcmp($a['name'], $b['name']); }
+		uasort($websites, 'orderByName');
+		$view->websites = $websites;
 		$this->setBasicVariablesView($view);
 		$view->menu = Piwik_GetAdminMenu();
 		echo $view->render();
@@ -120,7 +139,7 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 			'year' => Piwik_Translate('General_CurrentYear'),
 		);
 		
-		$view->ignoreCookieSet = Piwik_Tracker_Cookie::isIgnoreCookieFound();
+		$view->ignoreCookieSet = Piwik_Tracker_IgnoreCookie::isIgnoreCookieFound();
 		$this->initViewAnonymousUserSettings($view);
 		$view->piwikHost = Piwik_Url::getCurrentHost();
 		$this->setBasicVariablesView($view);
@@ -133,7 +152,7 @@ class Piwik_UsersManager_Controller extends Piwik_Controller
 		Piwik::checkUserHasSomeViewAccess();
 		Piwik::checkUserIsNotAnonymous();
 		$this->checkTokenInUrl();
-		Piwik_Tracker_Cookie::setIgnoreCookie();
+		Piwik_Tracker_IgnoreCookie::setIgnoreCookie();
 		Piwik::redirectToModule('UsersManager', 'userSettings');
 	}
 

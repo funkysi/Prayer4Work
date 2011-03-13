@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: DataTable.php 3143 2010-09-13 01:46:21Z vipsoft $
+ * @version $Id: DataTable.php 3869 2011-02-12 08:28:33Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -357,11 +357,6 @@ class Piwik_DataTable
 	{
 		foreach($this->queuedFilters as $filter)
 		{
-			if($filter['className'] == 'Piwik_DataTable_Filter_Limit')
-			{
-				$this->setRowsCountBeforeLimitFilter();
-			}
-			
 			$this->filter($filter['className'], $filter['parameters']);
 		}
 		$this->queuedFilters = array();
@@ -587,6 +582,22 @@ class Piwik_DataTable
 	}
 	
 	/**
+	 * Returns an array containing the rows Metadata values
+	 * 
+	 * @param string $name Metadata column to return
+	 * @return array
+	 */
+	public function getRowsMetadata( $name )
+	{
+		$metadataValues = array();
+		foreach($this->getRows() as $row)
+		{
+			$metadataValues[] = $row->getMetadata($name);
+		}
+		return $metadataValues;
+	}
+	
+	/**
 	 * Returns the number of rows in the table
 	 * 
 	 * @return int
@@ -755,13 +766,13 @@ class Piwik_DataTable
 	{
 		if($limit === 0)
 		{
-			return;
+			return 0;
 		}
 
 		$count = $this->getRowsCount();
 		if($offset >= $count)
 		{
-			return;
+			return 0;
 		}
 
 		// if we delete until the end, we delete the summary row as well
@@ -773,12 +784,14 @@ class Piwik_DataTable
 
 		if(is_null($limit))
 		{
-			array_splice($this->rows, $offset);
+			$spliced = array_splice($this->rows, $offset);
 		}
 		else
 		{
-			array_splice($this->rows, $offset, $limit);
+			$spliced = array_splice($this->rows, $offset, $limit);
 		}
+		$countDeleted = count($spliced);
+		return $countDeleted;
 	}
 
 	/**

@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:18:02
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:17:11
          compiled from Live/templates/visitorLog.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'Live/templates/visitorLog.tpl', 3, false),array('modifier', 'capitalize', 'Live/templates/visitorLog.tpl', 60, false),array('modifier', 'count', 'Live/templates/visitorLog.tpl', 98, false),array('modifier', 'truncate', 'Live/templates/visitorLog.tpl', 110, false),array('function', 'cycle', 'Live/templates/visitorLog.tpl', 32, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate', 'Live/templates/visitorLog.tpl', 3, false),array('modifier', 'capitalize', 'Live/templates/visitorLog.tpl', 72, false),array('modifier', 'escape', 'Live/templates/visitorLog.tpl', 81, false),array('modifier', 'count', 'Live/templates/visitorLog.tpl', 110, false),array('modifier', 'truncate', 'Live/templates/visitorLog.tpl', 122, false),array('function', 'cycle', 'Live/templates/visitorLog.tpl', 37, false),)), $this); ?>
 <div class="home" id="content" style="display: block;">
 <a graphid="VisitsSummarygetEvolutionGraph" name="evolutionGraph"></a>
 <h2><?php echo ((is_array($_tmp='Live_VisitorLog')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -9,6 +9,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 <div id="<?php echo $this->_tpl_vars['properties']['uniqueId']; ?>
 " class="visitorLog">
 
+<?php $this->assign('minIdVisit', 0); ?>
 <?php if (isset ( $this->_tpl_vars['arrayDataTable']['result'] ) && $this->_tpl_vars['arrayDataTable']['result'] == 'error'): ?>
 		<?php echo $this->_tpl_vars['arrayDataTable']['message']; ?>
 
@@ -27,7 +28,7 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	<tr>
 	<th style="display:none"></th>
 	<th id="label" class="sortable label" style="cursor: auto;width:12%" width="12%">
-	<div id="thDIV"><?php echo ((is_array($_tmp='Live_Date')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+	<div id="thDIV"><?php echo ((is_array($_tmp='General_Date')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 <div></th>
 	<th id="label" class="sortable label" style="cursor: auto;width:13%" width="13%">
 	<div id="thDIV"><?php echo ((is_array($_tmp='General_Visitors')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -45,16 +46,21 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 <?php $_from = $this->_tpl_vars['arrayDataTable']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
     foreach ($_from as $this->_tpl_vars['visitor']):
 ?>
+<?php if ($this->_tpl_vars['minIdVisit'] == 0 || $this->_tpl_vars['visitor']['columns']['idVisit'] < $this->_tpl_vars['minIdVisit']): ?>
+<?php $this->assign('minIdVisit', $this->_tpl_vars['visitor']['columns']['idVisit']); ?>
+<?php endif; ?>
+
 	<tr class="label<?php echo smarty_function_cycle(array('values' => 'odd,even'), $this);?>
 ">
 	<td style="display:none;"></td>
 	<td class="label" style="width:12%" width="12%">
 
 				<strong><?php echo $this->_tpl_vars['visitor']['columns']['serverDatePretty']; ?>
- - <?php echo $this->_tpl_vars['visitor']['columns']['serverTimePretty']; ?>
+ - <?php echo $this->_tpl_vars['visitor']['columns']['serverTimePrettyFirstAction']; ?>
 </strong>
 				<?php if (! empty ( $this->_tpl_vars['visitor']['columns']['ip'] )): ?> <br/>IP: <?php echo $this->_tpl_vars['visitor']['columns']['ip']; ?>
 <?php endif; ?>
+				
 				<?php if (( isset ( $this->_tpl_vars['visitor']['columns']['provider'] ) && $this->_tpl_vars['visitor']['columns']['provider'] != 'IP' )): ?> 
 					<br />
 					<?php echo ((is_array($_tmp='Provider_ColumnProvider')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
@@ -65,6 +71,18 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 						<?php echo $this->_tpl_vars['visitor']['columns']['provider']; ?>
 
 					</a>
+				<?php endif; ?>
+				<?php if (! empty ( $this->_tpl_vars['visitor']['columns']['customVariables'] )): ?>
+					<br/>
+					<?php $_from = $this->_tpl_vars['visitor']['columns']['customVariables']; if (!is_array($_from) && !is_object($_from)) { settype($_from, 'array'); }if (count($_from)):
+    foreach ($_from as $this->_tpl_vars['id'] => $this->_tpl_vars['customVariable']):
+?>
+						<br/><acronym title="<?php echo ((is_array($_tmp='CustomVariables_CustomVariables')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+ (index <?php echo $this->_tpl_vars['id']; ?>
+)"><?php echo $this->_tpl_vars['customVariable']['name']; ?>
+</acronym>: <?php echo $this->_tpl_vars['customVariable']['value']; ?>
+
+					<?php endforeach; endif; unset($_from); ?>
 				<?php endif; ?>
 				
 	</td>
@@ -106,47 +124,47 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 
 	<td class="column" style="width:20%" width="20%">
 		<div class="referer">
-			<?php if ($this->_tpl_vars['visitor']['columns']['refererType'] == 'website'): ?>
+			<?php if ($this->_tpl_vars['visitor']['columns']['referrerType'] == 'website'): ?>
 				<?php echo ((is_array($_tmp='Referers_ColumnWebsite')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 :
-				<a href="<?php echo $this->_tpl_vars['visitor']['columns']['refererUrl']; ?>
-" target="_blank" title="<?php echo $this->_tpl_vars['visitor']['columns']['refererUrl']; ?>
+				<a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+" target="_blank" title="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 " style="text-decoration:underline;">
-					<?php echo $this->_tpl_vars['visitor']['columns']['refererName']; ?>
+					<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 
 				</a>
 			<?php endif; ?>
-			<?php if ($this->_tpl_vars['visitor']['columns']['refererType'] == 'campaign'): ?>
+			<?php if ($this->_tpl_vars['visitor']['columns']['referrerType'] == 'campaign'): ?>
 				<?php echo ((is_array($_tmp='Referers_Campaigns')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 
 				<br />
-				<a href="<?php echo $this->_tpl_vars['visitor']['columns']['refererUrl']; ?>
-" target="_blank" title="<?php echo $this->_tpl_vars['visitor']['columns']['refererUrl']; ?>
+				<a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+" target="_blank" title="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 " style="text-decoration:underline;">
-					<?php echo $this->_tpl_vars['visitor']['columns']['refererName']; ?>
+					<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 
 				</a>
 			<?php endif; ?>
-			<?php if ($this->_tpl_vars['visitor']['columns']['refererType'] == 'searchEngine'): ?>
+			<?php if ($this->_tpl_vars['visitor']['columns']['referrerType'] == 'search'): ?>
 				<?php if (! empty ( $this->_tpl_vars['visitor']['columns']['searchEngineIcon'] )): ?>
 					<img src="<?php echo $this->_tpl_vars['visitor']['columns']['searchEngineIcon']; ?>
-" alt="<?php echo $this->_tpl_vars['visitor']['columns']['refererName']; ?>
+" alt="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 " /> 
 				<?php endif; ?>
-				<?php echo $this->_tpl_vars['visitor']['columns']['refererName']; ?>
+				<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 
 				<br />
 				<?php if (! empty ( $this->_tpl_vars['visitor']['columns']['keywords'] )): ?><?php echo ((is_array($_tmp='Referers_Keywords')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 :<?php endif; ?>
-				<a href="<?php echo $this->_tpl_vars['visitor']['columns']['refererUrl']; ?>
+				<a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['referrerUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 " target="_blank" style="text-decoration:underline;">
 					<?php if (! empty ( $this->_tpl_vars['visitor']['columns']['keywords'] )): ?>
-						"<?php echo $this->_tpl_vars['visitor']['columns']['keywords']; ?>
+						"<?php echo ((is_array($_tmp=$this->_tpl_vars['visitor']['columns']['keywords'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
 "
 					<?php endif; ?>
 				</a>
 			<?php endif; ?>
-			<?php if ($this->_tpl_vars['visitor']['columns']['refererType'] == 'directEntry'): ?><?php echo ((is_array($_tmp='Referers_DirectEntry')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
+			<?php if ($this->_tpl_vars['visitor']['columns']['referrerType'] == 'direct'): ?><?php echo ((is_array($_tmp='Referers_DirectEntry')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 <?php endif; ?>
 		</div>
 	</td>
@@ -170,9 +188,9 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
     foreach ($_from as $this->_tpl_vars['action']):
 ?>
 				<li>
-					<a href="<?php echo $this->_tpl_vars['action']['pageUrl']; ?>
-" target="_blank" style="text-decoration:underline;" title="<?php echo $this->_tpl_vars['action']['pageUrl']; ?>
-"><?php echo ((is_array($_tmp=$this->_tpl_vars['action']['pageUrl'])) ? $this->_run_mod_handler('truncate', true, $_tmp, 80, "...", true) : smarty_modifier_truncate($_tmp, 80, "...", true)); ?>
+					<a href="<?php echo ((is_array($_tmp=$this->_tpl_vars['action']['pageUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+" target="_blank" style="text-decoration:underline;" title="<?php echo ((is_array($_tmp=$this->_tpl_vars['action']['pageUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')); ?>
+"><?php echo ((is_array($_tmp=((is_array($_tmp=$this->_tpl_vars['action']['pageUrl'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'html') : smarty_modifier_escape($_tmp, 'html')))) ? $this->_run_mod_handler('truncate', true, $_tmp, 80, "...", true) : smarty_modifier_truncate($_tmp, 80, "...", true)); ?>
 </a>
 					<?php if ($this->_tpl_vars['visitor']['columns']['goalUrl'] == $this->_tpl_vars['action']['pageIdAction']): ?>
 						<ul class="actionGoalDetails">
@@ -198,24 +216,32 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'translate',
 	</tbody>
 	</table>
 
-		<?php endif; ?>
-		<?php if ($this->_tpl_vars['properties']['show_footer']): ?>
-			<?php $_smarty_tpl_vars = $this->_tpl_vars;
+	<?php endif; ?>
+	<?php if (count ( $this->_tpl_vars['arrayDataTable'] ) == 20): ?>
+		<?php $this->_tpl_vars['javascriptVariablesToSet']['totalRows'] = 100000;  ?>
+	<?php endif; ?>
+	<?php if ($this->_tpl_vars['properties']['show_footer']): ?>
+		<?php $_smarty_tpl_vars = $this->_tpl_vars;
 $this->_smarty_include(array('smarty_include_tpl_file' => "CoreHome/templates/datatable_footer.tpl", 'smarty_include_vars' => array()));
 $this->_tpl_vars = $_smarty_tpl_vars;
 unset($_smarty_tpl_vars);
  ?>
-		<?php endif; ?>
-		<?php $_smarty_tpl_vars = $this->_tpl_vars;
+	<?php endif; ?>
+	<?php $_smarty_tpl_vars = $this->_tpl_vars;
 $this->_smarty_include(array('smarty_include_tpl_file' => "CoreHome/templates/datatable_js.tpl", 'smarty_include_vars' => array()));
 $this->_tpl_vars = $_smarty_tpl_vars;
 unset($_smarty_tpl_vars);
  ?>
-	<?php endif; ?>
+	<script type="text/javascript" defer="defer">
+		dataTables['<?php echo $this->_tpl_vars['properties']['uniqueId']; ?>
+'].param.minIdVisit = <?php echo $this->_tpl_vars['minIdVisit']; ?>
+;
+	</script>
+<?php endif; ?>
 </div>
 
 <?php echo '
-<style>
+<style type="text/css">
  hr {
 	background:none repeat scroll 0 0 transparent;
 	border-color:-moz-use-text-color -moz-use-text-color #EEEEEE;

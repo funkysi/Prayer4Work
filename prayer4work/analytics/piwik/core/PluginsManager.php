@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PluginsManager.php 3470 2010-12-20 19:03:26Z matt $
+ * @version $Id: PluginsManager.php 3860 2011-02-06 23:11:53Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -346,10 +346,10 @@ class Piwik_PluginsManager
 			$success = $this->dispatcher->removeObserver( array( $plugin, $methodToCall), $hookName );
 			if($success !== true)
 			{
-				throw new Exception("Error unloading plugin = ".$plugin->getClassName() . ", method = $methodToCall, hook = $hookName ");
+				throw new Exception("Error unloading plugin = ".$plugin->getPluginName() . ", method = $methodToCall, hook = $hookName ");
 			}
 		}
-		unset($this->loadedPlugins[$plugin->getClassName()]);
+		unset($this->loadedPlugins[$plugin->getPluginName()]);
 	}
 	
 	public function unloadPlugins()
@@ -374,7 +374,7 @@ class Piwik_PluginsManager
 		try{
 			$plugin->install();
 		} catch(Exception $e) {
-			throw new Piwik_PluginsManager_PluginException($plugin->getClassName(), $e->getMessage());		}	
+			throw new Piwik_PluginsManager_PluginException($plugin->getPluginName(), $e->getMessage());		}	
 	}
 	
 	
@@ -426,7 +426,7 @@ class Piwik_PluginsManager
 			return;
 		}
 	
-		$pluginName = $plugin->getClassName();
+		$pluginName = $plugin->getPluginName();
 		
 		$path = PIWIK_INCLUDE_PATH . '/plugins/' . $pluginName .'/lang/%s.php';
 		
@@ -465,7 +465,7 @@ class Piwik_PluginsManager
 	
 	private function installPluginIfNecessary( Piwik_Plugin $plugin )
 	{
-		$pluginName = $plugin->getClassName();
+		$pluginName = $plugin->getPluginName();
 		
 		// is the plugin already installed or is it the first time we activate it?
 		$pluginsInstalled = $this->getInstalledPluginsName();
@@ -523,12 +523,13 @@ class Piwik_PluginsManager_PluginException extends Exception
  * @param $object Object, array or string that the listeners can read and/or modify.
  *                Listeners can call $object =& $notification->getNotificationObject(); to fetch and then modify this variable.
  * @param $info Additional array of data that can be used by the listeners, but not edited
+ * @param $pending Should the notification be posted to plugins that register after the notification was sent?
  * @return void
  */
-function Piwik_PostEvent( $eventName,  &$object = null, $info = array() )
+function Piwik_PostEvent( $eventName,  &$object = null, $info = array(), $pending = false )
 {
 	$notification = new Piwik_Event_Notification($object, $eventName, $info);
-	Piwik_PluginsManager::getInstance()->dispatcher->postNotification( $notification, true, false );
+	Piwik_PluginsManager::getInstance()->dispatcher->postNotification( $notification, $pending, $bubble = false );
 }
 
 /**

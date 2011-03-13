@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: functions.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: functions.php 3723 2011-01-13 07:32:49Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_UserSettings
@@ -159,7 +159,11 @@ function Piwik_getScreenTypeFromResolution($resolution)
 	$height= intval(substr($resolution, strpos($resolution, 'x') + 1));
 	$ratio = Piwik::secureDiv($width, $height);
 	
-	if($ratio < 1.4)
+	if($width < 640)
+	{
+		$name = 'mobile';
+	}
+	elseif($ratio < 1.4)
 	{
 		$name = 'normal';
 	}

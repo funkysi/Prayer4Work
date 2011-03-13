@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Site.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Site.php 3896 2011-02-14 04:46:29Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -59,7 +59,7 @@ class Piwik_Site
 	{
 		if(!isset(self::$infoSites[$this->id][$name]))
 		{
-			throw new Exception('Requested website was not loaded. ');
+			throw new Exception('Requested field '.$name .' was not loaded in website '.(int)$this->id.'. ');
 		}
 		return self::$infoSites[$this->id][$name];
 	}
@@ -104,7 +104,10 @@ class Piwik_Site
 		foreach($ids as $id)
 		{
 			$id = trim($id);
-			$validIds[] = $id;
+			if(!empty($id) && is_numeric($id))
+			{
+			    $validIds[] = $id;
+			}
 		}
 		return $validIds;
 	}

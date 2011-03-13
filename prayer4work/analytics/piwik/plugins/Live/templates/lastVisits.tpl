@@ -2,6 +2,7 @@
 	<div id="{$visitor.idVisit}" class="visit{if $visitor.idVisit % 2} alt{/if}">
 		<div style="display:none" class="idvisit">{$visitor.idVisit}</div>
 			<div class="datetime">
+				<span style='display:none' class='serverTimestamp'>{$visitor.serverTimestamp}</span>
 				{$visitor.serverDatePretty} - {$visitor.serverTimePretty} ({$visitor.visitLengthPretty})
 				&nbsp;<img src="{$visitor.countryFlag}" title="{$visitor.country}, {'Provider_ColumnProvider'|translate} {$visitor.provider}" />
 				&nbsp;<img src="{$visitor.browserIcon}" title="{$visitor.browser}, {'UserSettings_Plugins'|translate}: {$visitor.plugins}" />
@@ -12,10 +13,10 @@
 			</div>
 			<!--<div class="settings"></div>-->
 			<div class="referer">
-				{if $visitor.refererType != 'directEntry'}from <a href="{$visitor.refererUrl|escape:'html'}" target="_blank">{if !empty($visitor.searchEngineIcon)}<img src="{$visitor.searchEngineIcon}" /> {/if}{$visitor.refererName|escape:'html'}</a>
+				{if $visitor.referrerType != 'direct'}from <a href="{$visitor.referrerUrl|escape:'html'}" target="_blank">{if !empty($visitor.searchEngineIcon)}<img src="{$visitor.searchEngineIcon}" /> {/if}{$visitor.referrerName|escape:'html'}</a>
 					{if !empty($visitor.keywords)}"{$visitor.keywords|escape:'html'}"{/if}
 				{/if}
-				{if $visitor.refererType == 'directEntry'}{'Referers_DirectEntry'|translate}{/if}
+				{if $visitor.referrerType == 'direct'}{'Referers_DirectEntry'|translate}{/if}
 			</div>
 		<div id="{$visitor.idVisit}_actions" class="settings">
 			<span class="pagesTitle">{'Actions_SubmenuPages'|translate}:</span>&nbsp;

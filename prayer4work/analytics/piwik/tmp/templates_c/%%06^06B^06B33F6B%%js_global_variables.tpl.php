@@ -1,7 +1,7 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-05 23:16:14
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:09:21
          compiled from CoreHome/templates/js_global_variables.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('modifier', 'escape', 'CoreHome/templates/js_global_variables.tpl', 6, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('modifier', 'escape', 'CoreHome/templates/js_global_variables.tpl', 5, false),)), $this); ?>
 <script type="text/javascript">
 	var piwik = <?php echo '{}'; ?>
 ;
@@ -9,6 +9,8 @@ smarty_core_load_plugins(array('plugins' => array(array('modifier', 'escape', 'C
 ";
 	piwik.piwik_url = "<?php echo $this->_tpl_vars['piwikUrl']; ?>
 ";
+	<?php if (isset ( $this->_tpl_vars['userLogin'] )): ?>piwik.userLogin = "<?php echo ((is_array($_tmp=$this->_tpl_vars['userLogin'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>
+";<?php endif; ?>
 	<?php if (isset ( $this->_tpl_vars['idSite'] )): ?>piwik.idSite = "<?php echo $this->_tpl_vars['idSite']; ?>
 ";<?php endif; ?>
 	<?php if (isset ( $this->_tpl_vars['siteName'] )): ?>piwik.siteName = "<?php echo ((is_array($_tmp=$this->_tpl_vars['siteName'])) ? $this->_run_mod_handler('escape', true, $_tmp, 'javascript') : smarty_modifier_escape($_tmp, 'javascript')); ?>

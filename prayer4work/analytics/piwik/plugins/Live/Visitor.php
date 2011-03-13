@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Visitor.php 3318 2010-11-16 00:36:05Z matt $
+ * @version $Id: Visitor.php 3917 2011-02-17 00:51:14Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -42,6 +42,7 @@ class Piwik_Live_Visitor
 			'idVisit' => $this->getIdVisit(),
 			'countActions' => $this->getNumberOfActions(),
 			'isVisitorReturning' => $this->isVisitorReturning(),
+			'customVariables' => $this->getCustomVariables(),
 			'country' => $this->getCountryName(),
 			'countryFlag' => $this->getCountryFlag(),
 			'continent' => $this->getContinent(),
@@ -54,11 +55,11 @@ class Piwik_Live_Visitor
 			'firstActionTimestamp' => $this->getTimestampFirstAction(),
 			'lastActionTimestamp' => $this->getTimestampLastAction(),
 
-			'refererType' => $this->getRefererType(),
-			'refererName' => $this->getRefererTypeName(),
+			'referrerType' => $this->getRefererType(),
+			'referrerTypeName' => $this->getRefererTypeName(),
 			'keywords' => $this->getKeywords(),
-			'refererUrl' => $this->getRefererUrl(),
-			'refererName' => $this->getRefererName(),
+			'referrerUrl' => $this->getRefererUrl(),
+			'referrerName' => $this->getRefererName(),
 			'searchEngineUrl' => $this->getSearchEngineUrl(),
 			'searchEngineIcon' => $this->getSearchEngineIcon(),
 
@@ -94,7 +95,7 @@ class Piwik_Live_Visitor
 	{
 		if(isset($this->details['location_ip']))
 		{
-			return long2ip($this->details['location_ip']);
+			return Piwik_Common::long2ip($this->details['location_ip']);
 		}
 		return false;
 	}
@@ -154,19 +155,26 @@ class Piwik_Live_Visitor
 		return Piwik_ContinentTranslate($this->details['location_continent']);
 	}
 
+	function getCustomVariables()
+	{
+		$customVariables = array();
+		for($i = 1; $i <= Piwik_Tracker::MAX_CUSTOM_VARIABLES; $i++)
+		{
+			if(!empty($this->details['custom_var_k'.$i])
+				&& !empty($this->details['custom_var_v'.$i]))
+			{
+				$customVariables[$i] = array(
+					'name' => $this->details['custom_var_k'.$i],
+					'value' => $this->details['custom_var_v'.$i],
+				);
+			} 
+		}
+		return $customVariables;
+	}
+	
 	function getRefererType()
 	{
-		$map = array(
-		Piwik_Common::REFERER_TYPE_SEARCH_ENGINE => 'searchEngine',
-		Piwik_Common::REFERER_TYPE_WEBSITE => 'website',
-		Piwik_Common::REFERER_TYPE_DIRECT_ENTRY => 'directEntry',
-		Piwik_Common::REFERER_TYPE_CAMPAIGN => 'campaign',
-		);
-		if(isset($map[$this->details['referer_type']]))
-		{
-			return $map[$this->details['referer_type']];
-		}
-		return $map[Piwik_Common::REFERER_TYPE_DIRECT_ENTRY];
+	    return Piwik_getRefererTypeFromShortName($this->details['referer_type']);
 	}
 
 	function getRefererTypeName()
@@ -191,8 +199,8 @@ class Piwik_Live_Visitor
 
 	function getSearchEngineUrl()
 	{
-		if($this->getRefererType() == 'searchEngine'
-		&& !empty($this->details['referer_name']))
+		if($this->getRefererType() == 'search'
+		    && !empty($this->details['referer_name']))
 		{
 			return Piwik_getSearchEngineUrlFromName($this->details['referer_name']);
 		}

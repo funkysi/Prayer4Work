@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Range.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Range.php 3755 2011-01-16 11:39:35Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -170,7 +170,7 @@ class Piwik_Period_Range extends Piwik_Period
 		}
 	}
 	
-	function toString()
+	function toString($format = "Y-m-d")
 	{
 		if(!$this->subperiodsProcessed)
 		{
@@ -179,7 +179,7 @@ class Piwik_Period_Range extends Piwik_Period
 		$range = array();
 		foreach($this->subperiods as $element)
 		{
-			$range[] = $element->toString();
+			$range[] = $element->toString($format);
 		}
 		return $range;
 	}

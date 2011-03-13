@@ -1,4 +1,4 @@
-<?php /* Smarty version 2.6.26, created on 2011-01-04 23:16:03
+<?php /* Smarty version 2.6.26, created on 2011-03-12 08:59:05
          compiled from /var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
 smarty_core_load_plugins(array('plugins' => array(array('function', 'loadJavascriptTranslations', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 4, false),array('function', 'ajaxErrorDiv', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 9, false),array('function', 'ajaxLoadingDiv', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 10, false),array('modifier', 'translate', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 7, false),array('modifier', 'inlineHelp', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 32, false),array('modifier', 'escape', '/var/www/prayer4work/analytics/piwik/plugins/CoreAdminHome/templates/generalSettings.tpl', 136, false),)), $this); ?>
@@ -21,7 +21,7 @@ unset($_smarty_tpl_vars);
 <?php echo smarty_function_ajaxLoadingDiv(array('id' => 'ajaxLoading'), $this);?>
 
 
-<table class="adminTable adminTableNoBorder" style='width:900px;'>
+<table class="adminTable" style='width:900px;'>
 <tr>
 	<td style='width:400px'><?php echo ((is_array($_tmp='General_AllowPiwikArchivingToTriggerBrowser')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </td>
@@ -37,7 +37,7 @@ unset($_smarty_tpl_vars);
 		<label><input type="radio" value="0" name="enableBrowserTriggerArchiving"<?php if ($this->_tpl_vars['enableBrowserTriggerArchiving'] == 0): ?> checked="checked"<?php endif; ?> /> 
 			<?php echo ((is_array($_tmp='General_No')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
  <br />
-			<span class="form-description"><?php echo ((is_array($_tmp='General_ArchivingTriggerDescription')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='?module=Proxy&action=redirect&php?url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='?module=Proxy&action=redirect&php?url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>", "</a>")); ?>
+			<span class="form-description"><?php echo ((is_array($_tmp='General_ArchivingTriggerDescription')) ? $this->_run_mod_handler('translate', true, $_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>", "</a>") : smarty_modifier_translate($_tmp, "<a href='?module=Proxy&action=redirect&url=http://piwik.org/docs/setup-auto-archiving/' target='_blank'>", "</a>")); ?>
 </span>
 		</label> 
 	</fieldset>
@@ -85,7 +85,7 @@ unset($_smarty_tpl_vars);
 <h2><?php echo ((is_array($_tmp='CoreAdminHome_EmailServerSettings')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </h2>
 <div id='emailSettings'>
-<table class="adminTable adminTableNoBorder" style='width:600px;'>
+<table class="adminTable" style='width:600px;'>
 	<tr>
 		<td><?php echo ((is_array($_tmp='General_UseSMTPServerForEmail')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </label><br>
@@ -103,7 +103,7 @@ unset($_smarty_tpl_vars);
 </div>
 
 <div id='smtpSettings'>
-	<table class="adminTable adminTableNoBorder" style='width:550px;'>	
+	<table class="adminTable" style='width:550px;'>	
 		<tr>
 			<td><label for="mailHost"><?php echo ((is_array($_tmp='General_SmtpServerAddress')) ? $this->_run_mod_handler('translate', true, $_tmp) : smarty_modifier_translate($_tmp)); ?>
 </label></td>

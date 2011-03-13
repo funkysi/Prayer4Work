@@ -4,29 +4,42 @@
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
-
 // first I'm ensuring that 'last' has been initialised (with last.constructor == Object),
 // then prev.html() == last.html() will return true if the HTML is the same, or false,
 // if I have a different entry.
 function check_for_dupe(prev, last)
 {
-	if (last.constructor == Object)	
-	{
-		return (prev.html() == last.html());
-	}
-	else 
-	{
-		return 0;
-	}
+//console.log(prev, last);//  idVisit = $(prev).attr('id');//
+
+//  if(idVisit && $('#'+idVisit)){ $('#'+idVisit).last().remove(); }
+idVisit = $(prev).attr('id');
+//console.log($('#'+idVisit));
+
+  if(idVisit && $('#'+idVisit)){
+    $('#'+idVisit).last().remove();
+  }
+  if(idVisit) {
+      return last.length >= 1 && (prev.html() == last.html());
+  }
+
+  return 0;
 }
 
 
-function lastIdVisit()
+// Pass the most recent timestamp known to the API
+var liveMinTimestamp = 0;
+function lastMinTimestamp()
 {
 	updateTotalVisits();
 	updateVisitBox();
-
-	return $('#visitsLive > div:lt(2) .idvisit').html();
+	minTimestamp = $('#visitsLive > div:lt(1) .serverTimestamp').html();
+	if(!isNaN(minTimestamp)
+			&& parseInt(minTimestamp)==minTimestamp) 
+	{
+		liveMinTimestamp = minTimestamp;
+		return liveMinTimestamp;
+	}
+	return false;
 }
 var pauseImage = "plugins/Live/templates/images/pause.gif";
 var pauseDisabledImage = "plugins/Live/templates/images/pause_disabled.gif";

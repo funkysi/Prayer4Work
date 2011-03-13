@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: Controller.php 3930 2011-02-17 11:03:11Z matt $
  *
  * @category Piwik_Plugins
  * @package Piwik_Live
@@ -15,12 +15,6 @@
  */
 class Piwik_Live_Controller extends Piwik_Controller
 {
-	function __construct()
-	{
-		parent::__construct();
-		$this->minIdVisit = Piwik_Common::getRequestVar('minIdVisit', 0, 'int');
-	}
-
 	function index()
 	{
 		$this->widget(true);
@@ -35,14 +29,13 @@ class Piwik_Live_Controller extends Piwik_Controller
 		$view->pisHalfhour = $this->getPageImpressionsInLastXMin(30);
 		$view->pisToday = $this->getPageImpressionsInLastXDays(1);
 		$view->visitors = $this->getLastVisitsStart($fetch = true);
+		$view->liveTokenAuth = Piwik::getCurrentUserTokenAuth();
 
 		echo $view->render();
 	}
 
 	public function getVisitorLog($fetch = false)
 	{
-		$limit = 20;
-		$_GET['limit'] = $limit;
 		$view = Piwik_ViewDataTable::factory();
 		$view->init( $this->pluginName,
 							__FUNCTION__,
@@ -51,16 +44,16 @@ class Piwik_Live_Controller extends Piwik_Controller
 
 		// All colomns in DB which could be shown
 		//'ip', 'idVisit', 'countActions', 'isVisitorReturning', 'country', 'countryFlag', 'continent', 'provider', 'providerUrl', 'idSite',
-		//'serverDate', 'visitLength', 'visitLengthPretty', 'firstActionTimestamp', 'lastActionTimestamp', 'refererType', 'refererName',
-		//'keywords', 'refererUrl', 'searchEngineUrl', 'searchEngineIcon', 'operatingSystem', 'operatingSystemShortName', 'operatingSystemIcon',
+		//'serverDate', 'visitLength', 'visitLengthPretty', 'firstActionTimestamp', 'lastActionTimestamp', 'referrerType', 'referrerName',
+		//'keywords', 'referrerUrl', 'searchEngineUrl', 'searchEngineIcon', 'operatingSystem', 'operatingSystemShortName', 'operatingSystemIcon',
 		//'browserFamily', 'browserFamilyDescription', 'browser', 'browserIcon', 'screen', 'resolution', 'screenIcon', 'plugins', 'lastActionDateTime',
 		//'serverDatePretty', 'serverTimePretty', 'actionDetails'
 		$view->disableGenericFilters();
 		$view->disableSort();
-		$view->setLimit($limit);
 		$view->setTemplate("Live/templates/visitorLog.tpl");
 		$view->setSortedColumn('idVisit', 'ASC');
 		$view->disableSearchBox();
+		$view->setLimit(20);
 		$view->disableOffsetInformation();
 		// "Include low population" link won't be displayed under this table
 		$view->disableExcludeLowPopulation();
@@ -68,6 +61,7 @@ class Piwik_Live_Controller extends Piwik_Controller
 		$view->disableShowAllViewsIcons();
 		// disable the button "show more datas"
 		$view->disableShowAllColumns();
+		
 		// disable the RSS feed
 		$view->disableShowExportAsRssFeed();
 		return $this->renderView($view, $fetch);
@@ -78,7 +72,9 @@ class Piwik_Live_Controller extends Piwik_Controller
 		$view = Piwik_View::factory('lastVisits');
 		$view->idSite = $this->idSite;
 
-		$view->visitors = $this->getLastVisits(10);
+		$api = new Piwik_API_Request("method=Live.getLastVisits&idSite=$this->idSite&limit=10&format=php&serialize=0&disable_generic_filters=1");
+		$visitors = $api->process();
+		$view->visitors = $visitors;
 
 		$rendered = $view->render($fetch);
 
@@ -87,14 +83,6 @@ class Piwik_Live_Controller extends Piwik_Controller
 			return $rendered;
 		}
 		echo $rendered;
-	}
-
-	public function getLastVisits($limit = 10)
-	{
-		$api = new Piwik_API_Request("method=Live.getLastVisits&idSite=$this->idSite&limit=$limit&format=php&serialize=0&disable_generic_filters=1");
-		$visitors = $api->process();
-
-		return $visitors;
 	}
 
 	public function getUsersInLastXMin($minutes = 30) {

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: VisitTime.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: VisitTime.php 3878 2011-02-13 03:04:55Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitTime
@@ -36,6 +36,7 @@ class Piwik_VisitTime extends Piwik_Plugin
 			'Menu.add' => 'addMenu',
 			'Goals.getReportsWithGoalMetrics' => 'getReportsWithGoalMetrics',
 			'API.getReportMetadata' => 'getReportMetadata',
+		    'API.getSegmentsMetadata' => 'getSegmentsMetadata',
 		);
 		return $hooks;
 	}
@@ -73,17 +74,42 @@ class Piwik_VisitTime extends Piwik_Plugin
 
 	function getReportsWithGoalMetrics( $notification )
 	{
-		$segments =& $notification->getNotificationObject();
-		$segments[] = array('category'  => Piwik_Translate('VisitTime_ColumnServerTime'),
+		$dimensions =& $notification->getNotificationObject();
+		$dimensions[] = array('category'  => Piwik_Translate('VisitTime_ColumnServerTime'),
                 			'name'   => Piwik_Translate('VisitTime_ColumnServerTime'),
                 			'module' => 'VisitTime',
                 			'action' => 'getVisitInformationPerServerTime',
     	);
 	}
 	
+	public function getSegmentsMetadata($notification)
+	{
+		$segments =& $notification->getNotificationObject();
+		$acceptedValues = "0, 1, 2, 3, ..., 20, 21, 22, 23";
+		$segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Visit',
+		        'name' => Piwik_Translate('VisitTime_ColumnServerTime'),
+		        'segment' => 'visitServerHour',
+		        'sqlSegment' => 'HOUR(visit_last_action_time)',
+				'acceptedValues' => $acceptedValues
+       );
+       $segments[] = array(
+		        'type' => 'dimension',
+		        'category' => 'Visit',
+		        'name' => Piwik_Translate('VisitTime_ColumnLocalTime'),
+		        'segment' => 'visitLocalHour',
+		        'sqlSegment' => 'HOUR(visitor_localtime)',
+       			'acceptedValues' => $acceptedValues
+       );
+	}
+	
 	function archivePeriod( $notification )
 	{
 		$archiveProcessing = $notification->getNotificationObject();
+		
+		if(!$archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
+		
 		$dataTableToSum = array( 
 				'VisitTime_localTime',
 				'VisitTime_serverTime',
@@ -94,6 +120,9 @@ class Piwik_VisitTime extends Piwik_Plugin
 	public function archiveDay( $notification )
 	{
 		$archiveProcessing = $notification->getNotificationObject();
+		
+		if(!$archiveProcessing->shouldProcessReportsForPlugin($this->getPluginName())) return;
+		
 		$this->archiveDayAggregateVisits($archiveProcessing);
 		$this->archiveDayAggregateGoals($archiveProcessing);
 		$this->archiveDayRecordInDatabase($archiveProcessing);
@@ -125,7 +154,10 @@ class Piwik_VisitTime extends Piwik_Plugin
 	
 	protected function archiveDayAggregateGoals($archiveProcessing)
 	{
-		$query = $archiveProcessing->queryConversionsBySingleSegment("HOUR(server_time)");
+		$query = $archiveProcessing->queryConversionsByDimension("HOUR(server_time)");
+		
+		if($query === false) return;
+		
 		$goalByServerTime = array();
 		while($row = $query->fetch())
 		{

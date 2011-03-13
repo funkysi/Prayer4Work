@@ -1,14 +1,16 @@
-<?php /* Smarty version 2.6.26, created on 2010-12-03 23:28:51
+<?php /* Smarty version 2.6.26, created on 2011-03-12 07:14:40
          compiled from VisitsSummary/templates/sparklines.tpl */ ?>
 <?php require_once(SMARTY_CORE_DIR . 'core.load_plugins.php');
-smarty_core_load_plugins(array('plugins' => array(array('function', 'sparkline', 'VisitsSummary/templates/sparklines.tpl', 2, false),array('modifier', 'translate', 'VisitsSummary/templates/sparklines.tpl', 2, false),array('modifier', 'sumtime', 'VisitsSummary/templates/sparklines.tpl', 8, false),)), $this); ?>
+smarty_core_load_plugins(array('plugins' => array(array('function', 'sparkline', 'VisitsSummary/templates/sparklines.tpl', 2, false),array('modifier', 'translate', 'VisitsSummary/templates/sparklines.tpl', 2, false),array('modifier', 'sumtime', 'VisitsSummary/templates/sparklines.tpl', 10, false),)), $this); ?>
 <div id='leftcolumn'>
 	<div class="sparkline"><?php echo smarty_function_sparkline(array('src' => $this->_tpl_vars['urlSparklineNbVisits']), $this);?>
  <?php echo ((is_array($_tmp='VisitsSummary_NbVisits')) ? $this->_run_mod_handler('translate', true, $_tmp, "<strong>".($this->_tpl_vars['nbVisits'])."</strong>") : smarty_modifier_translate($_tmp, "<strong>".($this->_tpl_vars['nbVisits'])."</strong>")); ?>
 </div>
+<?php if ($this->_tpl_vars['period'] != 'year'): ?>
 	<div class="sparkline"><?php echo smarty_function_sparkline(array('src' => $this->_tpl_vars['urlSparklineNbUniqVisitors']), $this);?>
  <?php echo ((is_array($_tmp='VisitsSummary_NbUniqueVisitors')) ? $this->_run_mod_handler('translate', true, $_tmp, "<strong>".($this->_tpl_vars['nbUniqVisitors'])."</strong>") : smarty_modifier_translate($_tmp, "<strong>".($this->_tpl_vars['nbUniqVisitors'])."</strong>")); ?>
 </div>
+<?php endif; ?>
 	<div class="sparkline"><?php echo smarty_function_sparkline(array('src' => $this->_tpl_vars['urlSparklineNbActions']), $this);?>
  <?php echo ((is_array($_tmp='VisitsSummary_NbActionsDescription')) ? $this->_run_mod_handler('translate', true, $_tmp, "<strong>".($this->_tpl_vars['nbActions'])."</strong>") : smarty_modifier_translate($_tmp, "<strong>".($this->_tpl_vars['nbActions'])."</strong>")); ?>
 </div>

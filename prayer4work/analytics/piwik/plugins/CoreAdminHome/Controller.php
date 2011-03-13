@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3558 2011-01-02 09:53:58Z matt $
+ * @version $Id: Controller.php 3688 2011-01-10 03:36:38Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_CoreAdminHome
@@ -89,12 +89,12 @@ class Piwik_CoreAdminHome_Controller extends Piwik_Controller
      */
     public function optOut()
     {
-		$trackVisits = !Piwik_Tracker_Cookie::isIgnoreCookieFound();
+		$trackVisits = !Piwik_Tracker_IgnoreCookie::isIgnoreCookieFound();
 
 		$nonce = Piwik_Common::getRequestVar('nonce', false);
 		if($nonce !== false && Piwik_Nonce::verifyNonce('Piwik_OptOut', $nonce))
 		{
-			Piwik_Tracker_Cookie::setIgnoreCookie();
+			Piwik_Tracker_IgnoreCookie::setIgnoreCookie();
 			$trackVisits = !$trackVisits;
 		}
  

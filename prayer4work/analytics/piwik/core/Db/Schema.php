@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Schema.php 3270 2010-10-28 18:21:55Z vipsoft $
+ * @version $Id: Schema.php 3672 2011-01-08 23:26:57Z matt $
  *
  * @category Piwik
  * @package Piwik
@@ -241,9 +241,9 @@ class Piwik_Db_Schema
 	 * @param string $idSite
 	 * @return array Tables installed
 	 */
-	public function getTablesInstalled($forceReload = true,  $idSite = null)
+	public function getTablesInstalled($forceReload = true)
 	{
-		return $this->getSchema()->getTablesInstalled($forceReload, $idSite);
+		return $this->getSchema()->getTablesInstalled($forceReload);
 	}
 
 	/**
@@ -276,6 +276,6 @@ interface Piwik_Db_Schema_Interface
 	public function dropTables( $doNotDelete = array() );
 
 	public function getTablesNames();
-	public function getTablesInstalled($forceReload = true,  $idSite = null);
+	public function getTablesInstalled($forceReload = true);
 	public function hasTables();
 }

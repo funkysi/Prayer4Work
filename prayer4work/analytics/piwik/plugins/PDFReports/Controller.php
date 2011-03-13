@@ -4,12 +4,16 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Controller.php 3038 2010-08-31 17:52:29Z vipsoft $
+ * @version $Id: Controller.php 3986 2011-02-28 06:04:30Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_PDFReports
  */
 
+/**
+ *
+ * @package Piwik_PDFReports
+ */
 class Piwik_PDFReports_Controller extends Piwik_Controller
 {	
     public function index()
@@ -39,7 +43,8 @@ class Piwik_PDFReports_Controller extends Piwik_Controller
 		$view->newColumnAfter = round(count($availableReports) / $columnsCount);
 		$view->reportsByCategory = $reportsByCategory;
 		$view->reportsJSON = json_encode($reportsById);
-		$view->periods = Piwik_PDFReports_API::getPeriodToFrequency();
+		$view->periods = array_merge(array('never' => Piwik_Translate('General_Never')),
+							Piwik_PDFReports_API::getPeriodToFrequency());
 		$view->reports = $reports;
 		echo $view->render();
 	}

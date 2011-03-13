@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ChartEvolution.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: ChartEvolution.php 3730 2011-01-14 16:45:10Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik
@@ -170,8 +170,7 @@ class Piwik_ViewDataTable_GenerateGraphData_ChartEvolution extends Piwik_ViewDat
 				{
 					$hash = '#' . Piwik_Url::getQueryStringFromParameters( $queryStringAsHash + $parameters);
 				}
-				$link = Piwik_Url::getCurrentUrlWithoutQueryString() . 
-						'?' .
+				$link = 'index.php?' .
 						Piwik_Url::getQueryStringFromParameters( array(
 							'module' => 'CoreHome',
 							'action' => 'index',

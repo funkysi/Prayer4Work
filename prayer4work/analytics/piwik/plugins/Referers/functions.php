@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: functions.php 3168 2010-09-21 19:02:43Z vipsoft $
+ * @version $Id: functions.php 3858 2011-02-06 04:25:53Z matt $
  * 
  * @category Piwik_Plugins
  * @package Piwik_Referers
@@ -147,3 +147,27 @@ function Piwik_getRefererTypeLabel($label)
 	}
 	return html_entity_decode(Piwik_Translate($indexTranslation), ENT_COMPAT, 'UTF-8');
 }
+
+/**
+ * Works in both directions
+ * @param mixed 
+ */
+function Piwik_getRefererTypeFromShortName($name)
+{
+	$map = array(
+		Piwik_Common::REFERER_TYPE_SEARCH_ENGINE => 'search',
+		Piwik_Common::REFERER_TYPE_WEBSITE => 'website',
+		Piwik_Common::REFERER_TYPE_DIRECT_ENTRY => 'direct',
+		Piwik_Common::REFERER_TYPE_CAMPAIGN => 'campaign',
+	);
+	if(isset($map[$name]))
+	{
+		return $map[$name];
+	}
+	if($found = array_search($name, $map))
+	{
+	    return $found;
+	}
+	throw new Exception("Referrer type '$name' is not valid.");
+}
+

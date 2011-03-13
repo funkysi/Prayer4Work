@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Proxy.php 3270 2010-10-28 18:21:55Z vipsoft $
+ * @version $Id: Proxy.php 3869 2011-02-12 08:28:33Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -131,9 +131,15 @@ class Piwik_API_Proxy
 		try {
 			$this->registerClass($className);
 
+			// Temporarily sets the Request array to this API call context
+			$saveGET = $_GET;
+			foreach($parametersRequest as $param => $value) {
+				$_GET[$param] = $value;
+			}
+			
 			// instanciate the object
 			$object = call_user_func(array($className, "getInstance"));
-
+			
 			// check method exists
 			$this->checkMethodExists($className, $methodName);
 			
@@ -148,6 +154,9 @@ class Piwik_API_Proxy
 			
 			// call the method
 			$returnedValue = call_user_func_array(array($object, $methodName), $finalParameters);
+			
+			// Restore the request 
+			$_GET = $saveGET;
 			
 			// log the API Call
 			Zend_Registry::get('logger_api_call')->logEvent(

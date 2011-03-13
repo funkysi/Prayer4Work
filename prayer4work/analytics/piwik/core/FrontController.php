@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: FrontController.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: FrontController.php 3865 2011-02-11 20:17:47Z JulienM $
  * 
  * @category Piwik
  * @package Piwik
@@ -24,7 +24,7 @@ require_once PIWIK_INCLUDE_PATH . '/core/Option.php';
  * This is the class hit in the first place.
  * It dispatches the request to the right controller.
  * 
- * For a detailed explanation, see the documentation on http://dev.piwik.org/trac/wiki/MainSequenceDiagram
+ * For a detailed explanation, see the documentation on http://piwik.org/docs/plugins/framework-overview
  * 
  * @package Piwik
  * @subpackage Piwik_FrontController
@@ -126,7 +126,7 @@ class Piwik_FrontController
 		} catch(Piwik_Access_NoAccessException $e) {
 			Piwik_PostEvent('FrontController.NoAccessException', $e);					
 		} catch(Exception $e) {
-			Piwik_ExitWithMessage($e->getMessage(), false, true);
+			Piwik_ExitWithMessage($e->getMessage(), false /* DEBUG ONLY $e->getTraceAsString() */, true);
 		}
 	}
 	
@@ -192,7 +192,7 @@ class Piwik_FrontController
 			);
 			
 			Piwik::checkDirectoriesWritableOrDie($directoriesToCheck);
-			self::assignCliParametersToRequest();
+			Piwik_Common::assignCliParametersToRequest();
 
 			Piwik_Translate::getInstance()->loadEnglishTranslation();
 
@@ -201,7 +201,7 @@ class Piwik_FrontController
 			try {
 				Piwik::createConfigObject();
 			} catch(Exception $e) {
-				Piwik_PostEvent('FrontController.NoConfigurationFile', $e);
+				Piwik_PostEvent('FrontController.NoConfigurationFile', $e, $info = array(), $pending = true);
 				$exceptionToThrow = $e;
 			}
 
@@ -217,7 +217,7 @@ class Piwik_FrontController
 			try {
 				Piwik::createDatabaseObject();
 			} catch(Exception $e) {
-				Piwik_PostEvent('FrontController.badConfigurationFile', $e);
+				Piwik_PostEvent('FrontController.badConfigurationFile', $e, $info = array(), $pending = true);
 				throw $e;
 			}
 
@@ -252,24 +252,6 @@ class Piwik_FrontController
 		} catch(Exception $e) {
 			Piwik_ExitWithMessage($e->getMessage(), false, true);
 		}
-	}
-	
-	/**
-	 * Assign CLI parameters as if they were REQUEST or GET parameters.
-	 * You can trigger Piwik from the command line by
-	 * # /usr/bin/php5 /path/to/piwik/index.php -- "module=API&method=Actions.getActions&idSite=1&period=day&date=previous8&format=php"
-	 */
-	static protected function assignCliParametersToRequest()
-	{
-		if(isset($_SERVER['argc'])
-			&& $_SERVER['argc'] > 0)
-		{
-			for ($i=1; $i < $_SERVER['argc']; $i++)
-			{
-				parse_str($_SERVER['argv'][$i],$tmp);
-				$_GET = array_merge($_GET, $tmp);
-			}
-		}				
 	}
 }
 

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Limit.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Limit.php 3764 2011-01-17 02:19:39Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -17,7 +17,7 @@
  * @subpackage Piwik_DataTable
  */
 class Piwik_DataTable_Filter_Limit extends Piwik_DataTable_Filter
-{	
+{
 	/**
 	 * Filter constructor.
 	 * 
@@ -35,12 +35,14 @@ class Piwik_DataTable_Filter_Limit extends Piwik_DataTable_Filter
 			$limit = -1;
 		}
 		$this->limit = $limit;
-		$this->filter();
+		$this->filter($table);
 	}	
 	
-	protected function filter()
+	protected function filter($table)
 	{
-		$table = $this->table;
+		$table = $table;
+		$table->setRowsCountBeforeLimitFilter();
+		
 		$rowsCount = $table->getRowsCount();
 		
 		// we delete from 0 to offset

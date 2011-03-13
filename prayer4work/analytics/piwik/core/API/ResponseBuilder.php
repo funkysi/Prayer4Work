@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: ResponseBuilder.php 3565 2011-01-03 05:49:45Z matt $
+ * @version $Id: ResponseBuilder.php 3764 2011-01-17 02:19:39Z matt $
  * 
  * @category Piwik
  * @package Piwik
@@ -256,8 +256,8 @@ class Piwik_API_ResponseBuilder
 		// if the flag disable_generic_filters is defined we skip the generic filters
 		if('false' == Piwik_Common::getRequestVar('disable_generic_filters', 'false', 'string', $this->request))
 		{
-			$genericFilter = new Piwik_API_DataTableGenericFilter($datatable, $this->request);
-			$genericFilter->filter();
+			$genericFilter = new Piwik_API_DataTableGenericFilter($this->request);
+			$genericFilter->filter($datatable);
 		}
 		
 		// we automatically safe decode all datatable labels (against xss) 

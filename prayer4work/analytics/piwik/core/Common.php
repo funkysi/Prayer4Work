@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Common.php 3623 2011-01-05 00:30:34Z matt $
+ * @version $Id: Common.php 4008 2011-03-03 19:38:07Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -28,7 +28,7 @@ class Piwik_Common
 	const REFERER_TYPE_SEARCH_ENGINE	= 2;
 	const REFERER_TYPE_WEBSITE			= 3;
 	const REFERER_TYPE_CAMPAIGN			= 6;
-
+	
 	/**
 	 * Flag used with htmlspecialchar
 	 * See php.net/htmlspecialchars
@@ -98,7 +98,10 @@ class Piwik_Common
 			}
 
 			$pluginsManager = Piwik_PluginsManager::getInstance();
-			$pluginsManager->loadPlugins( Zend_Registry::get('config')->Plugins->Plugins->toArray() );
+			$pluginsToLoad = Zend_Registry::get('config')->Plugins->Plugins->toArray();
+			$pluginsForcedNotToLoad = Piwik_Tracker::getPluginsNotToLoad();
+			$pluginsToLoad = array_diff($pluginsToLoad, $pluginsForcedNotToLoad);
+			$pluginsManager->loadPlugins( $pluginsToLoad );
 		}
 		
 	}
@@ -219,7 +222,7 @@ class Piwik_Common
 	/**
 	 * Deletes all Tracker cache files
 	 */
-	static public function deleteAllCache()
+	static public function deleteTrackerCache()
 	{
 		$cache = new Piwik_CacheFile('tracker');
 		$cache->deleteAll();
@@ -231,7 +234,6 @@ class Piwik_Common
 	 * but still want daily/weekly/monthly PDF reports emailed automatically.
 	 * 
 	 * This is similar to calling the API CoreAdminHome.runScheduledTasks (see misc/cron/archive.sh)
-	 * @return 
 	 */
 	public static function runScheduledTasks($now)
 	{
@@ -308,7 +310,7 @@ class Piwik_Common
 	 * @param string $urlQuery result of parse_url()['query'] and htmlentitied (& is &amp;) eg. module=test&amp;action=toto or ?page=test
 	 * @param string $param
 	 *
-	 * @return string|bool Parameter value if found (can be the empty string!), false if not found
+	 * @return string|bool Parameter value if found (can be the empty string!), null if not found
 	 */
 	static public function getParameterFromQueryString( $urlQuery, $parameter)
 	{
@@ -317,7 +319,7 @@ class Piwik_Common
 		{
 			return $nameToValue[$parameter];
 		}
-		return false;
+		return null;
 	}
 
 	/**
@@ -358,7 +360,7 @@ class Piwik_Common
 			else
 			{
 				$name = $value;
-				$value = '';
+				$value = false;
 			}
 
 			// if array without indexes
@@ -441,14 +443,26 @@ class Piwik_Common
 	 * Create directory if permitted
 	 *
 	 * @param string $path
-	 * @param int $mode (in octal)
 	 * @param bool $denyAccess
 	 */
-	static public function mkdir( $path, $mode = 0755, $denyAccess = true )
+	static public function mkdir( $path, $denyAccess = true )
 	{
 		if(!is_dir($path))
 		{
-			@mkdir($path, $mode, $recursive = true);
+			// the mode in mkdir is modified by the current umask
+			@mkdir($path, $mode = 0755, $recursive = true);
+		}
+
+		// try to overcome restrictive umask (mis-)configuration
+		if(!is_writable($path))
+		{
+			@chmod($path, 0755);
+			if(!is_writable($path))
+			{
+				@chmod($path, 0775);
+
+				// enough! we're not going to make the directory world-writeable
+			}
 		}
 
 		if($denyAccess)
@@ -759,9 +773,34 @@ class Piwik_Common
 	}
 
 /*
+ * Conversions
+ */
+
+	/**
+	 * Convert hexadecimal representation into binary data.
+	 *
+	 * @see http://php.net/bin2hex
+	 *
+	 * @param string $str Hexadecimal representation
+	 * @return string
+	 */
+	static public function hex2bin($str)
+	{
+		return pack("H*" , $str);
+	}
+
+/*
  * IP addresses
  */
 
+	/**
+	 * Converts from a numeric representation to a string representation 
+	 */
+	static public function long2ip($long)
+	{
+	    return long2ip($long);
+	}
+	
 	/**
 	 * Convert dotted IP to a stringified integer representation
 	 *
@@ -1139,9 +1178,9 @@ class Piwik_Common
 	 * 							'name' => 'Google',
 	 * 							'keywords' => 'my searched keywords')
 	 */
-	static public function extractSearchEngineInformationFromUrl($refererUrl)
+	static public function extractSearchEngineInformationFromUrl($referrerUrl)
 	{
-		$refererParsed = @parse_url($refererUrl);
+		$refererParsed = @parse_url($referrerUrl);
 		$refererHost = '';
 		if(isset($refererParsed['host']))
 		{
@@ -1215,7 +1254,7 @@ class Piwik_Common
 		}
 
 		if($searchEngineName === 'Google Images'
-			|| ($searchEngineName === 'Google' && strpos($refererUrl, '/imgres') !== false) )
+			|| ($searchEngineName === 'Google' && strpos($referrerUrl, '/imgres') !== false) )
 		{
 			$query = urldecode(trim(self::getParameterFromQueryString($query, 'prev')));
 			$query = str_replace('&', '&amp;', strstr($query, '?'));
@@ -1254,7 +1293,7 @@ class Piwik_Common
 				if($variableName[0] == '/')
 				{
 					// regular expression match
-					if(preg_match($variableName, $refererUrl, $matches))
+					if(preg_match($variableName, $referrerUrl, $matches))
 					{
 						$key = trim(urldecode($matches[1]));
 						break;
@@ -1317,6 +1356,24 @@ class Piwik_Common
 	}
 
 	/**
+	 * Assign CLI parameters as if they were REQUEST or GET parameters.
+	 * You can trigger Piwik from the command line by
+	 * # /usr/bin/php5 /path/to/piwik/index.php -- "module=API&method=Actions.getActions&idSite=1&period=day&date=previous8&format=php"
+	 */
+	static public function assignCliParametersToRequest()
+	{
+		if(isset($_SERVER['argc'])
+			&& $_SERVER['argc'] > 0)
+		{
+			for ($i=1; $i < $_SERVER['argc']; $i++)
+			{
+				parse_str($_SERVER['argv'][$i],$tmp);
+				$_GET = array_merge($_GET, $tmp);
+			}
+		}				
+	}
+	
+	/**
 	 * Returns true if running on a Windows operating system
 	 *
 	 * @since added in 0.6.5
@@ -1338,4 +1395,12 @@ function destroy(&$var)
 	if (is_object($var)) $var->__destruct();
 	unset($var);
 	$var = null;
+}
+
+
+// http://bugs.php.net/bug.php?id=53632
+if (strpos(str_replace('.','',serialize($_REQUEST)), '22250738585072011') !== false)
+{
+  header('Status: 422 Unprocessable Entity');
+  die('Exit');
 }

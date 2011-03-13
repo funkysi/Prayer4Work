@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Generator.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Generator.php 3803 2011-01-23 20:55:34Z vipsoft $
  * 
  * @category Piwik_Plugins
  * @package Piwik_VisitorGenerator
@@ -471,7 +471,7 @@ class Piwik_VisitorGenerator_Generator
 		$deep = mt_rand(0,$this->maximumUrlDepth);
 		for($i=0;$i<$deep;$i++)
 		{
-			$name = $this->getRandomString(1,1,'alnum');
+			$name = $this->getRandomString(7-$deep,5-$deep,'alnum');
 			
 			$url .= '/'.$name;
 		}

@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: AssetManager.php 3352 2010-11-25 06:57:57Z matt $
+ * @version $Id: AssetManager.php 3772 2011-01-17 21:56:16Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
@@ -125,6 +125,7 @@ class Piwik_AssetManager
 		}
 
 		$mergedContent = cssmin::minify($mergedContent);
+		$mergedContent = str_replace("\n", "\r\n", $mergedContent);
 		
 		// Remove the previous file
 		self::removeMergedAsset(self::MERGED_CSS_FILE);
@@ -233,6 +234,7 @@ class Piwik_AssetManager
 			
 			$mergedContent = $mergedContent . PHP_EOL . $content;
 		}
+		$mergedContent = str_replace("\n", "\r\n", $mergedContent);
 		
 		// Remove the previous file
 		self::removeMergedAsset(self::MERGED_JS_FILE);
@@ -395,7 +397,7 @@ class Piwik_AssetManager
 			
 			// Tries to remove compressed version of the merged file.
 			// See Piwik::serveStaticFile() for more info on static file compression
-			$compressedFileLocation = Piwik::COMPRESSED_FILE_LOCATION . $filename;
+			$compressedFileLocation = PIWIK_USER_PATH . Piwik::COMPRESSED_FILE_LOCATION . $filename;
 			
 			@unlink ( $compressedFileLocation . ".deflate");
 			@unlink ( $compressedFileLocation . ".gz");
@@ -430,11 +432,11 @@ class Piwik_AssetManager
 	 */
 	private static function getMergedFileDirectory ()
 	{
- 		$mergedFileDirectory = self::getAbsoluteLocation(self::MERGED_FILE_DIR);
+ 		$mergedFileDirectory = PIWIK_USER_PATH . '/' . self::MERGED_FILE_DIR;
 
 		if (!is_dir($mergedFileDirectory))
 		{
-			Piwik_Common::mkdir($mergedFileDirectory, 0755, false);
+			Piwik_Common::mkdir($mergedFileDirectory);
 		}
 
 		if (!is_writable($mergedFileDirectory))

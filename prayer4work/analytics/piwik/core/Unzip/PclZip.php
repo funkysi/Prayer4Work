@@ -4,10 +4,14 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: PclZip.php 3408 2010-12-05 15:00:42Z vipsoft $
+ * @version $Id: PclZip.php 3986 2011-02-28 06:04:30Z vipsoft $
  *
  * @category Piwik
  * @package Piwik
+ */
+
+/**
+ * @see libs/PclZip
  */
 require_once PIWIK_INCLUDE_PATH . '/libs/PclZip/pclzip.lib.php';
 

@@ -4,7 +4,7 @@
  * 
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: Mysqli.php 2968 2010-08-20 15:26:33Z vipsoft $
+ * @version $Id: Mysqli.php 3717 2011-01-12 07:19:46Z vipsoft $
  * 
  * @category Piwik
  * @package Piwik

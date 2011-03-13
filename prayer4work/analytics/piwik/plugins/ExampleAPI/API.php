@@ -4,7 +4,7 @@
  *
  * @link http://piwik.org
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
- * @version $Id: API.php 3270 2010-10-28 18:21:55Z vipsoft $
+ * @version $Id: API.php 3865 2011-02-11 20:17:47Z JulienM $
  *
  * @category Piwik_Plugins
  * @package Piwik_ExampleAPI
@@ -17,7 +17,7 @@
  * 
  * Functions can be called internally using the PHP objects directly, or via the 
  * Piwik Web APIs, using HTTP requests. For more information, check out:
- * http://dev.piwik.org/trac/wiki/API/CallingTechniques
+ * http://piwik.org/docs/analytics-api/calling-techniques
  * 
  * Parameters are passed automatically from the GET request to the API functions.
  * 
