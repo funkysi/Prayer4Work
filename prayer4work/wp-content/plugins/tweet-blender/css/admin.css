@@ -43,3 +43,33 @@ a.info-icon img {
 	-moz-background-origin:padding;
 	background:transparent url(/wp-content/plugins/tweet-blender/img/tweetblender-logo_32x32.png) no-repeat;
 }
+
+img.tb-addon-screenshot {
+	border: 3px solid #EEE;
+}
+
+div.centered {
+	margin-top: 20px;
+	margin-bottom: 20px;
+	text-align: center;
+	vertical-align: middle;
+}
+
+div.box-left {
+	width: 45%;
+	display: inline-block;
+	float: left;
+}
+
+div.box-right {
+	width: 45%;
+	float: right;
+}
+
+ol.feature-set {
+	margin: 25px;
+}
+
+#filter_bad_strings {
+	wrap-option:soft-wrap;
+}

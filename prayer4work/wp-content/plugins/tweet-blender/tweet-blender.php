@@ -3,12 +3,12 @@
 Plugin Name: Tweet Blender
 Plugin URI: http://www.tweet-blender.com
 Description: Provides several Twitter widgets: show your own tweets, show tweets relevant to post's tags, show tweets for Twitter lists, show tweets for hashtags, show tweets for keyword searches, show favorite tweets. Multiple widgets on the same page are supported. Can combine sources and blend all of them into a single stream.
-Version: 3.2.4
+Version: 3.3.5
 Author: Kirill Novitchenko
 Author URI: http://kirill-novitchenko.com
 */
 
-/*  Copyright 2009-2010  Kirill Novitchenko  (email : knovitchenko@gmail.com)
+/*  Copyright 2009-2011  Kirill Novitchenko  (email : knovitchenko@gmail.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,10 +24,6 @@ Author URI: http://kirill-novitchenko.com
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
-// include JSON library
-class_exists('Services_JSON') || require(dirname(__FILE__).'/lib/JSON.php');
-$json = new Services_JSON();
 
 // if on PHP5, include oAuth library and config
 if(!version_compare(PHP_VERSION, '5.0.0', '<'))
@@ -202,6 +198,10 @@ function tb_load_js() {
 		wp_enqueue_script('tojson', '/' . PLUGINDIR . '/tweet-blender/js/jquery.json-2.2.min.js', array('jquery'));
 		$dependencies[] = 'tojson';
 	}
+	
+	// load jsonp plugin with good error hanlding
+	wp_enqueue_script('jsonp', '/' . PLUGINDIR . '/tweet-blender/js/jquery.jsonp-2.1.4.min.js', array('jquery'));
+	
 	// load main JS code
 	wp_enqueue_script('tbmain', '/' . PLUGINDIR . '/tweet-blender/js/main.js', $dependencies);
 }
@@ -305,7 +305,7 @@ function tb_create_markup($mode = 'widget',$instance,$widget_id,$tb_o) {
 		$html .= tb_create_markup_header($widget_id);
 	}
 	if (isset($tb_o['general_seo_tweets_googleoff']) && $tb_o['general_seo_tweets_googleoff']) {
-		$html .= '<!--googleoff: index--><div class="tb_tweetlist">' . tb_get_cached_tweets_html($mode,$instance) . '</div><!--googleon: index-->';
+		$html .= '<!--googleoff: index--><div class="tb_tweetlist">' . tb_get_cached_tweets_html($mode,$instance,$widget_id) . '</div><!--googleon: index-->';
 	}
 	else {
 		$html .= '<div class="tb_tweetlist">' . tb_get_cached_tweets_html($mode,$instance) . '</div>';

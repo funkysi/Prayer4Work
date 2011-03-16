@@ -1,11 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="http://www.prayer4work.com/wp-content/plugins/google-sitemap-generator/sitemap.xsl"?><!-- generator="wordpress/3.0.4" -->
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="http://www.prayer4work.com/wp-content/plugins/google-sitemap-generator/sitemap.xsl"?><!-- generator="wordpress/3.1" -->
 <!-- sitemap-generator-url="http://www.arnebrachhold.de" sitemap-generator-version="3.2.4" -->
-<!-- generated-on="January 22, 2011 5:50 pm" -->
+<!-- generated-on="March 15, 2011 8:01 pm" -->
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">	<url>
 		<loc>http://www.prayer4work.com/</loc>
 		<lastmod>2010-11-19T16:59:20+00:00</lastmod>
 		<changefreq>daily</changefreq>
 		<priority>1.0</priority>
+	</url>
+	<url>
+		<loc>http://www.prayer4work.com/2011/03/15/a-world-in-turmoil/</loc>
+		<lastmod>2011-03-15T20:00:59+00:00</lastmod>
+		<changefreq>monthly</changefreq>
+		<priority>0.2</priority>
 	</url>
 	<url>
 		<loc>http://www.prayer4work.com/2011/01/22/work-challenges/</loc>

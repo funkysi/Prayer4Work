@@ -9,6 +9,18 @@ screenNamesCount = 0;
   
 // make tabs
 jQuery(document).ready(function(){
+	
+	// don't do anything if we are not showing full admin page
+	if (jQuery('#icon-tweetblender').length <= 0) {
+		return;
+	}
+
+	// Bind event listener to save button
+	jQuery('#btn_save_settings').click(function() {
+		jQuery('#settings_form').submit();
+	});
+		
+	// initialize tabs
     var tabsElement = jQuery("#tabs").tabs({
 	    show:function(event, ui) {
 			
@@ -22,7 +34,9 @@ jQuery(document).ready(function(){
 	});
 	
 	// reopen last used tab
-	tabsElement.tabs('select', lastUsedTabId);
+	if (typeof(lastUsedTabId) != 'undefined') {
+		tabsElement.tabs('select', lastUsedTabId);
+	}
 
 	// bind event handler to disable archive checkbox
 	jQuery('#archive_is_disabled').click(function() {
@@ -52,14 +66,29 @@ jQuery(document).ready(function(){
 			jQuery('#locallimit').html('<span class="fail">Check failed</span>');
 		}
 	});	
-
 	
 	// if there were any problems, highlight the Status tab
 	if(jQuery('span.fail').length > 0) {
 		jQuery('#statustab a').children('span').addClass('fail');
 	}
 
+	// Cache Manager add-on
+	if (typeof(TB_cacheManagerAvailable) == 'undefined' || !TB_cacheManagerAvailable) {
+		jQuery('#cache-manager-tab a').css('text-decoration','line-through');
+		jQuery('img.tb-addon-screenshot').parent().lightBox({
+			imageLoading: TB_pluginPath + '/img/lightbox/lightbox-ico-loading.gif',
+			imageBtnClose: TB_pluginPath + '/img/lightbox/lightbox-btn-close.gif',
+			imageBtnPrev: TB_pluginPath + '/img/lightbox/lightbox-btn-prev.gif',
+			imageBtnNext: TB_pluginPath + '/img/lightbox/lightbox-btn-next.gif',
+			imageBlank: TB_pluginPath + '/img/lightbox/lightbox-blank.gif',
+			txtImage: 'Screenshot'
+	   });
+	}
 });
+
+function TB_showPopup(dialogName) {
+	$('#' + dialogName).dialog('open');
+}
 
 
 // Twitter oAuth window

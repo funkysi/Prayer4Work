@@ -1,9 +1,9 @@
 === Tweet Blender ===
 Contributors: kirilln
-Tags: sidebar, twitter, tweets, multiple authors, tags, lists, hashtags, archive, widget, admin, AJAX, jquery, keywords, BuddyPress
+Tags: sidebar, twitter, tweets, multiple authors, favorites, tweet, tags, lists, hashtags, archive, widget, admin, AJAX, jquery, keywords, BuddyPress
 Requires at least: 2.8.0
-Tested up to: 3.0.2
-Stable tag: 3.2.4
+Tested up to: 3.1
+Stable tag: 3.3.5
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5907095
 
 Provides several Twitter widgets: show your own tweets, show tweets relevant to post's tags, show tweets for Twitter lists, show tweets for hashtags, show tweets for keyword searches. Multiple widgets on the same page are supported. Can combine sources and blend all of them into a single stream.
@@ -19,13 +19,16 @@ Submit ideas, ask questions, or report problems on the [GetSatisfaction.com comm
 Follow [Tweet Blender on Twitter](http://twitter.com/tweetblender "@tweetblender")  to keep up to date on bug fixes and releases and join the conversation using [#tweetblender](http://search.twitter.com/search?q=%23tweetblender "#tweetblender") hashtag
 
 = Features =
-* NEW: filter that allows to filter out tweets that are from different screen names but have exactly same content
-* NEW: filter that allows to show only replies and hide original tweets
-* NEW: ability to define custom text for "view more" link
-* NEW: Support for multi-keyword phrase searches (e.g. <b>Tweet Blender</b>)
-* NEW: Ability to define name that shows up instead of twitter handle using a colon (e.g. @joesmith:Joe Smith would show "Joe Smith" for each tweet instead of "@joesmith") 
+* NEW: ability to get Cache Manager addon ($) that allows to backup/restore cache and delete individual tweets
+* NEW: if you use custom field "tb_tags" for a post its value overrides actual tags and gets used by Tweet Blender for Tags widget (requested by Thomas P via GetSatisfaction)
+* NEW: support for non-English hashtags and filter words
+* A filter that allows to filter out tweets that are from different screen names but have exactly same content
+* A filter that allows to show only replies and hide original tweets
+* Ability to define custom text for "view more" link
+* Support for multi-keyword phrase searches (e.g. <b>Tweet Blender</b>)
+* Ability to define name that shows up instead of twitter handle using a colon (e.g. @joesmith:Joe Smith would show "Joe Smith" for each tweet instead of "@joesmith") 
 * Throttling that allows to limit number of tweets to show for each user account. You can now have X tweets for each user in the list no matter how frequently each of them tweets. 
-* favorites widget that shows favorite tweets or one or multiple users
+* Favorites widget that shows favorite tweets or one or multiple users
 * Improved cache management controls
 * Ability to qualify searches using a pipe symbol. For example @user|#fun will get all tweets from @user that contain #fun in them
 * Ability to filter out tweets that come from ceratin users or contain certain undersired keywords or hashtags
@@ -138,6 +141,7 @@ For the related tweets widget that uses post's tags you would use the following:
 7. Admin: filtering options
 8. Admin: advanced settings
 9. Admin: status information
+10. Admin: Cache Manager addon (note: paid module)
 
 == Getting Help ==
 
@@ -160,7 +164,6 @@ Here are the places I monitor regularly:
 * Twitter: hashtag #tweetblender, mentions of @tweetblender, keywords "tweetblender" and "tweet blender" - This is the best way if your request is fairly urgent as I'm online 16 hours a day
 * Facebook: [Tweet Blender fan page](http://www.facebook.com/pages/Tweet-Blender/96201618006 "Facebook Fan Page") discussion board
 * WordPress Support Forums: [tweet-blender tag](http://wordpress.org/tags/tweet-blender?forum_id=10 "WP forum")
-* Old homepage: [http://kirill-novitchenko.com/tweet-blender](http://kirill-novitchenko.com/tweet-blender "old homepage")
 
 Additional resources:
 
@@ -172,6 +175,48 @@ Additional resources:
 *Note #2: Please don't flame me for bugs.* Twitter is notoriously unstable and has some bugs in the API. On top of it, I use jQuery library that has some bugs in it as well. On top of it you might have other plugins installed that have bugs or introduce conflicts. Finally, 90% of the code works within browsers which have all sorts of different bugs of their own. Before calling TweetBlender "crap" give it a benefit of a doubt - it might not be its problem. I'm really striving to make it the best it could be
 
 == Changelog ==
+
+= 3.3.5 =
+* Bug fix: Cache Manager not working if your blog is not in the root of your domain (thanks to Brad for reporting via GetSatisfaction)
+* Improvement: Filters are now only used internally and not supplied to Twitter API queries to work around limitations and special character issues (thanks to Phil B for reporting via email)
+
+= 3.3.4 =
+* Bug fix: Cache Manager installer not working after purchase is complete (thanks to Stef N for reporting via Get Satisfaction)
+* Bug fix: "Warning: require_once(.../wp-includes/class-json.php): failed to open stream: No such file or directory" (thanks to Angilee S for reporting via Facebook)
+* Bug fix: If your filters included "xxx" tweets from @somexxxuser still showed up (thanks to Mark S for reporting via GetSatisfactin)  
+
+= 3.3.3 =
+* Bug fix: visual editor and other AJAX features broken in WP3.1 on PHP4 when plugin is active due to JSON library conflict (thanks to Nezi, Gabor R, Geoffrey F, and @ILoveStyle_be for reporting)
+* Bug fix: Cache panel layout broken if blog is not at root url and Cache Manager addon is not installed
+
+= 3.3.2 =
+* Bug fix: blending private/pass-protected accounts did not find any tweets
+* Bug fix: error "Fatal error: Cannot redeclare class OAuthSignatureMethod_HMAC_SHA1" when other OAuth-based plugins installed (thanks to Tomislav V for reporting via Facebook)
+* Bug fix: same tweets in cache and from Twitter were treated as different and appeared twice (thanks to mark for reporting via GetSatisfaction)
+* Bug fix: WP Admin > Settings > Tweet Blender was not working in IE7 on Windows
+* Tested with IE7 and Opera11 on Windows XP
+* Tested with WordPress 3.1
+
+= 3.3.1 =
+* Bug fix: hashtag links in the infobox that appears after click on Twitter logo were broken
+* Bug fix: tweets not refreshed due to "jQuery.jsonp is not a function" error (thanks to Ryan M for reporting via GetSatisfaction)
+* Bug fix: Cache Manager installation failed with "Failed opening required 'uploader/pclzip.lib.php'" error (thanks to Lucas S for reporting via GetSatisfaction)
+* Bug fix: lists validation when saving widget settings - "json error: can't get json" (thanks to @aaronhudspeth for reporting via Twitter)
+
+= 3.3.0 =
+* New feature: ability to get Cache Manager addon ($) that allows to backup/restore cache and delete individual tweets
+* New feature: if you use custom field "tb_tags" for a post its value overrides actual tags and gets used by Tweet Blender for Tags widget (requested by Thomas P via GetSatisfaction)
+* Bug fix: multiple escapes for filter phrases in quotes broke searches (thanks to @drtanz for reporting via WP Forums)
+* Bug fix: problem retrieving cached tweets for hashtags when API limit is reached
+* Bug fix: filters now support words in any lanugage, not just in English (thanks to Dmitry Sh for reporting via Facebook)
+* Bug fix: Twitter default number of search results (15) was returned even when widget was configured to show more (thanks to Brent S for reporting via GetSatisfaction)
+* Bug fix: non-English hashtags support (thanks to Esben R for reporting via GetSatisfaction)
+* Bug fix: jQuery conflict with CadabraPress theme (thanks to Dave G for reporting via GetSatisfaction)
+* Bug fix: multiple tweets created at the same second by the same user had only the first one show up in the stream
+* Improvement: switched to new Twitter API endpoint for user timelines
+* Improvement: "Loading tweets" message now hides if Twitter had an error and loading is done
+* Improvement: Made admin section use the latest jquery shipping with WP and stopped bundling local copy with plugin
+* Tested with WordPress 3.0.3, 3.0.4, 3.0.5
 
 = 3.2.4 =
 * Bug fix: not able to use "Show author's username for each tweet" checkbox under Archive tab in admin

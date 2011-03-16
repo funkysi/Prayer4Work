@@ -2,7 +2,7 @@
  * @author http://kirill-novitchenko.com
  */
 
-var TB_version = '3.2.4',	// Plugin version 
+var TB_version = '3.3.5',	// Plugin version 
 TB_rateLimitData,
 TB_tmp,
 TB_mode = 'widget',
@@ -12,7 +12,7 @@ TB_timePeriods = new Array("second", "minute", "hour", "day", "week", "month", "
 TB_timePeriodLengths = new Array("60","60","24","7","4.35","12","10"),
 TB_tweetsToCache = new Object(),
 TB_allSources = new Array(),
-jQnc = jQuery.noConflict(),
+jQnc = jQuery,
 TB_sourceCounts = new Array(),
 TB_sourceNames = new Array(),
 TB_seenTweets = new Array();
@@ -67,7 +67,7 @@ function TB_start() {
 		
 		TB_config.widgets[widgetId] = new Object;
 		
-		// set all properties (backward compatibiliy)
+		// set all properties (backward compatibility)
 		jQuery.each(jQuery('#'+widgetConfId).children('input'),function(j,property) {
 			TB_config.widgets[widgetId][property.name] = property.value;
 		});
@@ -115,32 +115,15 @@ function TB_start() {
 	// de-dupe list of all sources
 	TB_allSources = TB_getUniqueElements(TB_allSources);
 	
-	/* check opt out
-	jQuery.ajax({
-		dataType: 'jsonp',
-		url: 'http://tweet-blender.com/check_optout.php',
-		timeout: 500,
-		data: ({
-			u: window.location.href,
-			s: TB_allSources.join(','),
-			v: 'wp_' + TB_version
-		}),
-		success: function (json) {
-			if (!json.ERROR) {
-				if (json.chk == 0) {
-					jQuery('div.tb_tools').css('background-image','url(' + TB_pluginPath + '/img/bg.png)').width(56);
-					jQuery('a.tb_infolink').css('display','inline').css('margin-right','11px');
-				}
-			}
-		}
-	});
-	*/
 	jQuery('div.tb_tools').css('background-image','url(' + TB_pluginPath + '/img/bg.png)').width(56);
 	jQuery('a.tb_infolink').css('display','inline').css('margin-right','11px');
 	
 	// make sure plugins are available
 	if (typeof(jQuery.toJSON) == 'undefined' && typeof(jQnc.toJSON) == 'function') {
 		jQuery.toJSON = jQnc.toJSON;
+	}
+	if (typeof(jQuery.jsonp) == 'undefined' && typeof(jQnc.jsonp) == 'function') {
+		jQuery.jsonp = jQnc.jsonp;
 	}
 
 	// if there is no archive page, hide view more links
@@ -261,14 +244,14 @@ function TB_makeAjaxURLs(widgetId) {
 
 			// if we are serving only favorites
 			if (TB_config.widgets[widgetId].favoritesOnly) {
-				TB_addAjaxUrl(widgetId,'favorites',screenName,src,1);
+				TB_addAjaxUrl(widgetId,'favorites',{'screen_name':screenName},src,1);
 			}
 			// if we are not using Search API
 			else if (TB_config.advanced_no_search_api) {
-				TB_addAjaxUrl(widgetId,'user_timeline','screen_name=' + screenName,src,1);
+				TB_addAjaxUrl(widgetId,'user_timeline',{'screen_name':screenName},src,1);
 			}
 			else {
-				TB_addAjaxUrl(widgetId,'search','&from=' + screenName,src,1);
+				TB_addAjaxUrl(widgetId,'search',{'from':screenName},src,1);
 			}
 		}
 		// if it's a public screen name
@@ -287,7 +270,7 @@ function TB_makeAjaxURLs(widgetId) {
 					screenName = src.substr(1);
 				}
 
-				TB_addAjaxUrl(widgetId,'favorites',screenName,src,0);
+				TB_addAjaxUrl(widgetId,'favorites',{'screen_name':screenName},src,0);
 			}
 			// if it includes modifiers, use a one-off URL
 			else if ((pipePos = src.indexOf('|')) > 1) {
@@ -306,10 +289,10 @@ function TB_makeAjaxURLs(widgetId) {
 				
 				// if modifier is a hashtag
 				if (modifier.charAt(0) == '#') {
-					TB_addAjaxUrl(widgetId,'search','&from=' + screenName + '&tag=' + modifier.substr(1),src,0);
+					TB_addAjaxUrl(widgetId,'search',{'from':screenName,'tag':modifier.substr(1)},src,0);
 				}
 				else {
-					TB_addAjaxUrl(widgetId,'search','&from=' + screenName + '&ors=' + modifier,src,0);
+					TB_addAjaxUrl(widgetId,'search',{'from':screenName,'ors':modifier},src,0);
 				}
 			}
 			else {
@@ -327,13 +310,13 @@ function TB_makeAjaxURLs(widgetId) {
 				
 				// if we are not using Search API
 				if (TB_config.advanced_no_search_api) {
-					TB_addAjaxUrl(widgetId,'user_timeline','screen_name=' +screenName,src,0);
+					TB_addAjaxUrl(widgetId,'user_timeline',{'screen_name':screenName},src,0);
 				}
 				// else, group with other screen names
 				else {
 					// check to make sure we are not over the query length limit
 					if (escape(TB_screenNameQueries.join(' OR ')).length + src.length > 140) {
-						TB_addAjaxUrl(widgetId,'search','&q=' + escape(TB_screenNameQueries.join(' OR ')),escape('@'+TB_screenNames.join(',@')),0);
+						TB_addAjaxUrl(widgetId,'search',{'q':TB_screenNameQueries.join(' OR ')},escape('@'+TB_screenNames.join(',@')),0);
 						TB_screenNames = new Array();
 						TB_screenNameQueries = new Array();
 					}
@@ -349,12 +332,7 @@ function TB_makeAjaxURLs(widgetId) {
 		}
 		// if it's a list
 		else if (src.charAt(0) == '@' && src.indexOf('/') > 1) {
-			if (TB_config.advanced_reroute_on || TB_config.reached_api_limit) {
-				TB_addAjaxUrl(widgetId,'list_timeline','&user=' + src.substr(1, src.indexOf('/') - 1) + '&list=' + src.substr(src.indexOf('/') + 1),src,0);
-			}
-			else {
-				TB_addAjaxUrl(widgetId,'list_timeline',src.substr(1, src.indexOf('/') - 1) + '/lists/' + src.substr(src.indexOf('/') + 1) + '/statuses.json',src,0);
-			}
+			TB_addAjaxUrl(widgetId,'list_timeline',{'user':src.substr(1, src.indexOf('/') - 1),'list':src.substr(src.indexOf('/') + 1)},src,0);
 		}
 		// else it's a hash or keyword 
 		else if (src != '') {
@@ -368,106 +346,87 @@ function TB_makeAjaxURLs(widgetId) {
 			}
 
 			// check to make sure we are not over the query length limit
-			if (escape(TB_searchTerms.join(' OR ')).length + src.length > 140) {
-				TB_addAjaxUrl(widgetId,'search','&q=' + escape(TB_searchTerms.join(' OR ')),escape(TB_searchTerms.join(',')),0);
+			if (TB_searchTerms.join(' OR ').length + src.length > 140) {
+				TB_addAjaxUrl(widgetId,'search',{'q':TB_searchTerms.join(' OR ')},TB_searchTerms.join(','),0);
 				TB_searchTerms = new Array();
 			}
 			TB_searchTerms.push(src);
-
-/*
- 			// if it's a multi-word keyword give it a dedicated ajax call
-			if (src.indexOf(' ') > 0) {
-				TB_addAjaxUrl(widgetId,'search','&q=' + src,src,0);
-			}
-			// else it will be grouped with the rest
-			else {
-				// check to make sure we are not over the query length limit
-				if (escape(TB_searchTerms.join(' ')).length + src.length > 140) {
-					TB_addAjaxUrl(widgetId,'search','&ors=' + escape(TB_searchTerms.join(' ')),escape(TB_searchTerms.join(',')),0);
-					TB_searchTerms = new Array();
-				}
-				TB_searchTerms.push(src);
-			}
-*/					
 		}
 	});
 	
 	// if there are terms that are not part of a query - add another query
 	if (TB_searchTerms.length > 0) {
-		TB_addAjaxUrl(widgetId,'search','&q=' + escape(TB_searchTerms.join(' OR ')),escape(TB_searchTerms.join(',')),0);
+		TB_addAjaxUrl(widgetId,'search',{'q':TB_searchTerms.join(' OR ')},TB_searchTerms.join(','),0);
 	}
 	
 	// if there are screenNames - join them into a single query
 	if (TB_screenNames.length > 0) {
-		TB_addAjaxUrl(widgetId,'search','&q=' + escape(TB_screenNameQueries.join(' OR ')),escape('@'+TB_screenNames.join(',@')),0);
+		TB_addAjaxUrl(widgetId,'search',{'q':TB_screenNameQueries.join(' OR ')},encodeURI('@'+TB_screenNames.join(',@')),0);
 	}
 }
 
-function TB_addAjaxUrl(widgetId,actionType,urlPart,src,isPrivateSrc) {
-	var langFilter = '',
-	locationFilter = '',
-	negativeFilter = '',
-	privateParam = '';
-
+function TB_addAjaxUrl(widgetId,actionType,queryData,src,isPrivateSrc) {
+	
 	// check language filter	
 	if (typeof(TB_config['filter_lang']) != 'undefined' && TB_config.filter_lang.length == 2) {
-		langFilter = '&lang=' + TB_config.filter_lang;
+		queryData.lang = TB_config.filter_lang;
 	}
 	else {
-		langFilter = '&lang=all';
+		queryData.lang = 'all';
 	}
-	
-	/* FUTURE: check location filter	
-	if (typeof(TB_config['filter_location_name']) != 'undefined' && TB_config.filter_location_name.length > 0) {
-		locationFilter = escape('near:' + TB_config.filter_location_name + ' within:' + TB_config.filter_location_dist + TB_config.filter_location_dist_units);
-	}
-	*/
-	
-	// check negative keywords
-	if (typeof(TB_config['filter_bad_strings']) != 'undefined' && TB_config.filter_bad_strings.length > 0) {
-		negativeFilter = '&nots=' + escape(TB_config.filter_bad_strings.split(',').splice(0,9).join(' '));
-	}
-	
+			
 	// check private
 	if (isPrivateSrc) {
-		privateParam = '&private=1';
+		queryData.private  = 1;
 	}
 
 	if (actionType == 'search' && (TB_config.advanced_reroute_on || TB_config.reached_api_limit || isPrivateSrc)) {
+		queryData.action = actionType;
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url':TB_pluginPath + '/ws.php?action=search' + urlPart + langFilter + locationFilter + negativeFilter + privateParam,
+			'url':TB_pluginPath + '/ws.php',
+			'data':queryData,
 			'source':src,
 			'privateSrc':isPrivateSrc,
 			'dtype':'json'
 		});
 	}
 	else if (actionType == 'search') {
+		queryData.rpp = TB_config.widgets[widgetId]['tweetsNum'];
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url': 'http://search.twitter.com/search.json?' + locationFilter + urlPart + langFilter + negativeFilter,
+			'url': 'http://search.twitter.com/search.json',
+			'data':queryData,
 			'source':src,
 			'privateSrc':0,
 			'dtype':'jsonp'
 		});
 	}
 	else if (actionType == 'list_timeline' && (TB_config.advanced_reroute_on || TB_config.reached_api_limit)) {
+		queryData.action = actionType;
+		delete queryData.nots;
+		delete queryData.lang;
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url':TB_pluginPath + '/ws.php?action=list_timeline' + urlPart,
+			'url':TB_pluginPath + '/ws.php',
+			'data':queryData,
 			'source':src,
 			'privateSrc':0,
 			'dtype':'json'
 		});
 	}
 	else if (actionType == 'list_timeline'){
+		queryData.per_page = TB_config.widgets[widgetId]['tweetsNum'];
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url':'http://api.twitter.com/1/' + urlPart,
+			'url':'http://api.twitter.com/1/' + queryData.user + '/lists/' + queryData.list + '/statuses.json',
+			'data':queryData,
 			'source':src,
 			'privateSrc':0,
 			'dtype':'jsonp'
 		});
 	}
 	else if (actionType == 'user_timeline' && (TB_config.advanced_reroute_on || TB_config.reached_api_limit || isPrivateSrc)) {
+		queryData.action = actionType;
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url':TB_pluginPath + '/ws.php?action=user_timeline&' + urlPart,
+			'url':TB_pluginPath + '/ws.php',
+			'data':queryData,
 			'source':src,
 			'privateSrc':0,
 			'dtype':'json'
@@ -475,15 +434,18 @@ function TB_addAjaxUrl(widgetId,actionType,urlPart,src,isPrivateSrc) {
 	}
 	else if (actionType == 'user_timeline') {
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url': 'http://twitter.com/statuses/user_timeline.json?' + urlPart,
+			'data':queryData,
+			'url': 'http://api.twitter.com/1/statuses/user_timeline.json',
 			'source':src,
 			'private':0,
 			'dtype':'jsonp'
 		});
 	}
 	else if (actionType == 'favorites' && (TB_config.advanced_reroute_on || TB_config.reached_api_limit || isPrivateSrc)) {
+		queryData.action = actionType;
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url':TB_pluginPath + '/ws.php?action=favorites&user=' + urlPart,
+			'data':queryData,
+			'url':TB_pluginPath + '/ws.php',
 			'source':src,
 			'privateSrc':0,
 			'dtype':'json'
@@ -491,7 +453,8 @@ function TB_addAjaxUrl(widgetId,actionType,urlPart,src,isPrivateSrc) {
 	}
 	else if (actionType == 'favorites') {
 		TB_config.widgets[widgetId]['ajaxURLs'].push({
-			'url': 'http://api.twitter.com/1/favorites/' + urlPart + '.json',
+			'data':{},	// favorites does not support any params
+			'url': 'http://api.twitter.com/1/favorites/' + queryData.screen_name + '.json',
 			'source':src,
 			'private':0,
 			'dtype':'jsonp'
@@ -512,7 +475,7 @@ function TB_initInfoBox(widgetId) {
 		if ((colonPos = src.indexOf(':')) > 0) {
 			src = src.substr(0, colonPos);
 		}
-		// if there is a modfier - strip it
+		// if there is a modifier - strip it
 		if ((pipePos = src.indexOf('|')) > 0) {
 			src = src.substr(0, pipePos);
 		}
@@ -624,28 +587,60 @@ function TB_getTweets(widgetId) {
 	
 	// iterate over AJAX URLs
 	jQuery.each(TB_config.widgets[widgetId].ajaxURLs,function(i,urlInfo) {
-		jQuery.ajax({
-			dataType: urlInfo.dtype,
-			url: urlInfo.url,
-			success: function (json) {
-				// if we had valid JSON but with error
-				if (json.error) {
-					// if we reached the API limit
-					if (json.error.indexOf('Rate limit exceeded') == 0) {
-						TB_config['reached_api_limit'] = true;
+		
+		// special jsonp use case to ensure proper error handling
+		if (urlInfo.dtype == 'jsonp' && typeof(jQuery.jsonp) != 'undefined') {
+			jQuery.jsonp({
+				data:urlInfo.data,
+				callbackParameter: "callback",
+				url: urlInfo.url,
+				timeout: 2000,
+				success: function (json) {
+					// if we had valid JSON but with error
+					if (json.error) {
+						// if we reached the API limit
+						if (json.error.indexOf('Rate limit exceeded') == 0) {
+							TB_config['reached_api_limit'] = true;
+						}
+						TB_config.widgets[widgetId].urlsDone++;
+						TB_checkComplete(widgetId);
 					}
+					else {
+						TB_addTweets(widgetId,json,urlInfo);
+					}
+				},
+				error: function(jqXHR, textStatus, errorThrown) {
 					TB_config.widgets[widgetId].urlsDone++;
 					TB_checkComplete(widgetId);
 				}
-				else {
-					TB_addTweets(widgetId,json,urlInfo);
+			});
+		}
+		else {
+			jQuery.ajax({
+				data:urlInfo.data,
+				dataType: urlInfo.dtype,
+				url: urlInfo.url,
+				timeout: 2000,
+				success: function (json) {
+					// if we had valid JSON but with error
+					if (json.error) {
+						// if we reached the API limit
+						if (json.error.indexOf('Rate limit exceeded') == 0) {
+							TB_config['reached_api_limit'] = true;
+						}
+						TB_config.widgets[widgetId].urlsDone++;
+						TB_checkComplete(widgetId);
+					}
+					else {
+						TB_addTweets(widgetId,json,urlInfo);
+					}
+				},
+				error: function(jqXHR, textStatus, errorThrown) {
+					TB_config.widgets[widgetId].urlsDone++;
+					TB_checkComplete(widgetId);
 				}
-			},
-			error: function() {
-				TB_config.widgets[widgetId].urlsDone++;
-				TB_checkComplete(widgetId);
-			}
-		});
+			});
+		}
 	});
 }
 
@@ -677,7 +672,8 @@ function TB_addTweets(widgetId,jsonData,urlInfo) {
 	isNewTweet = false,
 	tweetUser,
 	badStrings,
-	tb_tweet;
+	tb_tweet,
+	tweetExists;
 	
 	if (typeof(jsonData.results) != 'undefined') {
 		tweets = jsonData.results;
@@ -697,11 +693,19 @@ function TB_addTweets(widgetId,jsonData,urlInfo) {
 		isNewTweet = false;
 		
 		// if this tweet already in the set, skip it
-		if (jQuery('#' + tb_tweet.divId).length > 0) {
+		tweetExists = false;
+		jQuery('div.tb_tweet').each(function() {
+			if (tb_tweet.isSameId(this.id)) {
+				tweetExists = true;
+			}
+		});
+		if (tweetExists) {
 			return true;
 		}
+		
+		
 		// if this is the first tweet, just add it and set it to be both min and max
-		else if (TB_config.widgets[widgetId].tweetsShown == 0) {
+		if (TB_config.widgets[widgetId].tweetsShown == 0) {
 			TB_config.widgets[widgetId].tweetsShown++;
 			TB_config.widgets[widgetId].minTweetId = tb_tweet.divId;
 			TB_config.widgets[widgetId].maxTweetId = tb_tweet.divId;			
@@ -1106,12 +1110,12 @@ function TB_tweet(tweetJson) {
 	}
 	
 	// creates unique div ID for this tweet
-	getDivId = function(tweetDate,screenName) {
-		return 't-' + tweetDate.getTime() + '-' + screenName;	
+	getDivId = function(tweetDate,screenName,strId) {
+		return 't-' + tweetDate.getTime() + '-' + screenName + '-' + strId;	
 	}
 
 	// div id of the tweet
-	this.divId = getDivId(this.tweetDate,this.screenName);
+	this.divId = getDivId(this.tweetDate,this.screenName,this.id);
 	
 	// makes HTML for each tweet
 	this.getHTML = function() {
@@ -1147,7 +1151,7 @@ function TB_tweet(tweetJson) {
 		}
 		// link hash tags
 		if (TB_config.general_link_hash_tags) {
-			textHtml = textHtml.replace(/\#([\w\-]+)/gi,'<a rel="nofollow" href="http://search.twitter.com/search?q=%23$1">#$1</a>'); 
+			textHtml = textHtml.replace(/\#(\S+)/gi,'<a rel="nofollow" href="http://search.twitter.com/search?q=%23$1">#$1</a>'); 
 		}
 		if (tweetJson.profile_image_url) {
 			imageUrl = tweetJson.profile_image_url;
@@ -1224,6 +1228,36 @@ function TB_tweet(tweetJson) {
 		return !this.isNewerThan(TB_tweetId);
 	}
 	
+	
+	this.isSameId = function(TB_tweetId) {
+
+		var parts1, parts2;
+
+		// if other tweet's ID is not defined - assume we are not the same
+		if (typeof(TB_tweetId) == 'undefined') {
+			return false;
+		}
+		// if it's some weird format - assume we are not the same
+		else if (TB_tweetId.indexOf('-') <= 0) {
+			return flase;
+		}
+		// else, do the real comparisons
+		else {
+			
+			parts1 = TB_tweetId.split('-');
+			parts2 = this.divId.split('-');
+			
+			// if one of the IDs is in old format - compare only the first two parts
+			if (parts1.length == 3 || parts2.length == 3) {
+				return (parts1[1] == parts2[1] && parts1[2] == parts2[2]);
+			}
+			// for new formats - compare all 3 parts
+			else {
+				return (parts1[1] == parts2[1] && parts1[2] == parts2[2] && parts1[3] == parts2[3]);
+			}
+		}
+	}
+	
 	/* returns true if this tweet doesn't contain any words that are supposed to be filtered out 
 	 * and if it's not supposed to be hidden due to other criteria
 	 */
@@ -1252,7 +1286,7 @@ function TB_tweet(tweetJson) {
 		if (typeof(TB_config['filter_bad_strings']) != 'undefined' && TB_config.filter_bad_strings.length > 0) {
 			badStrings = TB_config.filter_bad_strings.split(',');
 			for (i = 0; i < badStrings.length; i++) {
-				if (this.jsonCode.text.indexOf(badStrings[i]) >= 0 || this.screenName == badStrings[i]) {
+				if (this.jsonCode.text.indexOf(badStrings[i]) >= 0 || this.screenName.indexOf(badStrings[i]) >= 0) {
 					return false;
 				}
 			}

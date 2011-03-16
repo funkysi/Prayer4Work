@@ -11,7 +11,7 @@
  */
 
 /* Load OAuth lib. You can find it at http://oauth.net */
-require_once('OAuth.php');
+class_exists("OAuthSignatureMethod_HMAC_SHA1") && class_exists("OAuthSignatureMethod_RSA_SHA1") || require_once('OAuth.php');
 
 /**
  * Twitter OAuth class

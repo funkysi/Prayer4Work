@@ -1,13 +1,9 @@
 <?php
 
-// version 3.2.2
+// version 3.3.4
 
 // include WP functions
 require_once("../../../wp-blog-header.php");
-
-// include JSON library
-class_exists('Services_JSON') || require(dirname(__FILE__).'/lib/JSON.php');
-$json = new Services_JSON();
 
 // if on PHP5, include oAuth library and config
 if(!version_compare(PHP_VERSION, '5.0.0', '<'))
@@ -25,22 +21,37 @@ status_header(200);
 // get options from WP
 $tb_o = get_option('tweet-blender');
 
+// if we don't have json class, get the library
+if (!isset($wp_json) || !is_a($wp_json, 'Services_JSON') ) {
+	if (file_exists(ABSPATH . WPINC . '/class-json.php')) {
+		require_once( ABSPATH . WPINC . '/class-json.php' );
+	}
+	else {
+		require(dirname(__FILE__).'/lib/JSON.php');
+	}
+	$wp_json = new Services_JSON();
+}
+
+
 // if request is for favorites, search results, user timeline, or list timeline
 if (in_array($_GET['action'],array('search','list_timeline','user_timeline','favorites'))) {
 
 	$params = array();
-	parse_str(esc_attr($_SERVER['QUERY_STRING']),$params);
+	parse_str($_SERVER['QUERY_STRING'],$params);
 	unset($params['action']);
 
 	if ($_GET['action'] == 'search') {
 		// if its for screen names
-		if ($_GET['from']) {
+		if (isset($_GET['from'])) {
 			$sources = split(' OR ',$_GET['from']);
 			// add the @ sign
 			array_walk($sources, create_function('&$src','$src = "@" . $src;'));
 		}
-		else {
+		elseif (isset($_GET['ors'])) {
 			$sources = split(' ',$_GET['ors']);
+		}
+		else {
+			$sources = split(' OR ',$_GET['q']);
 		}
 		$url = 'http://search.twitter.com/search.json';
 		
@@ -52,28 +63,28 @@ if (in_array($_GET['action'],array('search','list_timeline','user_timeline','fav
 		unset($params['list']);
 	}
 	elseif($_GET['action'] == 'favorites') {
-		$sources = array('@'.$_GET['user']);
-		$url = 'https://api.twitter.com/1/favorites/' . $_GET['user'] . '.json';
+		$sources = array('@'.$_GET['screen_name']);
+		$url = 'https://api.twitter.com/1/favorites/' . $_GET['screen_name'] . '.json';
 		unset($params['user']);
 	}
 	elseif($_GET['action'] == 'user_timeline') {
 		$sources = array('@'.$_GET['user']);
-		$url = 'https://api.twitter.com/1/statuses/user_timeline/' . $_GET['user'] . '.json';
-		unset($params['user']);
+		$url = 'https://api.twitter.com/1/statuses/user_timeline/' . $_GET['screen_name'] . '.json';
+		unset($params['screen_name']);
 	}
 
 	// check if it's a private source or if we are rerouting with oAuth
-	if ($_GET['private'] || ($tb_o['advanced_reroute_on'] && $tb_o['advanced_reroute_type'] == 'oauth')) {
+	if (isset($_GET['private']) || ($tb_o['advanced_reroute_on'] && $tb_o['advanced_reroute_type'] == 'oauth')) {
 		
 		// check to make sure we have the class
 		if (!class_exists('TwitterOAuth')) {
-			echo $json->encode(array('error' => 'Twitter oAuth is not available'));
+			echo $wp_json->encode(array('error' => 'Twitter oAuth is not available'));
 			exit;
 		}
 
 		// make sure we have oAuth info
 		if (!isset($tb_o['oauth_access_token'])){
-			echo $json->encode(array('error' => "Don't have oAuth login info"));
+			echo $wp_json->encode(array('error' => "Don't have oAuth login info"));
 			exit;
 		}
 		else {
@@ -129,7 +140,7 @@ if (in_array($_GET['action'],array('search','list_timeline','user_timeline','fav
 		}
 		// if it was an error
 		else {
-			echo $json->encode(array('error' => $result->get_error_message()));	
+			echo $wp_json->encode(array('error' => $result->get_error_message()));	
 		}
 	}
 }
@@ -142,7 +153,7 @@ elseif ($_GET['action'] == 'rate_limit_status') {
 		exit;
 	}
 	else {
-		echo $json->encode(array('error' => "Can't retrieve limit info from Twitter"));
+		echo $wp_json->encode(array('error' => "Can't retrieve limit info from Twitter"));
 		exit;
 	}
 }
@@ -154,7 +165,7 @@ elseif($_GET['action'] == 'cache_data') {
 	if (array_key_exists('HTTP_REFERER', $_SERVER)) {
 		$referer = parse_url(esc_attr($_SERVER['HTTP_REFERER']));
 		if ($referer['host'] != esc_attr($_SERVER['SERVER_NAME']) && $referer['host'] != 'www.' . esc_attr($_SERVER['SERVER_NAME'])) {
-			echo $json->encode(array('error' => "Request from unauthorized page. \n" . esc_attr($_SERVER['SERVER_NAME']) . "\n" . $referer['host']));
+			echo $wp_json->encode(array('error' => "Request from unauthorized page. \n" . esc_attr($_SERVER['SERVER_NAME']) . "\n" . $referer['host']));
 			exit;
 		}
 	}
@@ -163,19 +174,19 @@ elseif($_GET['action'] == 'cache_data') {
 	
 	// make sure data is really JSON
 	$data = stripslashes($_POST['tweets']);
-	if($tweets = $json->decode($data)) {
+	if($tweets = $wp_json->decode($data)) {
 
 		if(tb_save_cache($tweets)) {
 			// return OK
-			echo $json->encode(array('OK' => 1));
+			echo $wp_json->encode(array('OK' => 1));
 		}
 		else {
-			echo $json->encode(array('error' => 'Cannot store tweets to DB'));
+			echo $wp_json->encode(array('error' => 'Cannot store tweets to DB'));
 		}
 		exit;
 	}
 	else {
-		echo $json->encode(array('error' => 'Invalid data format'));
+		echo $wp_json->encode(array('error' => 'Invalid data format'));
 		exit;
 	}		
 }

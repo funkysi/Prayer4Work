@@ -1,6 +1,6 @@
 <?php
 
-// Version 3.2.3
+// Version 3.3.4
 
 // aliases for sources
 $TB_sourceNames = array();
@@ -232,6 +232,28 @@ $tb_languages = array(
 'zu' => 'Zulu'
 );
 
+$tb_addons = array(
+	'1' => array(
+		'name' => 'Cache Manager',
+		'slug' => 'tweet-blender-cache-manager'
+	),
+	'2' => array(
+		'name' => 'nStyle',
+		'slug' => 'tweet-blender-nstyle'
+	),
+	'3' => array(
+		'name' => 'Tweet Injector',
+		'slug' => 'tweet-blender-injector'
+	)
+);
+
+$tb_package_names = array(
+	'1' => 'Cache Manager',
+	'2' => 'nStyle',
+	'3' => 'Tweet Injector'
+);
+
+
 function tb_get_url_content($url)
 {
   $string = '';
@@ -382,21 +404,21 @@ function tb_get_server_rate_limit_json($tb_o) {
 }
 
 function tb_get_cached_tweets_json($sources) {
-	global $json;
+	global $wp_json;
 	
 	$tweets = array();
 	$tweets = tb_get_cached_tweets($sources, 500);
 	foreach ($tweets as $t){
-		$tweet = $json->decode($t->tweet_json);
+		$tweet = $wp_json->decode($t->tweet_json);
 		$tweet['div_id'] = $t->div_id;
 		$tweets[] = $tweet;
 	}
 	
-	return $json->encode($tweets);
+	return $wp_json->encode($tweets);
 }
 
 function tb_save_cache($tweets) {
-	global $wpdb, $json;
+	global $wpdb, $wp_json;
 
 	if (is_array($tweets) || (is_object($tweets) && !version_compare(PHP_VERSION, '5.0.0', '<'))) {
 
@@ -429,7 +451,7 @@ function tb_save_cache($tweets) {
 						$wpdb->escape($div_id) . "','" . 
 						$wpdb->escape($src) . "','" . 
 						$wpdb->escape($t->text) . "','" .
-						$wpdb->escape($json->encode($t)) . "')"
+						$wpdb->escape($wp_json->encode($t)) . "')"
 					);
 					
 					$inserted_cache = true;
@@ -445,9 +467,15 @@ function tb_save_cache($tweets) {
 }
 
 // creates HTML for the list of tweets using cached tweets
-function tb_get_cached_tweets_html($mode,$instance) {
+function tb_get_cached_tweets_html($mode,$instance,$widget_id = '') {
 
-	global $json;
+	global $wp_json;
+
+    // if we don't have json class, get the library
+	if ( !is_a($wp_json, 'Services_JSON') ) {
+		require_once( ABSPATH . WPINC . '/class-json.php' );
+		$wp_json = new Services_JSON();
+	}
 	
 	// get options
 	$tb_o = get_option('tweet-blender');
@@ -467,9 +495,9 @@ function tb_get_cached_tweets_html($mode,$instance) {
 
 	// get data from DB
 	$tweets_html = '';
-	$tweets = tb_get_cached_tweets($sources, $tweets_to_show);
+	$tweets = tb_get_cached_tweets($sources, $tweets_to_show,$widget_id);
 	foreach ($tweets as $t){
-		$tweet = $json->decode($t->tweet_json);
+		$tweet = $wp_json->decode($t->tweet_json);
 		$tweet->{'div_id'} = $t->div_id;
 		$tweets_html .= tb_tweet_html($tweet,$mode,$tb_o);
 	}
@@ -477,10 +505,12 @@ function tb_get_cached_tweets_html($mode,$instance) {
 	return $tweets_html;
 }
 
-function tb_get_cached_tweets($sources,$tweets_num) {
+function tb_get_cached_tweets($sources,$tweets_num,$widget_id = '') {
 	global $wpdb;
 	$table_name = $wpdb->prefix . "tweetblender";
 
+	// TODO: if widget_id contains "favorites" pull out only favorite tweets for the given sources
+	
 	$sources_sql = "";
 	if (sizeof($sources) > 0) {
 		array_walk($sources,'tb_process_sources');
@@ -512,7 +542,7 @@ function tb_tweet_html($tweet,$mode = 'widget',$tb_o) {
  	// add screen name if from_user is given
 	if (!isset($tweet->user)) {
 		$user = new stdClass();
-		if ($tweet->from_user) {
+		if (isset($tweet->from_user)) {
 			
 			$user->screen_name = $tweet->from_user;
 			$tweet->user = $user;
@@ -524,7 +554,9 @@ function tb_tweet_html($tweet,$mode = 'widget',$tb_o) {
 	}
 
 	// see if there in alias for this screen name
-	$TB_sourceNames = $tb_o['alt_source_names'];
+	if (isset($tb_o['alt_source_names'])) {
+		$TB_sourceNames = $tb_o['alt_source_names'];
+	}
 	if (isset($TB_sourceNames[strtolower($tweet->user->screen_name)])) {
 		$tweet->user->alias = $TB_sourceNames[strtolower($tweet->user->screen_name)];
 	}
@@ -550,7 +582,7 @@ function tb_tweet_html($tweet,$mode = 'widget',$tb_o) {
 	}
 	// link hashtags if requested
 	if ($tb_o['general_link_hash_tags']) {
-		$patterns[] = '/\#([\w\-]+)/';
+		$patterns[] = '/\#(\S+)/';
 		$replacements[] = '<a rel="nofollow" href="http://search.twitter.com/search?q=%23$1">#$1</a>';
 	}
 	if (sizeof($patterns) > 0) {
@@ -570,7 +602,7 @@ function tb_tweet_html($tweet,$mode = 'widget',$tb_o) {
 	} 
 
 	// if source is not url encoded -> use as is
-	if (strpos($tweet->source,'&lt;') === false) {
+	if (isset($tweet->source) && strpos($tweet->source,'&lt;') === false) {
 		$source_html = $tweet->source;
 	}
 	// else decode
@@ -611,7 +643,7 @@ function tb_tweet_html($tweet,$mode = 'widget',$tb_o) {
 	$tweet_template .= '<a rel="nofollow" href="http://twitter.com/{1}/statuses/{4}">{5}</a>';
 	
 	// show source if requested
-	if ($tb_o[$mode . '_show_source'] && $tweet->source) {
+	if ($tb_o[$mode . '_show_source'] && isset($tweet->source)) {
 		$tweet_template .= ' from {6}';
 	}
 	
@@ -701,5 +733,172 @@ function tb_get_archive_post_id() {
 		return null;
 	}
 }
+
+function tb_get_current_page_url() {
+	$page_url = 'http';
+	if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") {
+		$page_url .= "s";
+	}
+	$page_url .= "://";
+	if ($_SERVER["SERVER_PORT"] != "80") {
+		$page_url .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];
+	}
+	else {
+		$page_url .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
+	}
+	return $page_url;
+}
+
+
+function tb_download_package($item_number) {
+
+	global $tb_package_names;
+
+	if ($item_number <= 0) {
+		echo("ID of the addon to install not provided... aborting");
+		return;
+	}
+	
+	// get user-friendly package name
+	$package_name = $tb_package_names[$item_number];	
+
+	// Show status updates on screen
+	echo "<h3>Installing $package_name for Tweet Blender</h3>\n";
+
+	// get purchase transaction id
+	$txn_id = tb_get_txn_id($item_number);
+	if (!isset($txn_id) || strlen($txn_id) < 10) {
+		echo("Can't confirm purchase... aborting\n");
+		return;
+	}
+
+	// Download
+	echo "Downloading package... \n";
+	$response = wp_remote_get('http://tweetblender.com/download.php?item_number=' . $item_number . '&blog_url=' . urlencode(get_bloginfo('url')) . '&txn_id=' . $txn_id);
+	
+	// if couldn't download - report error
+	if(is_wp_error($response)) {
+		echo 'not able to download. Error: ' . $response->get_error_message();;
+		return;
+	}
+	// else, if validation error
+	elseif(isset($response['headers']['validation-error'])) {
+		echo 'not able to download. Error: ' . $response['headers']['validation-error'];
+		return;
+	}
+	// else - proceed to save
+	else {
+		
+		$package_file_name = $response['headers']['package-file-name'];
+
+		// form file name
+		$file_name = WP_PLUGIN_DIR . '/'. $package_file_name . '.zip';
+		
+		// if couldn't save - report error
+		if (file_put_contents($file_name,wp_remote_retrieve_body($response)) === false) {
+			echo "unable to save file $file_name. Check directory permissions";
+			return;
+		}
+		// else - proceed to unzip
+		else {
+			echo "done<br />";
+	
+			// Unpack
+			echo "Unpacking... \n";
+			class_exists('PclZip') || include_once dirname(__FILE__) . '/pclzip.lib.php';
+			$archive = new PclZip($file_name);
+			
+			// if can't unzip - report error
+			if (($v_result_list = $archive->extract(PCLZIP_OPT_SET_CHMOD, 0777, PCLZIP_OPT_PATH, WP_PLUGIN_DIR)) == 0) {
+				echo "unable to unzip. Error: " . $archive->get_error_message();
+				rturn;
+			}
+			// else - proceed to activate
+			else {
+
+				echo "done<br />";
+
+				// clean up by removing zip file
+				unlink($file_name);			
+					
+				// Activate
+				echo "Activating... \n";
+				$activation = activate_plugin(WP_PLUGIN_DIR . '/' . $package_file_name . '/' . $package_file_name . '.php');
+				
+				// if can't activate - report error
+				if (is_wp_error($activation)) {
+					echo "unable to activate, please try to do it manually. Error: " . $activation->get_error_message();
+					return;
+				}
+				// else - wrap it up
+				else {
+					echo "done<br />";
+					
+					/* TODO: change permissions to the same as ours
+					$info = stat(__FILE__);
+					$info['uid'];
+					$info['gid']; */
+
+					// Done, link to admin
+					$url = tb_get_current_page_url();
+					$url = str_replace('&install_addon=1', '', $url);
+					echo "All Done!<br /><br /><a href='$url'>Start using $package_name</a><br /><br />";
+				}
+			}
+		}
+	}	
+}
+
+function tb_chmod_R($path, $filemode) {
+ 
+    $dh = opendir($path);
+    while ($file = readdir($dh)) {
+        if($file != '.' && $file != '..') {
+            $fullpath = $path.'/'.$file;
+			chmod($fullpath, $filemode);
+            if(is_dir($fullpath)) {
+ 
+               chmod_R($fullpath, $filemode);
+ 
+            } 
+        }
+    }
+ 
+    closedir($dh);    
+}
+
+function tb_get_txn_id($item_number) {
+	
+	// check WP options
+	$txn_id = get_option('txn_id_' . $item_number);
+	if (isset($txn_id) && strlen($txn_id) > 10) {
+		return $txn_id;
+	}
+	// if not found check recovery file
+	else {
+		$txn_id = trim(@file_get_contents(WP_PLUGIN_DIR . '/tweet-blender/' . $item_number . '.txt'));
+		
+		if (isset($txn_id) && strlen($txn_id) > 10) {
+			
+			// update option
+			update_option('txn_id_'.$item_number,$txn_id);
+			
+			// remove file
+			unlink(WP_PLUGIN_DIR . '/tweet-blender/' . $item_number . '.txt');
+			
+			// return
+			return $txn_id;
+		}
+		else {
+			return null;
+		}		
+	}
+}
+
+function tb_save_txn_id($item_number,$txn_id) {
+	// save to WP options
+	update_option('txn_id_'.$item_number,$txn_id);
+}
+
 
 ?>

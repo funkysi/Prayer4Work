@@ -1,4 +1,7 @@
 <?php
+
+// version 3.3.4
+
 class TweetBlenderFavorites extends WP_Widget {
 	
 	// constructor	 
@@ -9,7 +12,7 @@ class TweetBlenderFavorites extends WP_Widget {
 	// display widget	 
 	function widget($args, $instance) {
 
-		global $post,$json;
+		global $post;
 		if (sizeof($args) > 0) {
 			extract($args, EXTR_SKIP);			
 		}
@@ -91,7 +94,12 @@ class TweetBlenderFavorites extends WP_Widget {
 		
 		// process sources
 		$errors = array();
-		$old_sources = preg_split('/[\n\r]/m', $old_instance['widget_sources']);
+		if (isset($old_instance['widget_sources'])) {
+			$old_sources = preg_split('/[\n\r]/m', $old_instance['widget_sources']);
+		}
+		else {
+			$old_sources = array();
+		}
 		$new_sources = preg_split('/[\n\r]/m', $new_instance['widget_sources']);
 		$oAuth = null;
 		$have_bad_sources = false; $need_oauth_tokens = false; $status_msg = array(); $log_msg = ''; $private_sources = array();
@@ -185,13 +193,13 @@ class TweetBlenderFavorites extends WP_Widget {
 		$instance = wp_parse_args( (array) $instance, $default );
  
  		// report errors if any
- 		if ($this->error) {
+ 		if (isset($this->error)) {
  			echo tb_wrap_javascript("function tAuth(url) {var tWin = window.open(url,'tWin','width=800,height=410,toolbar=0,location=1,status=0,menubar=0,resizable=1');}");
  			echo '<div class="error">' . $this->error . '</div>';
 			$instance = $this->bad_input;
  		}
 		// report messages if an
- 		if ($this->message) {
+ 		if (isset($this->message)) {
  			echo '<div class="updated">' . $this->message . '</div>';
  		}
 		
@@ -208,6 +216,9 @@ class TweetBlenderFavorites extends WP_Widget {
 		// private sources
 		$field_id = $this->get_field_id('widget_private_sources');
 		$field_name = $this->get_field_name('widget_private_sources');
+		if (!isset($instance['widget_private_sources'])) {
+			$instance['widget_private_sources'] = '';
+		} 
 		echo "\r\n".'<input type="hidden" id="'.$field_id.'" name="'.$field_name.'" value="' . esc_attr( $instance['widget_private_sources'] ) . '" />';
 		 		
 		// specify refresh
@@ -248,12 +259,18 @@ class TweetBlenderFavorites extends WP_Widget {
 		// specify text for "view more" link
 		$field_id = $this->get_field_id('widget_view_more_text');
 		$field_name = $this->get_field_name('widget_view_more_text');
+		if (!isset($instance['widget_view_more_text'])) {
+			$instance['widget_view_more_text'] = '';
+		} 
 		echo "\r\n".'<br/><label for="'.$field_id.'">'.__('Text for &quot;view more&quot; link').':</label>';
 		echo "\r\n".'<input class="widefat" type="text" id="'.$field_id.'" name="'.$field_name.'" value="' . esc_attr( $instance['widget_view_more_text'] ) . '">';;
 				
 		// specify URL for "view more" link
 		$field_id = $this->get_field_id('widget_view_more_url');
 		$field_name = $this->get_field_name('widget_view_more_url');
+		if (!isset($instance['widget_view_more_url'])) {
+			$instance['widget_view_more_url'] = '';
+		} 
 		echo "\r\n".'<br/><label for="'.$field_id.'">'.__('URL for &quot;view more&quot; link').':</label>';
 		echo "\r\n".'<input class="widefat" type="text" id="'.$field_id.'" name="'.$field_name.'" value="' . esc_attr( $instance['widget_view_more_url'] ) . '"><br/>';
 		if ($archive_post = tb_get_archive_post_id()) {
@@ -263,13 +280,24 @@ class TweetBlenderFavorites extends WP_Widget {
 	
 	function check_source($src,$tb_o) {
 
-		global $json;
+		global $wp_json;
 		$need_oauth = false;
 		$is_private = false;
 		$source_check_result = '';
 		$log_msg = '';
 		$is_ok = false;
 
+	    // if we don't have json class, get the library
+		if ( !is_a($wp_json, 'Services_JSON') ) {
+			if (file_exists(ABSPATH . WPINC . '/class-json.php')) {
+				require_once( ABSPATH . WPINC . '/class-json.php' );
+			}
+			else {
+				require(dirname(__FILE__).'/lib/JSON.php');
+			}
+			$wp_json = new Services_JSON();
+		}
+				
 		// remove private account markup
 		if (stripos($src,'!') === 0) {
 			$src = substr($src,1);
@@ -309,11 +337,16 @@ class TweetBlenderFavorites extends WP_Widget {
 
 		// try to get data from Twitter
 		if (!is_wp_error($result)) {
-			$jsonData = $json->decode($result['body']);
+			$jsonData = $wp_json->decode($result['body']);
 			// if Twitter reported error
-			if ($jsonData->{error}) {
+			if (!isset($jsonData)) {
+				$source_check_result = ' ' . $src . ' - <span class="fail">FAIL</span>';
+				$log_msg = "($src) json error: could not decode body\n";
+			}
+			elseif(isset($jsonData->{'error'})) {
+			
 				// if it's a private user
-				if (strpos($jsonData->{error},"Not authorized") !== false){
+				if (strpos($jsonData->{'error'},"Not authorized") !== false){
 					$is_private = true;
 					// if we don't have access tokens - error
 					if (!array_key_exists('oauth_access_token',$tb_o)) {

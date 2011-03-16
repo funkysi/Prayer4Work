@@ -1,31 +1,142 @@
 <?php
 
-// Version 3.2.3
+// Version 3.3.5
+
+// include TweetBlender library
+include_once(dirname(__FILE__).'/lib/lib.php');
+
+// set up data structure for addon tracking
+$tb_installed_addons = array();
+$tb_active_addons = array();
+
+// check for addons
+function tb_check_addons() {
+
+	global $tb_installed_addons, $tb_active_addons, $tb_addons;
+	
+	foreach($tb_addons as $addon_id => $addon) {
+		$addon_file = $addon['slug'] . '/' . $addon['slug'] . '.php';
+		if (file_exists(WP_PLUGIN_DIR . '/' . $addon_file)) { 
+			$tb_installed_addons[$addon_id] = true;
+			if(is_plugin_active($addon_file)) {
+				$tb_active_addons[$addon_id] = true;
+			}
+			else {
+				$tb_active_addons[$addon_id] = false;
+			}
+		}
+		else {
+			$tb_installed_addons[$addon_id] = false;
+		}
+	}
+	
+	return false;
+}
 
 function tb_admin_load_scripts() {
-    wp_enqueue_script('jq', '/' . PLUGINDIR . '/tweet-blender/js/jquery-1.3.2.min.js');
-    wp_enqueue_script('jq-ui', '/' . PLUGINDIR . '/tweet-blender/js/jquery-ui.js',array('jq'));
-    wp_enqueue_script('jq-ui-tabs', '/' . PLUGINDIR . '/tweet-blender/js/ui.tabs.js',array('jq','jq-ui'));
-    wp_enqueue_script('tweet-blender-admin', '/' . PLUGINDIR . '/tweet-blender/js/admin.js',array('jq','jq-ui','jq-ui-tabs'));
+
+    wp_enqueue_script('jquery');
+    wp_enqueue_script('jquery-ui-core');
+    wp_enqueue_script('jquery-ui-tabs');
+    wp_enqueue_script('jquery-lightbox', '/' . PLUGINDIR . '/tweet-blender/js/jquery.lightbox-0.5.min.js',array('jquery'));
+    wp_enqueue_script('tb-admin', '/' . PLUGINDIR . '/tweet-blender/js/admin.js',array('jquery','jquery-ui-core','jquery-ui-tabs','jquery-lightbox'));
 }
 
 function tb_admin_load_styles() {
+
     wp_enqueue_style('tweet-blender-css', '/' . PLUGINDIR .'/tweet-blender/css/admin.css');
     wp_enqueue_style('jquery-ui-css', '/' . PLUGINDIR . '/tweet-blender/css/jquery-ui/jquery-ui.css');
     wp_enqueue_style('jquery-tabs-css', '/' . PLUGINDIR . '/tweet-blender/css/jquery-ui/ui.tabs.css');
+    wp_enqueue_style('jquery-lightbox-css', '/' . PLUGINDIR . '/tweet-blender/css/jquery.lightbox-0.5.css');
 }
 
 // register admin page
 add_action('admin_menu', 'tb_admin_menu');
 function tb_admin_menu() {
+
+	global $tb_installed_addons, $tb_active_addons, $tb_addons;
+
+	// add hooks for Tweet Blender admin
     $pagehook = add_options_page('Tweet Blender Settings', 'Tweet Blender', 'manage_options', __FILE__, 'tb_admin_page');
     add_action( 'admin_print_scripts-' . $pagehook, 'tb_admin_load_scripts' );
     add_action( 'admin_print_styles-' . $pagehook, 'tb_admin_load_styles' );
+
+	// add hooks for addons
+	tb_check_addons();
+	foreach($tb_addons as $addon_id => $addon) {
+		$addon_file = $addon['slug'] . '/' . $addon['slug'] . '.php';
+		
+		if ($tb_installed_addons[$addon_id] && $tb_active_addons[$addon_id]) {
+			include_once(WP_PLUGIN_DIR . '/' . $addon_file);
+		    
+			add_action( 'admin_print_scripts-' . $pagehook, 'tb_admin_load_scripts_addon' . $addon_id );
+		    add_action( 'admin_print_styles-' . $pagehook, 'tb_admin_load_styles_addon' . $addon_id );
+		}
+	}
 }
 
 function tb_admin_page() {
- 
-    global $tb_option_names, $tb_option_names_system, $tb_keep_tweets_options, $tb_languages, $cache_clear_results, $tb_throttle_time_options;
+
+    global $wp_json, $tb_option_names, $tb_option_names_system, $tb_keep_tweets_options, $tb_languages, $cache_clear_results, $tb_throttle_time_options, $tb_installed_addons, $tb_active_addons, $tb_package_names;
+
+    // if we don't have json class, get the library
+	if ( !is_a($wp_json, 'Services_JSON') ) {
+		if (file_exists(ABSPATH . WPINC . '/class-json.php')) {
+			require_once( ABSPATH . WPINC . '/class-json.php' );
+		}
+		else {
+			require(dirname(__FILE__).'/lib/JSON.php');
+		}
+		$wp_json = new Services_JSON();
+	}
+            
+	$upgrade_message = '';
+
+	// if add-on installation is requested, perform it
+	if (isset($_GET['install_addon'])) {
+		
+		// get item number
+		if (isset($_POST['item_number'])) {
+			$item_number = $_POST['item_number'];
+		}
+		elseif (isset($_GET['item_number'])) {
+			$item_number = $_GET['item_number'];
+		}
+		else {
+			echo 'Error: addon ID was not specified';
+		}
+
+		// store transaction ID to prefs for future auto updates
+		if (isset($_POST['txn_id']) && $item_number) {
+			tb_save_txn_id($item_number, $_POST['txn_id']);
+		}
+
+		// perform installation
+		tb_download_package($item_number);		
+		
+		return;
+	}
+	// check for new versions of addons if we haven't checked recently
+	elseif (!get_transient('tb_addon_checked_upgrade')) {
+
+		foreach($tb_package_names as $item_number => $name) {
+			
+			// if user purchased the addon
+			if ($txn_id = tb_get_txn_id($item_number)) {
+
+				$response = wp_remote_get('http://tweetblender.com/check_upgrade.php?item_number=' . $item_number . '&blog_url=' . urlencode(get_bloginfo('url')) . '&txn_id=' . $txn_id);
+				
+				if(!is_wp_error($response)) {
+					if (isset($response['headers']['have-newer-version']) && $response['headers']['have-newer-version'] == 1) {
+						$upgrade_message .= 'Newer version of ' . $name . ' is available - <a href="' . tb_get_current_page_url() . '&install_addon=1&item_number=' . $item_number . '">upgrade</a>. ';
+					}
+				}
+			}
+		}
+
+		// don't check again for 24 hours
+		set_transient('tb_addon_checked_upgrade', true, 60*60*24);
+	}
 
     // Read in existing option values from database
 	$tb_o = get_option('tweet-blender');
@@ -38,8 +149,7 @@ function tb_admin_page() {
 	// get API limit info
 	$api_limit_data = null;
 	if ($json_data = tb_get_server_rate_limit_json($tb_o)) {
-		$json = new Services_JSON();
-    	$api_limit_data = $json->decode($json_data);
+    	$api_limit_data = $wp_json->decode($json_data);
 	}
 
 	// perform maintenance
@@ -47,11 +157,11 @@ function tb_admin_page() {
 		tb_db_cache_clear('WHERE DATEDIFF(now(),created_at) > ' . $tb_o['archive_keep_tweets']);
 	}
 					
-        // See if the user has posted us some information
+    // See if the user has posted us some information
 	if( isset($_POST['tb_new_data']) && $_POST['tb_new_data'] == 'Y' ) {
 
 		// check nonce
-		check_admin_referer('tweet-blender_settings-save');
+		check_admin_referer('tweet_blender_settings_save','tb_nonce');
 
 		// if we are disabling cache - clear it
 		if (isset($tb_o['advanced_disabled_cache']) && (!$tb_o['advanced_disable_cache'] && $_POST['advanced_disable_cache'])) {
@@ -127,35 +237,48 @@ function tb_admin_page() {
 		}	
 
     }
+	
+	// if addon installation was cancelled by user, show message
+	if (isset($_GET['install_addon']) && $_GET['install_addon'] == 0) {
+		$message = '<div class="updated"><p><strong>Addon installation was cancelled.</strong> If you have any questions, please use one of the links under the Help tab.</p></div>';
+	}
+
 ?>
 
 <script type="text/javascript">
-	var lastUsedTabId = <?php if (isset($_POST['tb_tab_index'])) { echo $_POST['tb_tab_index']; } else { echo 0; } ?>;
+	var lastUsedTabId = <?php if (isset($_POST['tb_tab_index'])) { echo $_POST['tb_tab_index']; } else { echo 0; } ?>,
+	TB_pluginPath = '<?php echo plugins_url('tweet-blender') ?>',
+	TB_CM_pluginPath = '<?php echo plugins_url('tweet-blender-cache-manager'); ?>',
+	TB_cacheManagerAvailable = <?php if ($tb_installed_addons[1] && $tb_active_addons[1]) { echo 'true'; } else { echo 'false'; } ?>;
 </script>
 
 <div class="wrap">
 	<div id="icon-tweetblender" class="icon32"><br/></div><h2><?php _e('Tweet Blender', 'mt_trans_domain' ); ?></h2>
 
-	<?php if (!empty($message)) { echo $message; }  if (!empty($log_msg)) { echo "<!-- $log_msg -->"; } ?>
-	 
-	<form name="form1" id="form1" method="post" action="<?php echo str_replace( '%7E', '~', esc_attr($_SERVER['REQUEST_URI'])); ?>">
-	<input type="hidden" id="tb_new_data" name="tb_new_data" value="Y">
-	<input type="hidden" id="tb_tab_index" name="tb_tab_index" value="">
-	<?php
-	if ( function_exists('wp_nonce_field') )
-		wp_nonce_field('tweet-blender_settings-save');
+	<?php 
+		if (!empty($upgrade_message)) { echo '<div class="updated"><p>' . $upgrade_message . '</p></div>'; }
+		if (!empty($message)) { echo $message; }  if (!empty($log_msg)) { echo "<!-- $log_msg -->"; } 
 	?>
-
+	 
 	<div id="tabs">
-    <ul style="height:35px;">
+    <ul>
         <li><a href="#tab-1"><span>General</span></a></li>
         <li><a href="#tab-2"><span>Widgets</span></a></li>
         <li><a href="#tab-3"><span>Archive</span></a></li>
         <li><a href="#tab-4"><span>Filters</span></a></li>
         <li><a href="#tab-5"><span>Advanced</span></a></li>
         <li id="statustab"><a href="#tab-6"><span>Status</span></a></li>
-        <li><a href="#tab-7"><span>Help</span></a></li>
+        <li id="cache-manager-tab"><a href="#tab-7"><span>Cache</span></a></li>
+        <li><a href="#tab-8"><span>Help</span></a></li>
     </ul>
+
+	<form name="settings_form" id="settings_form" method="post" action="<?php echo str_replace( '%7E', '~', esc_attr($_SERVER['REQUEST_URI'])); ?>">
+	<input type="hidden" id="tb_new_data" name="tb_new_data" value="Y" />
+	<input type="hidden" id="tb_tab_index" name="tb_tab_index" value="" />
+	<?php
+	if ( function_exists('wp_nonce_field') )
+		wp_nonce_field('tweet_blender_settings_save','tb_nonce');
+	?>
 
     <div id="tab-1">
     <!-- General settings -->
@@ -163,7 +286,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="general_link_urls">
-			<input type="checkbox" name="general_link_urls" <?php checked('on', $tb_o['general_link_urls']); ?>>
+			<input type="checkbox" name="general_link_urls" <?php checked('on', $tb_o['general_link_urls']); ?>/>
 			<?php _e("Link http &amp; https URLs insde tweet text", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -171,7 +294,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="general_link_screen_names">
-			<input type="checkbox" name="general_link_screen_names" <?php checked('on', $tb_o['general_link_screen_names']); ?>>
+			<input type="checkbox" name="general_link_screen_names" <?php checked('on', $tb_o['general_link_screen_names']); ?>/>
 			<?php _e('Link @screenname inside tweet text', 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -179,7 +302,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="general_link_hash_tags">
-			<input type="checkbox" name="general_link_hash_tags" <?php checked('on', $tb_o['general_link_hash_tags']); ?>>
+			<input type="checkbox" name="general_link_hash_tags" <?php checked('on', $tb_o['general_link_hash_tags']); ?>/>
 			<?php _e("Link #hashtags insde tweet text", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -188,7 +311,7 @@ function tb_admin_page() {
 			<th class="th-full" colspan="2" scope="row">
 			<h3>SEO</h3>
 			<label for="general_seo_tweets_googleoff">
-			<input type="checkbox" name="general_seo_tweets_googleoff" <?php checked('on', $tb_o['general_seo_tweets_googleoff']); ?>>
+			<input type="checkbox" name="general_seo_tweets_googleoff" <?php checked('on', $tb_o['general_seo_tweets_googleoff']); ?>/>
 			<?php _e('Wrap all tweets with googleoff/googleon tags to prevent indexing', 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -196,7 +319,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="general_seo_footer_googleoff">
-			<input type="checkbox" name="general_seo_footer_googleoff" <?php checked('on', $tb_o['general_seo_footer_googleoff']); ?>>
+			<input type="checkbox" name="general_seo_footer_googleoff" <?php checked('on', $tb_o['general_seo_footer_googleoff']); ?>/>
 			<?php _e('Wrap footer with date and time in all tweets with googleoff/googleon tags to prevent indexing', 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -210,7 +333,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_check_sources">
-			<input type="checkbox" name="widget_check_sources" <?php checked('on', $tb_o['widget_check_sources']); ?>>
+			<input type="checkbox" name="widget_check_sources" <?php checked('on', $tb_o['widget_check_sources']); ?>/>
 			<?php _e("Check and verify sources when widget settings are saved", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -218,7 +341,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_header">
-			<input type="checkbox" name="widget_show_header" <?php checked('on', $tb_o['widget_show_header']); ?>>
+			<input type="checkbox" name="widget_show_header" <?php checked('on', $tb_o['widget_show_header']); ?>/>
 			<?php _e("Show header with Twitter logo and refresh link for each widget", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -226,7 +349,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_photos">
-			<input type="checkbox" name="widget_show_photos" <?php checked('on', $tb_o['widget_show_photos']); ?>>
+			<input type="checkbox" name="widget_show_photos" <?php checked('on', $tb_o['widget_show_photos']); ?>/>
 			<?php _e("Show user's photo for each tweet", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -234,7 +357,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_user">
-			<input type="checkbox" name="widget_show_user" <?php checked('on', $tb_o['widget_show_user']); ?>>
+			<input type="checkbox" name="widget_show_user" <?php checked('on', $tb_o['widget_show_user']); ?>/>
 			<?php _e("Show author's username for each tweet", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -242,7 +365,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_source">
-			<input type="checkbox" name="widget_show_source" <?php checked('on', $tb_o['widget_show_source']); ?>>
+			<input type="checkbox" name="widget_show_source" <?php checked('on', $tb_o['widget_show_source']); ?>/>
 			<?php _e("Show tweet source for each tweet", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -250,7 +373,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_reply_link">
-			<input type="checkbox" name="widget_show_reply_link" <?php checked('on', $tb_o['widget_show_reply_link']); ?>>
+			<input type="checkbox" name="widget_show_reply_link" <?php checked('on', $tb_o['widget_show_reply_link']); ?>/>
 			<?php _e("Show reply link for each tweet (on mouse over)", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -258,7 +381,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="widget_show_follow_link">
-			<input type="checkbox" name="widget_show_follow_link" <?php checked('on', $tb_o['widget_show_follow_link']); ?>>
+			<input type="checkbox" name="widget_show_follow_link" <?php checked('on', $tb_o['widget_show_follow_link']); ?>/>
 			<?php _e("Show follow link for each tweet (on mouse over)", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -272,7 +395,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_is_disabled">
-			<input type="checkbox" id="archive_is_disabled" name="archive_is_disabled" <?php checked('on', $tb_o['archive_is_disabled']); ?>>
+			<input type="checkbox" id="archive_is_disabled" name="archive_is_disabled" <?php checked('on', $tb_o['archive_is_disabled']); ?>/>
 			<?php _e('Disable archive page', 'mt_trans_domain' ); ?> 
 			</label>
 			</th>
@@ -280,7 +403,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo 'style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_auto_page">
-			<input type="checkbox" id="archive_auto_page" name="archive_auto_page" <?php checked('on', $tb_o['archive_auto_page']); ?>>
+			<input type="checkbox" id="archive_auto_page" name="archive_auto_page" <?php checked('on', $tb_o['archive_auto_page']); ?>/>
 			<?php _e('Create archive page automatically', 'mt_trans_domain' ); ?> 
 			</label>
 			</th>
@@ -325,7 +448,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo 'style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_show_photos">
-			<input type="checkbox" name="archive_show_photos" <?php checked('on', $tb_o['archive_show_photos']); ?>>
+			<input type="checkbox" name="archive_show_photos" <?php checked('on', $tb_o['archive_show_photos']); ?>/>
 			<?php _e("Show user's photo for each tweet", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -333,7 +456,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo 'style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_show_user">
-			<input type="checkbox" name="archive_show_user" <?php checked('on', $tb_o['archive_show_user']); ?>>
+			<input type="checkbox" name="archive_show_user" <?php checked('on', $tb_o['archive_show_user']); ?>/>
 			<?php _e("Show author's username for each tweet", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -341,7 +464,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo ' style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_show_source">
-			<input type="checkbox" name="archive_show_source" <?php checked('on', $tb_o['archive_show_source']); ?>>
+			<input type="checkbox" name="archive_show_source" <?php checked('on', $tb_o['archive_show_source']); ?>/>
 			<?php _e("Show tweet source", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -349,7 +472,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo ' style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_show_reply_link">
-			<input type="checkbox" name="archive_show_reply_link" <?php checked('on', $tb_o['archive_show_reply_link']); ?>>
+			<input type="checkbox" name="archive_show_reply_link" <?php checked('on', $tb_o['archive_show_reply_link']); ?>/>
 			<?php _e("Show reply link for each tweet (on mouse over)", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -357,7 +480,7 @@ function tb_admin_page() {
 		<tr valign="top" <?php if (isset($tb_o['archive_is_disabled']) && $tb_o['archive_is_disabled']) echo ' style="display:none;"'; ?>>
 			<th class="th-full" colspan="2" scope="row">
 			<label for="archive_show_follow_link">
-			<input type="checkbox" name="archive_show_follow_link" <?php checked('on', $tb_o['archive_show_follow_link']); ?>>
+			<input type="checkbox" name="archive_show_follow_link" <?php checked('on', $tb_o['archive_show_follow_link']); ?>/>
 			<?php _e("Show follow link for each tweet (on mouse over)", 'mt_trans_domain' ); ?>
 			</label>
 			</th>
@@ -410,25 +533,25 @@ function tb_admin_page() {
 		</tr>
 		<tr valign="top">
 	 		<th class="th-full" colspan="2" scope="row">
-			<input type="checkbox" name="filter_hide_same_text" <?php checked('on', $tb_o['filter_hide_same_text']); ?>>
+			<input type="checkbox" name="filter_hide_same_text" <?php checked('on', $tb_o['filter_hide_same_text']); ?>/>
 			<label for="filter_hide_same_text"><?php _e("Hide tweets that come from different users but have exactly the same text", 'mt_trans_domain' ); ?></label>
 			</th>
 		</tr>
 		<tr valign="top">
 	 		<th class="th-full" colspan="2" scope="row">
-			<input type="checkbox" name="filter_hide_replies" <?php checked('on', $tb_o['filter_hide_replies']); ?>>
+			<input type="checkbox" name="filter_hide_replies" <?php checked('on', $tb_o['filter_hide_replies']); ?>/>
 			<label for="filter_hide_replies"><?php _e("Hide tweets that are in reply to other tweets", 'mt_trans_domain' ); ?></label>
 			</th>
 		</tr>
 		<tr valign="top">
 	 		<th class="th-full" colspan="2" scope="row">
-			<input type="checkbox" name="filter_hide_not_replies" <?php checked('on', $tb_o['filter_hide_not_replies']); ?>>
+			<input type="checkbox" name="filter_hide_not_replies" <?php checked('on', $tb_o['filter_hide_not_replies']); ?>/>
 			<label for="filter_hide_not_replies"><?php _e("Hide tweets that are NOT replies to other tweets", 'mt_trans_domain' ); ?></label>
 			</th>
 		</tr>
 		<tr valign="top">
 	 		<th class="th-full" colspan="2" scope="row">
-			<input type="checkbox" name="filter_hide_mentions" <?php checked('on', $tb_o['filter_hide_mentions']); ?>>
+			<input type="checkbox" name="filter_hide_mentions" <?php checked('on', $tb_o['filter_hide_mentions']); ?>/>
 			<label for="filter_hide_mentions"><?php _e("Hide mentions of users, only show tweets from users themselves", 'mt_trans_domain' ); ?></label>
 			</th>
 		</tr>
@@ -464,7 +587,7 @@ function tb_admin_page() {
 			<th scope="row"><label for="filter_bad_strings"><?php _e('Exclude tweets that contain these users, words or hashtags', 'mt_trans_domain' ); ?>: </label>
 			</th>
 			<td valign="top">
-			<textarea id="filter_bad_strings" name="filter_bad_strings" rows=2 cols=60 wrap="soft"><?php if (isset($tb_o['filter_bad_strings'])) { echo $tb_o['filter_bad_strings']; } ?></textarea> 
+			<textarea id="filter_bad_strings" name="filter_bad_strings" rows=2 cols=60><?php if (isset($tb_o['filter_bad_strings'])) { echo stripslashes($tb_o['filter_bad_strings']); } ?></textarea> 
 				<br/>
 				<span class="setting-description">You can use single keywords, usernames, or phrases. Enclose phrases in quotes. Do not use @ for screen names. Separate with commas. Example: #spam,badword,"entire bad phrase",badUser,anotherBadUser,#badHashTag</span>
 			</td>
@@ -478,16 +601,16 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="advanced_reroute_on">
-			<input type="checkbox" name="advanced_reroute_on" <?php checked('on', $tb_o['advanced_reroute_on']); ?>>
+			<input type="checkbox" name="advanced_reroute_on" <?php checked('on', $tb_o['advanced_reroute_on']); ?>/>
 			<?php _e('Re-route Twitter traffic through this server', 'mt_trans_domain' ); ?> 
-			</label> (<input type="radio" value="oauth" name="advanced_reroute_type" <?php checked('oauth', $tb_o['advanced_reroute_type']); ?>> user account based with oAuth <input type="radio" value="direct" name="advanced_reroute_type" <?php checked('direct', $tb_o['advanced_reroute_type']); ?>> IP based)<br/>
+			</label> (<input type="radio" value="oauth" name="advanced_reroute_type" <?php checked('oauth', $tb_o['advanced_reroute_type']); ?>/> user account based with oAuth <input type="radio" value="direct" name="advanced_reroute_type" <?php checked('direct', $tb_o['advanced_reroute_type']); ?>/> IP based)<br/>
 			<span class="setting-description">This option allows you to reroute all API calls to Twitter via your server. This is to be used ONLY if your server is a white-listed server that has higher connection allowance than each individual user.  Each user can make up to 150 Twitter API connections per hour. Each visitor to your site will have their own limit i.e. their own 150. Checking the box will make all visitors to the site use your server's connection limit, not their own limit. If you did not prearranged with Twitter to have that limit increased that means that it will be 150 for ALL visitors - be careful.</span>
 			</th>
 		</tr>
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="advanced_show_limit_msg">
-			<input type="checkbox" name="advanced_show_limit_msg" <?php checked('on', $tb_o['advanced_show_limit_msg']); ?>>
+			<input type="checkbox" name="advanced_show_limit_msg" <?php checked('on', $tb_o['advanced_show_limit_msg']); ?>/>
 			<?php _e('Notify user when Twitter API connection limit is reached', 'mt_trans_domain' ); ?> 
 			</label><br/>
 			<span class="setting-description">
@@ -498,7 +621,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="advanced_disable_cache">
-			<input type="checkbox" name="advanced_disable_cache" <?php checked('on', $tb_o['advanced_disable_cache']); ?>>
+			<input type="checkbox" name="advanced_disable_cache" <?php checked('on', $tb_o['advanced_disable_cache']); ?>/>
 			<?php _e('Disable data caching', 'mt_trans_domain' ); ?> 
 			</label><br/>
 			<span class="setting-description">
@@ -509,7 +632,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th scope="row"><label for="general_timestamp_format"><?php _e('Timestamp Format', 'mt_trans_domain' ); ?>:
 			</label></th>
-			<td><input type="text" name="general_timestamp_format" value="<?php if (isset($tb_o['general_timestamp_format'])) { echo $tb_o['general_timestamp_format']; } ?>"> <span class="setting-description"><br/>
+			<td><input type="text" name="general_timestamp_format" value="<?php if (isset($tb_o['general_timestamp_format'])) { echo $tb_o['general_timestamp_format']; } ?>"/> <span class="setting-description"><br/>
 				leave blank = verbose from now ("4 minutes ago")<br/>
 				h = 12-hour format of an hour with leading zeros ("08")<br/>
 				i = Minutes with leading zeros ("01")<br/>
@@ -533,7 +656,7 @@ function tb_admin_page() {
 		<tr valign="top">
 			<th class="th-full" colspan="2" scope="row">
 			<label for="advanced_no_search_api">
-			<input type="checkbox" name="advanced_no_search_api" <?php checked('on', $tb_o['advanced_no_search_api']); ?>>
+			<input type="checkbox" name="advanced_no_search_api" <?php checked('on', $tb_o['advanced_no_search_api']); ?>/>
 			<?php _e('Do not use search API for screen names', 'mt_trans_domain' ); ?> 
 			</label><br/>
 			<span class="setting-description">
@@ -622,7 +745,68 @@ function tb_admin_page() {
 		</table>
 	</div>
 
+	</form>
+
 	<div id="tab-7">
+
+	<?php 
+		// if Cache Manager is not installed
+		if (!$tb_installed_addons[1]) { 
+	?>
+	
+	<h2>Cache Manager Is Not Installed</h2>
+	<div class="box-left">
+	<p>Install Cache Manager add-on for Tweet Blender and instantly take advantage of the following features:</p>
+	<ol class="feature-set">
+		<li>See all the tweets stored in your cache database</li>
+		<li>Delete individual tweets or groups of tweets</li>
+		<li>Backup and restore your cache</li>
+	</ol>
+	<p>Click the button below to purchase the add-on for a <b>one time flat fee of $2.99</b>. This will perform a one-click install of a new plugin and you will get FREE upgrades with new features in the future.</p>
+	<div class="centered">
+		<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+		<input type="hidden" name="cmd" value="_xclick" />
+		<input type="hidden" name="business" value="tweetblender@gmail.com" />
+		<input type="hidden" name="lc" value="US" />
+		<input type="hidden" name="currency_code" value="USD" />
+		<input type="hidden" name="no_note" value="1" />
+		<input type="hidden" name="amount" value="2.99" />
+		<input type="hidden" name="item_name" value="Cache Manager for Tweet Blender" />
+		<input type="hidden" name="item_number" value="1" />
+		<input type="hidden" name="no_shipping" value="1" />
+		<input type="hidden" name="custom" value="<?php bloginfo('url'); ?>" />
+		<input type="hidden" name="notify_url" value="http://tweetblender.com/ipn.php" />
+		<input type="hidden" name="image_url" value="http://tweetblender.com/tweet-blender-logo_150x50.png" />
+		<input type="hidden" name="return" value="<?php echo tb_get_current_page_url(); ?>&install_addon=1" />
+		<input type="hidden" name="cbt" value="Return to your site to complete installation" />
+		<input type="hidden" name="cancel_return" value="<?php echo tb_get_current_page_url(); ?>#tab-7" />
+		<input type="submit" name="submit" class="button-secondary" value="Get Cache Manager" />
+		<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+	</form>
+	
+	</div>
+	</div>
+	<div class="box-right centered">
+		<a href="<?php echo plugins_url('tweet-blender/screenshot-10.png'); ?>" title="Cache Manager for Tweet Blender"><img class="tb-addon-screenshot" src="<?php echo plugins_url('tweet-blender/img/cache_manager_th.jpg'); ?>" /></a>
+	</div>
+	<br clear="all" />
+	<?php 
+		// if Cache Manager is not active
+		} else if(!$tb_active_addons[1]) { 
+	?>
+	<h2>Cache Manager Is Not Active</h2>
+	<p>You have the Cache Manager plugin installed but not activated. Please use the [Plugins] menu on the left to activate the plugin</p>
+
+	<?php
+		// else Cache Manager is available
+		} else {
+			echo tb_cm_get_cache_page_html();
+		} 
+	?>
+	
+	</div>
+
+	<div id="tab-8">
 	Get Satisfaction Community: <a href="http://getsatisfaction.com/tweet_blender">http://getsatisfaction.com/tweet_blender</a><br/>
 	Facebook Fan Page: <a href="http://www.facebook.com/pages/Tweet-Blender/96201618006">http://www.facebook.com/pages/Tweet-Blender/96201618006</a><br/>
 	Twitter: <a href="http://twitter.com/tweetblender">http://twitter.com/tweetblender</a><br/>
@@ -632,9 +816,8 @@ function tb_admin_page() {
 	</div>
 
 	<p class="submit">
-	<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'mt_trans_domain' ) ?>" />
+	<input id="btn_save_settings" type="button" class="button-primary" value="<?php _e('Save Settings', 'mt_trans_domain' ) ?>" />
 	</p>
-</form>
 </div>
 
 <?php

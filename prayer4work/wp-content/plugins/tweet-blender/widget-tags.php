@@ -1,4 +1,7 @@
 <?php
+
+// v3.3.4
+
 class TweetBlenderForTags extends WP_Widget {
 	
 	// constructor	 
@@ -9,7 +12,7 @@ class TweetBlenderForTags extends WP_Widget {
 	// display widget	 
 	function widget($args, $instance) {
 
-		global $post, $json;
+		global $post;
 				
 		// don't show widget if we are not on a post page
 		if ($post == null || $post->post_type != 'post') {
@@ -17,10 +20,23 @@ class TweetBlenderForTags extends WP_Widget {
 			return;
 		}
 
-		// don't show widget if there are no tags
+		// check custom tb_tags field
 		$sources = array();
-		$post_tags = get_the_tags($post->ID);
-		if (is_object($post_tags) || sizeof($post_tags) == 0) {
+		$custom_fields = get_post_custom($post->ID);
+ 		$post_tags = get_the_tags($post->ID);
+		if (isset($custom_fields['tb_tags'])) {
+			foreach($custom_fields['tb_tags'] as $key => $tags) {
+				$sources = array_merge($sources,explode(',',$tags));
+			}			
+		}
+		// check general post tags
+		elseif (isset($post_tags) && is_array($post_tags) && sizeof($post_tags) > 0) {
+			foreach($post_tags as $tag) {
+				$sources[] = trim($tag->name);			
+			}
+		}
+		// don't show widget if there are no tags
+		else {
 			echo '<!-- Tweet Blender: Not shown as there are no tags for this post -->';
 			return;
 		}
@@ -34,10 +50,6 @@ class TweetBlenderForTags extends WP_Widget {
 		$title = empty($instance['title']) ? '&nbsp;' : apply_filters('widget_title', $instance['title']);
 		if ( !empty( $title ) ) { echo $before_title . $title . $after_title; };
 
-		foreach($post_tags as $tag) {
-			$sources[] = trim($tag->name);
-			
-		}
 		$instance['widget_sources'] = join('\n\r',$sources);
 			
 		// add configuraiton options
@@ -81,7 +93,7 @@ class TweetBlenderForTags extends WP_Widget {
 		$instance = wp_parse_args( (array) $instance, $default );
  
 		// report messages if an
- 		if ($this->message) {
+ 		if (isset($this->message)) {
  			echo '<div class="updated">' . $this->message . '</div>';
  		}
 		
